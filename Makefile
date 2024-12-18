@@ -3,7 +3,7 @@ CXX := g++
 CXXFLAGS := -std=c++20 -Wall -Wextra -O2
 
 # Directories
-SRCDIR := src/moveGen
+SRCDIR := src
 INCDIR := include
 OBJDIR := obj
 BINDIR := bin
@@ -11,9 +11,9 @@ BINDIR := bin
 # Target executable
 TARGET := $(BINDIR)/main
 
-# Automatically find all source files and generate object files
-SOURCES := $(wildcard $(SRCDIR)/*.cpp)
-OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+# Find all .cpp files recursively in SRCDIR
+SOURCES := $(shell find $(SRCDIR) -name "*.cpp")
+OBJECTS := $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES))
 
 # Create necessary directories
 $(shell mkdir -p $(OBJDIR) $(BINDIR))
@@ -28,6 +28,7 @@ $(TARGET): $(OBJECTS)
 
 # Compile source files into object files
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(dir $@) # Ensure obj directory structure matches src
 	@echo "Compiling: $<"
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
