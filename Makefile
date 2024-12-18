@@ -18,28 +18,21 @@ OBJECTS := $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES))
 # Create necessary directories
 $(shell mkdir -p $(OBJDIR) $(BINDIR))
 
-# Default target: build the executable
-all: force_rebuild $(TARGET)
+# Default target
+all: $(TARGET)
 
-# Always recompile everything
-force_rebuild:
-	@echo "Forcing recompilation of all files."
-
-# Link all object files into the executable
+# Link all object files into the final executable
 $(TARGET): $(OBJECTS)
-	@echo "Linking target: $@"
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Compile every source file into an object file
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	@echo "Compiling: $<"
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
 # Clean up build artifacts
 clean:
-	@echo "Cleaning up..."
 	rm -rf $(OBJDIR) $(BINDIR)
 
-# Phony targets to ensure rules always run
-.PHONY: all clean force_rebuild
+# Always recompile every file
+.PHONY: all clean
