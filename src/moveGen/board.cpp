@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Board::Board() : pieces{0ULL} {
+Board::Board() : pieceBitboards{0ULL} {
     turn = true;
 }
 
@@ -11,29 +11,29 @@ uint64_t Board::getBoardPositions() const {
 }
 
 uint64_t Board::getWhitePositions() const {
-    return pieces[WPAWN] | pieces[WBISHOP] | pieces[WKNIGHT] | pieces[WROOK] | pieces[WQUEEN] | pieces[WKING];
+    return pieceBitboards[WPAWN] | pieceBitboards[WBISHOP] | pieceBitboards[WKNIGHT] | pieceBitboards[WROOK] | pieceBitboards[WQUEEN] | pieceBitboards[WKING];
 }
 
 uint64_t Board::getBlackPositions() const {
-    return pieces[BPAWN] | pieces[BBISHOP] | pieces[BKNIGHT] | pieces[BROOK] | pieces[BQUEEN] | pieces[BKING];
+    return pieceBitboards[BPAWN] | pieceBitboards[BBISHOP] | pieceBitboards[BKNIGHT] | pieceBitboards[BROOK] | pieceBitboards[BQUEEN] | pieceBitboards[BKING];
 }
 
 void Board::setStartingPosition() {
     // White pieces
-    pieces[WPAWN]   = 0x000000000000FF00;
-    pieces[WBISHOP] = 0x0000000000000024;
-    pieces[WKNIGHT] = 0x0000000000000042;
-    pieces[WROOK]   = 0x0000000000000081;
-    pieces[WQUEEN]  = 0x0000000000000008;
-    pieces[WKING]   = 0x0000000000000010;
+    pieceBitboards[WPAWN]   = 0x000000000000FF00;
+    pieceBitboards[WBISHOP] = 0x0000000000000024;
+    pieceBitboards[WKNIGHT] = 0x0000000000000042;
+    pieceBitboards[WROOK]   = 0x0000000000000081;
+    pieceBitboards[WQUEEN]  = 0x0000000000000008;
+    pieceBitboards[WKING]   = 0x0000000000000010;
 
     // Black pieces
-    pieces[BPAWN]   = 0x00FF000000000000;
-    pieces[BBISHOP] = 0x2400000000000000;
-    pieces[BKNIGHT] = 0x4200000000000000;
-    pieces[BROOK]   = 0x8100000000000000;
-    pieces[BQUEEN]  = 0x0800000000000000;
-    pieces[BKING]   = 0x1000000000000000;
+    pieceBitboards[BPAWN]   = 0x00FF000000000000;
+    pieceBitboards[BBISHOP] = 0x2400000000000000;
+    pieceBitboards[BKNIGHT] = 0x4200000000000000;
+    pieceBitboards[BROOK]   = 0x8100000000000000;
+    pieceBitboards[BQUEEN]  = 0x0800000000000000;
+    pieceBitboards[BKING]   = 0x1000000000000000;
 }
 
 void Board::swapTurn() {
@@ -56,7 +56,7 @@ void Board::displayBoard() const {
 
     // Map each piece's bitboard to the board array
     for (int piece = 0; piece < 12; ++piece) {
-        uint64_t bitboard = pieces[piece];
+        uint64_t bitboard = pieceBitboards[piece];
         while (bitboard) {
             int square = __builtin_ctzll(bitboard);
             board[square] = pieceSymbols[piece];
