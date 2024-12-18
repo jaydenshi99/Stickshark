@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Board::Board() : pieceBitboards{0ULL} {
+Board::Board() : pieceBitboards{0ULL}, squares{0} {
     turn = true;
 }
 
@@ -34,6 +34,21 @@ void Board::setStartingPosition() {
     pieceBitboards[BROOK]   = 0x8100000000000000;
     pieceBitboards[BQUEEN]  = 0x0800000000000000;
     pieceBitboards[BKING]   = 0x1000000000000000;
+
+    int startingSquares[64] = {
+        9, 8, 7, 10, 11, 7, 8, 9,
+        6, 6, 6, 6, 6, 6, 6, 6,
+        -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        3, 2, 1, 4, 5, 1, 2, 3
+    };
+
+    for (int i = 0; i < 64; ++i) {
+        squares[i] = startingSquares[i];
+    }
 }
 
 void Board::swapTurn() {

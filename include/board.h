@@ -26,6 +26,8 @@ class Board {
 
     // Board Data
     uint64_t pieceBitboards[12];
+    int squares[64];
+
     bool turn; // true - white | false - black
 
     // Get methods
