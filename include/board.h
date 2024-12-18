@@ -4,6 +4,8 @@
 #include <bitset>
 #include <cstdint>
 
+#include "move.h"
+
 #define WPAWN   0
 #define WBISHOP 1
 #define WKNIGHT 2
@@ -35,8 +37,8 @@ class Board {
     void setStartingPosition();
     void swapTurn();
 
-    void makeMove();
-    void unmakeMove();
+    void makeMove(Move move);
+    void unmakeMove(Move move);
 
     // Display methods
     void displayBoard() const;
