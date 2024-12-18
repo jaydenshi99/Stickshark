@@ -41,7 +41,7 @@ void Board::swapTurn() {
 }
 
 
-void Board::displayBoard() {
+void Board::displayBoard() const {
     // Create an array to represent the board
     char board[64];
     for (int i = 0; i < 64; ++i) {

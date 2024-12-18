@@ -36,5 +36,5 @@ class Board {
     void swapTurn();
 
     // Display methods
-    void displayBoard();
+    void displayBoard() const;
 };

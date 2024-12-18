@@ -7,6 +7,6 @@ int main () {
     board.displayBoard();
     board.setStartingPosition();
     board.displayBoard();
-
+    
     return 0;
 }

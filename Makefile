@@ -11,24 +11,28 @@ BINDIR := bin
 # Target executable
 TARGET := $(BINDIR)/main
 
-# Find all .cpp files recursively in SRCDIR
+# Find all source files recursively
 SOURCES := $(shell find $(SRCDIR) -name "*.cpp")
 OBJECTS := $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES))
 
 # Create necessary directories
 $(shell mkdir -p $(OBJDIR) $(BINDIR))
 
-# Default target
-all: $(TARGET)
+# Default target: build the executable
+all: force_rebuild $(TARGET)
 
-# Link all object files into the final executable
+# Always recompile everything
+force_rebuild:
+	@echo "Forcing recompilation of all files."
+
+# Link all object files into the executable
 $(TARGET): $(OBJECTS)
 	@echo "Linking target: $@"
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Compile source files into object files
+# Compile every source file into an object file
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	@mkdir -p $(dir $@) # Ensure obj directory structure matches src
+	@mkdir -p $(dir $@)
 	@echo "Compiling: $<"
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
@@ -37,5 +41,5 @@ clean:
 	@echo "Cleaning up..."
 	rm -rf $(OBJDIR) $(BINDIR)
 
-# Phony targets
-.PHONY: all clean
+# Phony targets to ensure rules always run
+.PHONY: all clean force_rebuild
