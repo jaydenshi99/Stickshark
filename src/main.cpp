@@ -3,5 +3,10 @@
 using namespace std;
 
 int main () {
-    cout << "testing" << endl;
+    Board board;
+    board.displayBoard();
+    board.setStartingPosition();
+    board.displayBoard();
+
+    return 0;
 }
