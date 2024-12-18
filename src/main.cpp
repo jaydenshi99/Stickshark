@@ -1,7 +1,7 @@
-#include <iostream>
+#include "../include/main.h"
 
 using namespace std;
 
 int main () {
-    cout << "testing\n" << endl;
+    cout << "testing" << endl;
 }
