@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+#include <bitset>
 #include <cstdint>
 
 #define WPAWN   0
@@ -17,6 +19,9 @@
 
 class Board {
     public:
+    // Constructor
+    Board();
+
     // Board Data
     uint64_t pieces[12];
     bool turn; // true - white | false - black
@@ -27,5 +32,9 @@ class Board {
     uint64_t getBlackPositions() const;
 
     // Set methods
+    void setStartingPosition();
     void swapTurn();
+
+    // Display methods
+    void displayBoard();
 };
