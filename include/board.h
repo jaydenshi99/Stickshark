@@ -35,6 +35,9 @@ class Board {
     void setStartingPosition();
     void swapTurn();
 
+    void makeMove();
+    void unmakeMove();
+
     // Display methods
     void displayBoard() const;
 };
