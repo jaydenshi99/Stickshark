@@ -13,3 +13,7 @@ uint64_t Board::getWhitePositions() const {
 uint64_t Board::getBlackPositions() const {
     return pieces[BPAWN] | pieces[BBISHOP] | pieces[BKNIGHT] | pieces[BROOK] | pieces[BQUEEN] | pieces[BKING];
 }
+
+void Board::swapTurn() {
+    turn = !turn;
+}

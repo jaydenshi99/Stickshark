@@ -25,4 +25,7 @@ class Board {
     uint64_t getBoardPositions() const;
     uint64_t getWhitePositions() const;
     uint64_t getBlackPositions() const;
+
+    // Set methods
+    void swapTurn();
 };
