@@ -3,8 +3,10 @@
 #include <iostream>
 #include <bitset>
 #include <cstdint>
+#include <stack>
 
 #include "move.h"
+#include "gamestate.h"
 
 #define EMPTY   -1
 #define WPAWN   0
@@ -29,9 +31,9 @@ class Board {
     uint64_t pieceBitboards[12];
     int squares[64];
     bool turn; // true - white | false - black
-    
-    // Gamestate
 
+    // Gamestate History
+    stack<Gamestate> history;
 
     // Get methods
     uint64_t getBoardPositions() const;

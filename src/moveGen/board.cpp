@@ -100,19 +100,26 @@ void Board::makeMove(Move move) {
     uint64_t targetSquareMask = 1ULL << targetSquare;
 
     int movedPiece = squares[startSquare];
-    attackedPiece = squares[targetSquare];
+    int capturedPiece = squares[targetSquare];
 
-    // Update 
+    // Update Gamestate
+    Gamestate gState = Gamestate(capturedPiece);
 
     // Update Bitboards
     pieceBitboards[movedPiece] ^= startSquareMask | targetSquareMask;
-    if (attackedPiece != EMPTY) {
-        pieceBitboards[attackedPiece] &= ~targetSquareMask; 
+    if (capturedPiece != EMPTY) {
+        pieceBitboards[capturedPiece] &= ~targetSquareMask; 
     }
 
     // Update Squares
     squares[startSquare] = EMPTY;
     squares[targetSquare] = movedPiece;
+
+    // Toggle turn
+    swapTurn();
+
+    // Push Gamestate
+    history.push(gState);
 }
 
 void Board::unmakeMove(Move move) {
@@ -122,8 +129,23 @@ void Board::unmakeMove(Move move) {
     uint64_t oldSquareMask = 1ULL << oldSquare;
     uint64_t currSquareMask = 1ULL << currSquare;
 
+    // Get old gamestate
+    Gamestate gState = history.top();
+    history.pop();
+
     int movedPiece = squares[currSquare];
+    int capturedPiece = gState.capturedPiece;
 
+    // Update Bitboards
+    pieceBitboards[movedPiece] ^= oldSquareMask | currSquareMask;
+    if (capturedPiece != EMPTY) {
+        pieceBitboards[capturedPiece] |= currSquareMask; 
+    }
     
+    // Toggle turn
+    swapTurn();
 
+    // Update Squares
+    squares[currSquare] = capturedPiece;
+    squares[oldSquare] = movedPiece;
 }
