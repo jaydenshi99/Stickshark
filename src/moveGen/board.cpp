@@ -108,7 +108,7 @@ void Board::makeMove(Move move) {
     // Update Bitboards
     pieceBitboards[movedPiece] ^= startSquareMask | targetSquareMask;
     if (capturedPiece != EMPTY) {
-        pieceBitboards[capturedPiece] &= ~targetSquareMask; 
+        pieceBitboards[capturedPiece] ^= targetSquareMask;
     }
 
     // Update Squares
@@ -141,7 +141,7 @@ void Board::unmakeMove(Move move) {
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
     }
-    
+
     // Toggle turn
     swapTurn();
 
