@@ -33,7 +33,7 @@ class Board {
     bool turn; // true - white | false - black
 
     // Gamestate History
-    stack<Gamestate> history;
+    std::stack<Gamestate> history;
 
     // Get methods
     uint64_t getBoardPositions() const;
