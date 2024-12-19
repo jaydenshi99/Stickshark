@@ -6,6 +6,7 @@
 
 #include "move.h"
 
+#define EMPTY   -1
 #define WPAWN   0
 #define WBISHOP 1
 #define WKNIGHT 2
@@ -27,8 +28,10 @@ class Board {
     // Board Data
     uint64_t pieceBitboards[12];
     int squares[64];
-
     bool turn; // true - white | false - black
+    
+    // Gamestate
+
 
     // Get methods
     uint64_t getBoardPositions() const;

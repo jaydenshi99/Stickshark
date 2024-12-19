@@ -91,3 +91,39 @@ void Board::displayBoard() const {
     std::cout << "  +------------------------+" << std::endl;
     std::cout << "    a b c d e f g h" << std::endl;
 }
+
+void Board::makeMove(Move move) {
+    uint64_t startSquare = move.getStart();
+    uint64_t targetSquare = move.getTarget();
+
+    uint64_t startSquareMask = 1ULL << startSquare;
+    uint64_t targetSquareMask = 1ULL << targetSquare;
+
+    int movedPiece = squares[startSquare];
+    attackedPiece = squares[targetSquare];
+
+    // Update 
+
+    // Update Bitboards
+    pieceBitboards[movedPiece] ^= startSquareMask | targetSquareMask;
+    if (attackedPiece != EMPTY) {
+        pieceBitboards[attackedPiece] &= ~targetSquareMask; 
+    }
+
+    // Update Squares
+    squares[startSquare] = EMPTY;
+    squares[targetSquare] = movedPiece;
+}
+
+void Board::unmakeMove(Move move) {
+    uint64_t oldSquare = move.getStart();
+    uint64_t currSquare = move.getTarget();
+
+    uint64_t oldSquareMask = 1ULL << oldSquare;
+    uint64_t currSquareMask = 1ULL << currSquare;
+
+    int movedPiece = squares[currSquare];
+
+    
+
+}
