@@ -7,7 +7,7 @@ int main () {
     board.setStartingPosition();
     board.displayBoard();
 
-    Move m = Move(0, 30, 0);
+    Move m = Move(0, 16, 0);
     board.makeMove(m);
     board.displayBoard();
     board.unmakeMove(m);

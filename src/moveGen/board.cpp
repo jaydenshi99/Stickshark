@@ -36,14 +36,14 @@ void Board::setStartingPosition() {
     pieceBitboards[BKING]   = 0x1000000000000000;
 
     int startingSquares[64] = {
-        9, 8, 7, 10, 11, 7, 8, 9,
+        3, 2, 1, 5, 4, 1, 2, 3,
+        0, 0, 0, 0, 0, 0, 0, 0, 
+        -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1,
         6, 6, 6, 6, 6, 6, 6, 6,
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        3, 2, 1, 4, 5, 1, 2, 3
+        9, 8, 7, 11, 10, 7, 8, 9
     };
 
     for (int i = 0; i < 64; ++i) {
@@ -55,41 +55,30 @@ void Board::swapTurn() {
     turn = !turn;
 }
 
-
 void Board::displayBoard() const {
-    // Create an array to represent the board
-    char board[64];
-    for (int i = 0; i < 64; ++i) {
-        board[i] = '.';
-    }
-
     // Define characters for each piece
     const char pieceSymbols[12] = {
         'P', 'B', 'N', 'R', 'Q', 'K', // White pieces
         'p', 'b', 'n', 'r', 'q', 'k'  // Black pieces
     };
 
-    // Map each piece's bitboard to the board array
-    for (int piece = 0; piece < 12; ++piece) {
-        uint64_t bitboard = pieceBitboards[piece];
-        while (bitboard) {
-            int square = __builtin_ctzll(bitboard);
-            board[square] = pieceSymbols[piece];
-            bitboard &= bitboard - 1;
-        }
-    }
-
-    // Print the board in reverse rank order (rank 8 to rank 1)
+    // Print the board (a1 is bottom-left, h8 is top-right)
     std::cout << "\n  +------------------------+" << std::endl;
-    for (int rank = 7; rank >= 0; --rank) {
+    for (int rank = 7; rank >= 0; --rank) { // Start from rank 8 to rank 1
         std::cout << rank + 1 << " | ";
-        for (int file = 0; file < 8; ++file) {
-            std::cout << board[rank * 8 + file] << " ";
+        for (int file = 7; file >= 0; --file) { // Iterate from a to h
+            int pieceType = squares[rank * 8 + file];
+            if (pieceType == EMPTY) {
+                std::cout << ". ";
+            } else {
+                std::cout << pieceSymbols[pieceType] << " ";
+            }
+
         }
         std::cout << "|" << std::endl;
     }
     std::cout << "  +------------------------+" << std::endl;
-    std::cout << "    a b c d e f g h" << std::endl;
+    std::cout << "    a b c d e f g h" << std::endl; // Files a to h
 }
 
 void Board::makeMove(Move move) {
