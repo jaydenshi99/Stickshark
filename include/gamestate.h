@@ -3,7 +3,7 @@
 class Gamestate {
     public:
     // Constructor
-    Gamestate(int a);
+    Gamestate(int c);
 
     // Data
     int capturedPiece;

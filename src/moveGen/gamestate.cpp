@@ -3,6 +3,6 @@
 
 using namespace std;
 
-Gamestate::Gamestate(int a) {
-    capturedPiece = a;
+Gamestate::Gamestate(int c) {
+    capturedPiece = c;
 }
