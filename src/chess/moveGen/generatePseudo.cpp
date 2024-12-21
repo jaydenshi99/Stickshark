@@ -12,8 +12,9 @@ vector<Move> generatePawnMoves(Board b) {
     uint64_t singlePushes = (b.pieceBitboards[pawnIndex] << singlePushShiftAmt) & ~(blockers);
     
     while (singlePushes) {
-        int lsb = __builtin_ctzll(singlePushes);
-        singlePushes &= singlePushes - 1;
+        int target = popLSB(&singlePushes);
+        moves.push_back(Move(target - singlePushShiftAmt, target, NONE));
     }
 
+    return moves;
 }
