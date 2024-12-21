@@ -2,4 +2,4 @@
 
 #include <cstdint>
 
-inline int popLSB(uint64_t *bb);
+int popLSB(uint64_t *bb);
