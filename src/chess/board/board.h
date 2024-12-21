@@ -36,7 +36,7 @@ class Board {
     std::stack<Gamestate> history;
 
     // Get methods
-    uint64_t getBoardPositions() const;
+    uint64_t getBlockers() const;
     uint64_t getWhitePositions() const;
     uint64_t getBlackPositions() const;
 

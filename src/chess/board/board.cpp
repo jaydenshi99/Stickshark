@@ -6,7 +6,7 @@ Board::Board() : pieceBitboards{0ULL}, squares{0} {
     turn = true;
 }
 
-uint64_t Board::getBoardPositions() const {
+uint64_t Board::getBlockers() const {
     return Board::getWhitePositions() | Board::getBlackPositions();
 }
 
@@ -49,6 +49,8 @@ void Board::setStartingPosition() {
     for (int i = 0; i < 64; ++i) {
         squares[i] = startingSquares[i];
     }
+
+    turn = true;
 }
 
 void Board::swapTurn() {
