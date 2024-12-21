@@ -5,6 +5,8 @@
 
 using namespace std;
 
+MoveGen::MoveGen() {};
+
 void MoveGen::generatePawnMoves(Board b) {
     int singlePushShiftAmt = b.turn ? 8 : -8;
     int doublePushShiftAmt = b.turn ? 16 : -16;

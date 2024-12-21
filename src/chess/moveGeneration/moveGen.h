@@ -10,5 +10,8 @@ class MoveGen {
     public:
     std::vector<Move> moves;
 
+    // Constructor
+    MoveGen();
+
     void generatePawnMoves(Board b);
 };
