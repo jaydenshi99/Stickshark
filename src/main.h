@@ -2,4 +2,4 @@
 
 #include <iostream>
 
-#include "../include/board.h"
+#include "./chess/board/board.h"

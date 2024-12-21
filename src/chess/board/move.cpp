@@ -1,4 +1,4 @@
-#include "../../include/move.h"
+#include "move.h"
 
 using namespace std;
 

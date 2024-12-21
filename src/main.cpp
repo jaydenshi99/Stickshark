@@ -1,5 +1,5 @@
-#include "../include/main.h"
-#include "../include/utility.h"
+#include "main.h"
+#include "utility.h"
 
 using namespace std;
 

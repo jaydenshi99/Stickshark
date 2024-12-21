@@ -1,5 +1,5 @@
-#include "../../include/gamestate.h"
-#include "../../include/board.h"
+#include "gamestate.h"
+#include "board.h"
 
 using namespace std;
 
