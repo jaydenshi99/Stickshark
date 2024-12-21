@@ -4,13 +4,14 @@ using namespace std;
 
 int main () {
     Board board;
+    MoveGen moveGen;
 
     board.setStartingPosition();
     board.displayBoard();
 
-    vector<Move> pawnMoves = generatePawnMoves(board);
+    moveGen.generatePawnMoves(board);
 
-    for (Move m : pawnMoves) {
+    for (Move m : moveGen.moves) {
         board.makeMove(m);
         board.displayBoard();
         board.unmakeMove(m);

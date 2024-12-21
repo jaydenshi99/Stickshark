@@ -6,4 +6,9 @@
 #include "../board/board.h"
 #include "../bit.h"
 
-std::vector<Move> generatePawnMoves(Board b);
+class MoveGen {
+    public:
+    std::vector<Move> moves;
+
+    void generatePawnMoves(Board b);
+};
