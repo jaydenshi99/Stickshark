@@ -24,16 +24,16 @@ void Board::setStartingPosition() {
     pieceBitboards[WBISHOP] = 0x0000000000000024;
     pieceBitboards[WKNIGHT] = 0x0000000000000042;
     pieceBitboards[WROOK]   = 0x0000000000000081;
-    pieceBitboards[WQUEEN]  = 0x0000000000000008;
-    pieceBitboards[WKING]   = 0x0000000000000010;
+    pieceBitboards[WQUEEN]  = 0x0000000000000010;
+    pieceBitboards[WKING]   = 0x000000000000008;
 
     // Black pieces
     pieceBitboards[BPAWN]   = 0x00FF000000000000;
     pieceBitboards[BBISHOP] = 0x2400000000000000;
     pieceBitboards[BKNIGHT] = 0x4200000000000000;
     pieceBitboards[BROOK]   = 0x8100000000000000;
-    pieceBitboards[BQUEEN]  = 0x0800000000000000;
-    pieceBitboards[BKING]   = 0x1000000000000000;
+    pieceBitboards[BQUEEN]  = 0x1000000000000000;
+    pieceBitboards[BKING]   = 0x0800000000000000;
 
     int startingSquares[64] = {
         3, 2, 1, 5, 4, 1, 2, 3,
