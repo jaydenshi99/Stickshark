@@ -15,6 +15,8 @@ class MoveGen {
     // Constructor
     MoveGen();
 
+    void generatePseudoMoves(Board b);
+
     void generatePawnMoves(Board b);
     void generateKnightMoves(Board b);
 

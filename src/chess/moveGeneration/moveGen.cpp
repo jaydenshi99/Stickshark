@@ -4,6 +4,12 @@ using namespace std;
 
 MoveGen::MoveGen() {};
 
+void MoveGen::generatePseudoMoves(Board b) {
+    clearMoves();
+    generatePawnMoves(b);
+    generateKnightMoves(b);
+}
+
 void MoveGen::generatePawnMoves(Board b) {
     uint64_t pawnBitboard = b.turn ? b.pieceBitboards[WPAWN] : b.pieceBitboards[BPAWN];
     uint64_t doublePushRank = b.turn ? rankBitboards[4] : rankBitboards[5];

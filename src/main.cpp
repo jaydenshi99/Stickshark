@@ -16,9 +16,7 @@ int main () {
     board.setStartingPosition();
     board.displayBoard();
 
-    board.swapTurn();
-
-    moveGen.generateKnightMoves(board);
+    moveGen.generatePseudoMoves(board);
 
     for (Move move : moveGen.moves) {
         board.makeMove(move);
