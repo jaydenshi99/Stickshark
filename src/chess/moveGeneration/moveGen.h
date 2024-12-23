@@ -16,6 +16,7 @@ class MoveGen {
     MoveGen();
 
     void generatePawnMoves(Board b);
+    void generateKnightMoves(Board b);
 
     void clearMoves();
 };

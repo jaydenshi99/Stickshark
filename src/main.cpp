@@ -5,25 +5,26 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    for (int i = 0; i < 64; i++) {
-        cout << i << ".\n";
-        displayBitboard(knightAttackBitboards[i]);
+    // for (int i = 0; i < 64; i++) {
+    //     cout << i << ".\n";
+    //     displayBitboard(knightAttackBitboards[i]);
+    // }
+
+    Board board;
+    MoveGen moveGen;
+
+    board.setStartingPosition();
+    board.displayBoard();
+
+    board.swapTurn();
+
+    moveGen.generateKnightMoves(board);
+
+    for (Move move : moveGen.moves) {
+        board.makeMove(move);
+        board.displayBoard();
+        board.unmakeMove(move);
     }
-
-    // Board board;
-    // MoveGen moveGen;
-
-    // board.setStartingPosition();
-    // board.displayBoard();
-
-    // // board.swapTurn();
-    // // moveGen.generatePawnMoves(board);
-
-    // // for (Move move : moveGen.moves) {
-    // //     board.makeMove(move);
-    // //     board.displayBoard();
-    // //     board.unmakeMove(move);
-    // // }
 
     // moveGen.generatePawnMoves(board);
 

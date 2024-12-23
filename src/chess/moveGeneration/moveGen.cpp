@@ -51,6 +51,21 @@ void MoveGen::generatePawnMoves(Board b) {
     }
 }
 
+void MoveGen::generateKnightMoves(Board b) {
+    uint64_t knightBitboard = b.turn ? b.pieceBitboards[WKNIGHT] : b.pieceBitboards[BKNIGHT];
+    uint64_t enemyOrEmpty = b.turn ? ~b.getWhitePositions() : ~b.getBlackPositions();
+
+    while (knightBitboard) {
+        int source = popLSB(&knightBitboard);
+        uint64_t movesBitboard = knightAttackBitboards[source] & enemyOrEmpty;
+
+        while (movesBitboard) {
+            int target = popLSB(&movesBitboard);
+            moves.push_back(Move(source, target, NONE));
+        }
+    }
+}
+
 void MoveGen::clearMoves() {
     moves.clear();
 }
