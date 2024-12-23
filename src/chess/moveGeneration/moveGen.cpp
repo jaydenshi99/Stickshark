@@ -12,7 +12,7 @@ void MoveGen::generatePseudoMoves(Board b) {
 
 void MoveGen::generatePawnMoves(Board b) {
     uint64_t pawnBitboard = b.turn ? b.pieceBitboards[WPAWN] : b.pieceBitboards[BPAWN];
-    uint64_t doublePushRank = b.turn ? rankBitboards[4] : rankBitboards[5];
+    uint64_t doublePushRank = b.turn ? rankBitboards[3] : rankBitboards[4];
     uint64_t blockers = b.getBlockers();
     uint64_t enemy = b.turn ? b.getBlackPositions() : b.getWhitePositions();
 
