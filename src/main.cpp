@@ -5,7 +5,7 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    displayPossibleMoves();
+    simulateRandomMoves();
     
     return 0;
 }

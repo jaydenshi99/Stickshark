@@ -24,7 +24,11 @@ void simulateRandomMoves() {
     Board board;
     MoveGen moveGen;
 
-    moveGen.generatePawnMoves(board);
+    cout << "Starting Position: " << endl;
+    board.setStartingPosition();
+    board.displayBoard();
+
+    moveGen.generatePseudoMoves(board);
 
     int move = 1;
     while (moveGen.moves.size() != 0) {
@@ -40,7 +44,7 @@ void simulateRandomMoves() {
         board.displayBoard();
 
         moveGen.clearMoves();
-        moveGen.generatePawnMoves(board);
+        moveGen.generatePseudoMoves(board);
     }
 }
 
