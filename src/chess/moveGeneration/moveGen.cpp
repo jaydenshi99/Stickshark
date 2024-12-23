@@ -1,11 +1,4 @@
 #include "moveGen.h"
-#include "../../utility.h"
-
-#define FILEA 0x8080808080808080
-#define FILEH 0x0101010101010101
-
-#define RANK4 0x00FF000000
-#define RANK5 0xFF00000000
 
 using namespace std;
 
@@ -13,7 +6,7 @@ MoveGen::MoveGen() {};
 
 void MoveGen::generatePawnMoves(Board b) {
     uint64_t pawnBitboard = b.turn ? b.pieceBitboards[WPAWN] : b.pieceBitboards[BPAWN];
-    uint64_t doublePushRank = b.turn ? RANK4 : RANK5;
+    uint64_t doublePushRank = b.turn ? rankBitboards[4] : rankBitboards[5];
     uint64_t blockers = b.getBlockers();
     uint64_t enemy = b.turn ? b.getBlackPositions() : b.getWhitePositions();
 
@@ -26,12 +19,12 @@ void MoveGen::generatePawnMoves(Board b) {
         : (singlePushes >> 8) & ~blockers & doublePushRank;
 
     uint64_t leftDiagonalAttacks = b.turn
-        ? (pawnBitboard << 9) & enemy & ~FILEH
-        : (pawnBitboard >> 7) & enemy & ~FILEH;
+        ? (pawnBitboard << 9) & enemy & notFileBitboards[7]
+        : (pawnBitboard >> 7) & enemy & notFileBitboards[7];
 
     uint64_t rightDiagonalAttacks = b.turn
-        ? (pawnBitboard << 7) & enemy & ~FILEA
-        : (pawnBitboard >> 9) & enemy & ~FILEA;
+        ? (pawnBitboard << 7) & enemy & notFileBitboards[0]
+        : (pawnBitboard >> 9) & enemy & notFileBitboards[0];
     
     int singlePushOffset = b.turn ? -8 : 8;
     while (singlePushes) {

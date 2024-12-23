@@ -5,6 +5,8 @@
 
 #include "../board/board.h"
 #include "../bit.h"
+#include "../../utility.h"
+#include "bitTables.h"
 
 class MoveGen {
     public:

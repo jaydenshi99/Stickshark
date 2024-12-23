@@ -3,6 +3,8 @@
 using namespace std;
 
 int main () {
+    computeAllTables();
+
     Board board;
     MoveGen moveGen;
 
