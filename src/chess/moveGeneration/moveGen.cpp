@@ -12,7 +12,7 @@ using namespace std;
 MoveGen::MoveGen() {};
 
 void MoveGen::generatePawnMoves(Board b) {
-    int pawnBitboard = b.turn ? b.pieceBitboards[WPAWN] : b.pieceBitboards[BPAWN];
+    uint64_t pawnBitboard = b.turn ? b.pieceBitboards[WPAWN] : b.pieceBitboards[BPAWN];
     uint64_t doublePushRank = b.turn ? RANK4 : RANK5;
     uint64_t blockers = b.getBlockers();
     uint64_t enemy = b.turn ? b.getBlackPositions() : b.getWhitePositions();

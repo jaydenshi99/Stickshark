@@ -9,6 +9,7 @@ int main () {
     board.setStartingPosition();
     board.displayBoard();
 
+    // board.swapTurn();
     // moveGen.generatePawnMoves(board);
 
     // for (Move move : moveGen.moves) {
@@ -19,6 +20,7 @@ int main () {
 
     moveGen.generatePawnMoves(board);
 
+    int move = 1;
     while (moveGen.moves.size() != 0) {
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -27,6 +29,8 @@ int main () {
         int randIndex = dist(gen);
 
         board.makeMove(moveGen.moves[randIndex]);
+
+        cout << move++ << ".\n";
         board.displayBoard();
 
         moveGen.clearMoves();
