@@ -14,4 +14,6 @@ class MoveGen {
     MoveGen();
 
     void generatePawnMoves(Board b);
+
+    void clearMoves();
 };
