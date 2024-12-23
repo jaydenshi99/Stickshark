@@ -7,7 +7,13 @@ void displayBitboard(uint64_t bb) {
         for (int j = 7; j >= 0; --j) {
             int bit = (bb >> (i * 8 + j)) & 1ULL;
 
-            cout << bit << " ";
+            if (bit == 1) {
+                cout << "#";
+            } else {
+                cout << ".";
+            }
+
+            cout << " ";
         }
         cout << endl;
     }
