@@ -65,7 +65,7 @@ void Board::displayBoard() const {
     };
 
     // Print the board (a1 is bottom-left, h8 is top-right)
-    std::cout << "\n  +------------------------+" << std::endl;
+    std::cout << "  +------------------------+" << std::endl;
     for (int rank = 7; rank >= 0; --rank) { // Start from rank 8 to rank 1
         std::cout << rank + 1 << " | ";
         for (int file = 7; file >= 0; --file) { // Iterate from a to h
@@ -81,6 +81,7 @@ void Board::displayBoard() const {
     }
     std::cout << "  +------------------------+" << std::endl;
     std::cout << "    a b c d e f g h" << std::endl; // Files a to h
+    cout << endl;
 }
 
 void Board::makeMove(Move move) {
