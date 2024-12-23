@@ -58,4 +58,6 @@ void displayPossibleMoves() {
         board.displayBoard();
         board.unmakeMove(move);
     }
+
+    cout << "Total Moves: " << moveGen.moves.size() << "\n\n";
 }
