@@ -17,7 +17,7 @@ int main () {
     //     board.unmakeMove(move);
     // }
 
-    // moveGen.generatePawnMoves(board);
+    moveGen.generatePawnMoves(board);
 
     while (moveGen.moves.size() != 0) {
         std::random_device rd;
