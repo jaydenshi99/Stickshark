@@ -6,7 +6,7 @@ Move::Move(int s, int t, int f) {
     moveValue = (f << 12) | (s << 6) | t;
 }
 
-uint16_t Move::getStart() const {
+uint16_t Move::getSource() const {
     return (moveValue >> 6) & 0x3F;
 }
 

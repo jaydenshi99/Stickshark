@@ -27,7 +27,7 @@ class Move {
     Move(int s, int t, int f);
 
     // Get methods
-    uint16_t getStart() const;
+    uint16_t getSource() const;
     uint16_t getTarget() const;
     uint16_t getFlag() const;
 };

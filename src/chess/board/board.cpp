@@ -85,26 +85,26 @@ void Board::displayBoard() const {
 }
 
 void Board::makeMove(Move move) {
-    uint64_t startSquare = move.getStart();
+    uint64_t sourceSquare = move.getSource();
     uint64_t targetSquare = move.getTarget();
 
-    uint64_t startSquareMask = 1ULL << startSquare;
+    uint64_t sourceSquareMask = 1ULL << sourceSquare;
     uint64_t targetSquareMask = 1ULL << targetSquare;
 
-    int movedPiece = squares[startSquare];
+    int movedPiece = squares[sourceSquare];
     int capturedPiece = squares[targetSquare];
 
     // Update Gamestate
     Gamestate gState = Gamestate(capturedPiece);
 
     // Update Bitboards
-    pieceBitboards[movedPiece] ^= startSquareMask | targetSquareMask;
+    pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
     }
 
     // Update Squares
-    squares[startSquare] = EMPTY;
+    squares[sourceSquare] = EMPTY;
     squares[targetSquare] = movedPiece;
 
     // Toggle turn
@@ -115,7 +115,7 @@ void Board::makeMove(Move move) {
 }
 
 void Board::unmakeMove(Move move) {
-    uint64_t oldSquare = move.getStart();
+    uint64_t oldSquare = move.getSource();
     uint64_t currSquare = move.getTarget();
 
     uint64_t oldSquareMask = 1ULL << oldSquare;
