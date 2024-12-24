@@ -27,10 +27,14 @@ uint64_t notRankBitboards[NUMRANKS];
 
 uint64_t knightAttackBitboards[NUMSQUARES];
 
+uint64_t bishopAttackMagicMasks[NUMSQUARES];
+uint64_t rookAttackMagicMasks[NUMSQUARES];
+
 
 void computeAllTables() {
     computeNotBitboards();
     computeKnightAttacks();
+    computeMagicAttackMasks();
 }
 
 void computeNotBitboards() {
@@ -51,5 +55,52 @@ void computeKnightAttacks() {
         knightAttackBitboards[i] |= (knightPos >> 6) & notFileBitboards[6] & notFileBitboards[7] & notRankBitboards[7];
         knightAttackBitboards[i] |= (knightPos << 10) & notFileBitboards[6] & notFileBitboards[7] & notRankBitboards[0];
         knightAttackBitboards[i] |= (knightPos << 17) & notFileBitboards[7] & notRankBitboards[0] & notRankBitboards[1];
+    }
+}
+
+void computeMagicAttackMasks() {
+    // Compute Rook Attack Masks
+    for (int square = 0; square < NUMSQUARES; square++) {
+        rookAttackMagicMasks[square] = 0ULL;
+
+        // Vertical
+        int bottomSquare = square % 8 + 8;
+        for (int i = bottomSquare; i < 56; i += 8) {
+            rookAttackMagicMasks[square] |= 1ULL << i;
+        }
+
+        // Horizontal
+        int rightSquare = square - square % 8 + 1;
+        for (int i = rightSquare; i % 8 < 7; i += 1) {
+            rookAttackMagicMasks[square] |= 1ULL << i;
+        }
+
+        // Empty rook square
+        rookAttackMagicMasks[square] &= ~(1ULL << square);
+    }
+
+    // Compute Bishop Attack Masks
+    for (int square = 0; square < NUMSQUARES; square++) {
+        bishopAttackMagicMasks[square] = 0ULL;
+
+        // NE
+        for (int i = square + 7; i % 8 < 7 && i % 8 > 0 && i < 56; i += 7) {
+            bishopAttackMagicMasks[square] |= 1ULL << i;
+        }
+
+        // NW
+        for (int i = square + 9; i % 8 < 7 && i % 8 > 0 && i < 56; i += 9) {
+            bishopAttackMagicMasks[square] |= 1ULL << i;
+        }
+
+        // SE
+        for (int i = square - 9; i % 8 < 7 && i % 8 > 0 && i > 7; i -= 9) {
+            bishopAttackMagicMasks[square] |= 1ULL << i;
+        }
+
+        // SW
+        for (int i = square - 7; i % 8 < 7 && i % 8 > 0 && i > 7; i -= 7) {
+            bishopAttackMagicMasks[square] |= 1ULL << i;
+        }
     }
 }

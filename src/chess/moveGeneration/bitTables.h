@@ -15,8 +15,14 @@ extern uint64_t notRankBitboards[NUMRANKS];
 
 extern uint64_t knightAttackBitboards[NUMSQUARES];
 
+extern uint64_t bishopAttackMagicMasks[NUMSQUARES];
+extern uint64_t rookAttackMagicMasks[NUMSQUARES];
+
 // Functions
 void computeAllTables();
 
 void computeNotBitboards();
+
 void computeKnightAttacks();
+
+void computeMagicAttackMasks();
