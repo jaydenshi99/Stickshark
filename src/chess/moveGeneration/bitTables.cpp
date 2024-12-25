@@ -2,7 +2,7 @@
 
 using namespace std;
 
-const uint64_t fileBitboards[NUMFILES] = {
+const uint64_t fileBitboards[NUM_FILES] = {
     0x8080808080808080,
     0x4040404040404040,
     0x2020202020202020,
@@ -13,7 +13,7 @@ const uint64_t fileBitboards[NUMFILES] = {
     0x0101010101010101
 };
 
-const uint64_t rankBitboards[NUMRANKS] = {
+const uint64_t rankBitboards[NUM_RANKS] = {
     0x00000000000000FF,
     0x000000000000FF00,
     0x0000000000FF0000,
@@ -24,15 +24,15 @@ const uint64_t rankBitboards[NUMRANKS] = {
     0xFF00000000000000
 };
 
-uint64_t notFileBitboards[NUMFILES];
-uint64_t notRankBitboards[NUMRANKS];
+uint64_t notFileBitboards[NUM_FILES];
+uint64_t notRankBitboards[NUM_RANKS];
 
-uint64_t knightAttackBitboards[NUMSQUARES];
+uint64_t knightAttackBitboards[NUM_SQUARES];
 
-uint64_t bishopAttackMagicMasks[NUMSQUARES];
-uint64_t rookAttackMagicMasks[NUMSQUARES];
-uint64_t bishopMagics[NUMSQUARES];
-uint64_t rookMagics[NUMSQUARES];
+uint64_t bishopAttackMagicMasks[NUM_SQUARES];
+uint64_t rookAttackMagicMasks[NUM_SQUARES];
+uint64_t bishopMagics[NUM_SQUARES];
+uint64_t rookMagics[NUM_SQUARES];
 
 
 void computeAllTables() {
@@ -42,14 +42,14 @@ void computeAllTables() {
 }
 
 void computeNotBitboards() {
-    for (int i = 0; i < NUMFILES; i++) {
+    for (int i = 0; i < NUM_FILES; i++) {
         notFileBitboards[i] = ~fileBitboards[i];
         notRankBitboards[i] = ~rankBitboards[i];
     }
 }
 
 void computeKnightAttacks() {
-    for (int i = 0; i < NUMSQUARES; i++) {
+    for (int i = 0; i < NUM_SQUARES; i++) {
         uint64_t knightPos = 1ULL << i;
         knightAttackBitboards[i] = (knightPos << 15) & notFileBitboards[0] & notRankBitboards[0] & notRankBitboards[1];
         knightAttackBitboards[i] |= (knightPos << 6) & notFileBitboards[0] & notFileBitboards[1] & notRankBitboards[0];
@@ -64,7 +64,7 @@ void computeKnightAttacks() {
 
 void computeMagicAttackMasks() {
     // Compute Rook Attack Masks
-    for (int square = 0; square < NUMSQUARES; square++) {
+    for (int square = 0; square < NUM_SQUARES; square++) {
         rookAttackMagicMasks[square] = 0ULL;
 
         // Vertical
@@ -84,7 +84,7 @@ void computeMagicAttackMasks() {
     }
 
     // Compute Bishop Attack Masks
-    for (int square = 0; square < NUMSQUARES; square++) {
+    for (int square = 0; square < NUM_SQUARES; square++) {
         bishopAttackMagicMasks[square] = 0ULL;
 
         // NE
@@ -112,6 +112,32 @@ void computeMagicAttackMasks() {
 void computeMagics() {
 
 }
+
+uint64_t generateRandomMagic() {
+    uint64_t magic = random_uint64();
+
+    for (int i = 0; i < 32; ++i) {
+        if (std::rand() % 2 == 0) {
+            magic &= ~(1ULL << (std::rand() % 64));
+        }
+    }
+
+    return magic;
+}
+
+bool testMagic(uint64_t magic, uint64_t mask, bool isBishop) {
+    unordered_set<uint64_t> indices;
+    int shiftAmt = isBishop ? 55 : 50;
+
+    vector<uint64_t> occupancies = generateAllOccupancies(mask);
+    for (uint64_t occupancy : occupancies) {
+        uint64_t index = (occupancy * magic) >> shiftAmt;
+        indices.insert(index);
+    }
+
+    return indices.size() == occupancies.size();
+}
+
 
 vector<uint64_t> generateAllOccupancies(uint64_t mask) {
     vector<uint64_t> occupancies;
