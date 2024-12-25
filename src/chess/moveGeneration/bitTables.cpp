@@ -80,7 +80,6 @@ void computeSlidingAttacks() {
         vector<uint64_t> occupancies = generateAllOccupancies(attackMask);
 
         for (uint64_t occupancy : occupancies) {
-            int currSquare;
             uint64_t attackBitboard = computeBishopAttackBitboard(square, occupancy);
             int index = square * BISHOP_ATTACKS_PER_SQUARE + 
             ((occupancy * bishopMagics[square]) >> 55);
@@ -95,7 +94,6 @@ void computeSlidingAttacks() {
         vector<uint64_t> occupancies = generateAllOccupancies(attackMask);
 
         for (uint64_t occupancy : occupancies) {
-            int currSquare;
             uint64_t attackBitboard = computeRookAttackBitboard(square, occupancy);
             int index = square * ROOK_ATTACKS_PER_SQUARE + 
             ((occupancy * rookMagics[square]) >> 52);
@@ -111,7 +109,7 @@ uint64_t computeBishopAttackBitboard(int square, uint64_t blockers) {
     // NE
     for (int i = square + 7; i % 8 < 7 && i % 8 >= 0 && i < 64; i += 7) {
         attackBitboard |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
@@ -119,7 +117,7 @@ uint64_t computeBishopAttackBitboard(int square, uint64_t blockers) {
     // NW
     for (int i = square + 9; i % 8 <= 7 && i % 8 > 0 && i < 64; i += 9) {
         attackBitboard |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
@@ -127,7 +125,7 @@ uint64_t computeBishopAttackBitboard(int square, uint64_t blockers) {
     // SE
     for (int i = square - 9; i % 8 < 7 && i % 8 >= 0 && i >= 0; i -= 9) {
         attackBitboard |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
@@ -135,7 +133,7 @@ uint64_t computeBishopAttackBitboard(int square, uint64_t blockers) {
     // SW
     for (int i = square - 7; i % 8 <= 7 && i % 8 > 0 && i >= 0; i -= 7) {
         attackBitboard |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
@@ -149,7 +147,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
     // Up
     for (int i = square + 8; i < 64; i += 8) {
         rookAttackMagicMasks[square] |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
@@ -157,7 +155,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
     // Down
     for (int i = square - 8; i >= 0; i -= 8) {
         rookAttackMagicMasks[square] |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
@@ -165,7 +163,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
     // Left
     for (int i = square + 1; i % 8 <= 7 && i / 8 == square / 8; i += 1) {
         rookAttackMagicMasks[square] |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
@@ -173,7 +171,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
     // Right
     for (int i = square - 1; i % 8 >= 0 && i / 8 == square / 8; i -= 1) {
         rookAttackMagicMasks[square] |= 1ULL << i;
-        if ((1ULL << i) & blockers != 0) {
+        if (((1ULL << i) & blockers) != 0) {
             break;
         }
     }
