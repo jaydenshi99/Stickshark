@@ -6,7 +6,7 @@ int main () {
     computeAllTables();
 
     for (int i = 0; i < 64; i++) {
-        cout << rookMagics[i] << endl;
+        cout << bitset<64>(rookMagics[i]) << endl;
     }
     
     return 0;
