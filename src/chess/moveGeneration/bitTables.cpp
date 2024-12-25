@@ -45,9 +45,6 @@ void computeAllTables() {
     computeKnightAttacks();
     cout << "Knight attacks computed" << endl;
 
-    loadMagics();
-    cout << "Magic numbers loaded" << endl;
-
     computeSlidingAttacks();
     cout << "Sliding attacks computed" << endl;
 }
@@ -74,6 +71,13 @@ void computeKnightAttacks() {
 }
 
 void computeSlidingAttacks() {
+    // Load and calculate prerequisites
+    loadMagics();
+    cout << "Magic numbers loaded" << endl;
+
+    computeMagicAttackMasks();
+    cout << "Magic attack masks computed" << endl;
+
     // Compute bishop attacks
     for (int square = 0; square < NUM_SQUARES; square++) {
         uint64_t attackMask = bishopAttackMagicMasks[square];
@@ -146,7 +150,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
 
     // Up
     for (int i = square + 8; i < 64; i += 8) {
-        rookAttackMagicMasks[square] |= 1ULL << i;
+        attackBitboard |= 1ULL << i;
         if (((1ULL << i) & blockers) != 0) {
             break;
         }
@@ -154,7 +158,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
 
     // Down
     for (int i = square - 8; i >= 0; i -= 8) {
-        rookAttackMagicMasks[square] |= 1ULL << i;
+        attackBitboard |= 1ULL << i;
         if (((1ULL << i) & blockers) != 0) {
             break;
         }
@@ -162,7 +166,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
 
     // Left
     for (int i = square + 1; i % 8 <= 7 && i / 8 == square / 8; i += 1) {
-        rookAttackMagicMasks[square] |= 1ULL << i;
+        attackBitboard |= 1ULL << i;
         if (((1ULL << i) & blockers) != 0) {
             break;
         }
@@ -170,7 +174,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
 
     // Right
     for (int i = square - 1; i % 8 >= 0 && i / 8 == square / 8; i -= 1) {
-        rookAttackMagicMasks[square] |= 1ULL << i;
+        attackBitboard |= 1ULL << i;
         if (((1ULL << i) & blockers) != 0) {
             break;
         }
