@@ -80,7 +80,7 @@ void perft(int depth) {
 
     auto start = chrono::high_resolution_clock::now();
 
-    int totalMoves = perftRecursive(board, depth);
+    long totalMoves = perftRecursive(board, depth);
 
     auto end = chrono::high_resolution_clock::now();
 
@@ -96,7 +96,7 @@ void perft(int depth) {
     cout << "Moves / Second: " << movesPerSecond << endl;
 }
 
-int perftRecursive(Board& b, int depth) {
+long perftRecursive(Board& b, int depth) {
     if (depth == 0) {
         return 1;
     }
@@ -104,7 +104,7 @@ int perftRecursive(Board& b, int depth) {
     MoveGen mg;
     mg.generatePseudoMoves(b);
 
-    int totalMoves = 0;
+    long totalMoves = 0;
     for (Move m : mg.moves) {
         b.makeMove(m);
         totalMoves += perftRecursive(b, depth - 1);

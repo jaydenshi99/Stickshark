@@ -13,4 +13,4 @@ void displayPossibleMoves();
 void simulateRandomMoves();
 
 void perft(int depth);
-int perftRecursive(Board& b, int depth);
+long perftRecursive(Board& b, int depth);
