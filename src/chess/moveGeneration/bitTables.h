@@ -6,6 +6,8 @@
 #include <cmath>
 #include <unordered_set>
 #include <iostream>
+#include <fstream>
+#include <ctime>
 
 #include "../bit.h"
 
@@ -45,3 +47,4 @@ void computeMagicAttackMasks();
 uint64_t generateRandomMagic();
 bool testMagic(uint64_t magic, uint64_t mask, bool isBishop);
 std::vector<uint64_t> generateAllOccupancies(uint64_t mask);
+void saveMagics();

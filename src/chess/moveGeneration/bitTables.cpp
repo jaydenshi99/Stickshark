@@ -85,6 +85,8 @@ void computeMagics() {
         cout << "Found " << i << ": " << magic << endl;;
         bishopMagics[i] = magic;
     }
+
+    void saveMagics();
 }
 
 void computeMagicAttackMasks() {
@@ -137,6 +139,7 @@ void computeMagicAttackMasks() {
 // Generates sparse random magics
 uint64_t generateRandomMagic() {
     uint64_t magic = 0;
+    srand(static_cast<unsigned>(time(0)));
     int numSetBits = std::rand() % 10 + 1;
 
     for (int i = 0; i < numSetBits; ++i) {
@@ -189,3 +192,21 @@ vector<uint64_t> generateAllOccupancies(uint64_t mask) {
     return occupancies;
 }
 
+void saveMagics() {
+    ofstream outFile("../data/magics.txt");
+
+    if (!outFile) {
+        cerr << "Error opening file for writing\n";
+        exit(1);
+    }
+
+    for (int i = 0; i < 64; i++) {
+        outFile << bishopMagics[i] << endl;
+    }
+    
+    for (int i = 0; i < 64; i++) {
+        outFile << rookMagics[i] << endl;
+    }
+
+    outFile.close();
+}
