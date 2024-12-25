@@ -16,8 +16,10 @@
 #define NUM_RANKS 8
 #define NUM_SQUARES 64
 
-#define BISHOP_MOVE_TABLE_SIZE 32768
-#define ROOK_MOVE_TABLE_SIZE 262144
+#define BISHOP_ATTACKS_PER_SQUARE 512
+#define ROOK_ATTACKS_PER_SQUARE 4096
+#define BISHOP_ATTACK_TABLE_SIZE 32768
+#define ROOK_ATTACK_TABLE_SIZE 262144
 
 
 extern const uint64_t fileBitboards[NUM_FILES];
@@ -27,6 +29,9 @@ extern uint64_t notFileBitboards[NUM_FILES];
 extern uint64_t notRankBitboards[NUM_RANKS];
 
 extern uint64_t knightAttackBitboards[NUM_SQUARES];
+
+extern uint64_t bishopAttackBitboards[BISHOP_ATTACK_TABLE_SIZE];
+extern uint64_t rookAttackBitboards[ROOK_ATTACK_TABLE_SIZE];
 
 extern uint64_t bishopAttackMagicMasks[NUM_SQUARES];
 extern uint64_t rookAttackMagicMasks[NUM_SQUARES];
@@ -40,6 +45,10 @@ void computeAllTables();
 void computeNotBitboards();
 
 void computeKnightAttacks();
+
+void computeSlidingAttacks();
+uint64_t computeBishopAttackBitboard(int square, uint64_t blockers);
+uint64_t computeRookAttackBitboard(int square, uint64_t blockers);
 
 // Magics
 void computeMagics();

@@ -29,6 +29,9 @@ uint64_t notRankBitboards[NUM_RANKS];
 
 uint64_t knightAttackBitboards[NUM_SQUARES];
 
+uint64_t bishopAttackBitboards[BISHOP_ATTACK_TABLE_SIZE];
+uint64_t rookAttackBitboards[ROOK_ATTACK_TABLE_SIZE];
+
 uint64_t bishopAttackMagicMasks[NUM_SQUARES];
 uint64_t rookAttackMagicMasks[NUM_SQUARES];
 uint64_t bishopMagics[NUM_SQUARES];
@@ -44,6 +47,9 @@ void computeAllTables() {
 
     loadMagics();
     cout << "Magic numbers loaded" << endl;
+
+    computeSlidingAttacks();
+    cout << "Sliding attacks computed" << endl;
 }
 
 void computeNotBitboards() {
@@ -67,6 +73,114 @@ void computeKnightAttacks() {
     }
 }
 
+void computeSlidingAttacks() {
+    // Compute bishop attacks
+    for (int square = 0; square < NUM_SQUARES; square++) {
+        uint64_t attackMask = bishopAttackMagicMasks[square];
+        vector<uint64_t> occupancies = generateAllOccupancies(attackMask);
+
+        for (uint64_t occupancy : occupancies) {
+            int currSquare;
+            uint64_t attackBitboard = computeBishopAttackBitboard(square, occupancy);
+            int index = square * BISHOP_ATTACKS_PER_SQUARE + 
+            ((occupancy * bishopMagics[square]) >> 55);
+            
+            bishopAttackBitboards[index] = attackBitboard;
+        }
+    }
+
+    // Compute rook attacks
+    for (int square = 0; square < NUM_SQUARES; square++) {
+        uint64_t attackMask = rookAttackMagicMasks[square];
+        vector<uint64_t> occupancies = generateAllOccupancies(attackMask);
+
+        for (uint64_t occupancy : occupancies) {
+            int currSquare;
+            uint64_t attackBitboard = computeRookAttackBitboard(square, occupancy);
+            int index = square * ROOK_ATTACKS_PER_SQUARE + 
+            ((occupancy * rookMagics[square]) >> 52);
+            
+            rookAttackBitboards[index] = attackBitboard;
+        }
+    }
+}
+
+uint64_t computeBishopAttackBitboard(int square, uint64_t blockers) {
+    uint64_t attackBitboard = 0;
+
+    // NE
+    for (int i = square + 7; i % 8 < 7 && i % 8 >= 0 && i < 64; i += 7) {
+        attackBitboard |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    // NW
+    for (int i = square + 9; i % 8 <= 7 && i % 8 > 0 && i < 64; i += 9) {
+        attackBitboard |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    // SE
+    for (int i = square - 9; i % 8 < 7 && i % 8 >= 0 && i >= 0; i -= 9) {
+        attackBitboard |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    // SW
+    for (int i = square - 7; i % 8 <= 7 && i % 8 > 0 && i >= 0; i -= 7) {
+        attackBitboard |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    return attackBitboard;
+}
+
+uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
+    uint64_t attackBitboard = 0;
+
+    // Up
+    for (int i = square + 8; i < 64; i += 8) {
+        rookAttackMagicMasks[square] |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    // Down
+    for (int i = square - 8; i >= 0; i -= 8) {
+        rookAttackMagicMasks[square] |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    // Left
+    for (int i = square + 1; i % 8 <= 7 && i / 8 == square / 8; i += 1) {
+        rookAttackMagicMasks[square] |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    // Right
+    for (int i = square - 1; i % 8 >= 0 && i / 8 == square / 8; i -= 1) {
+        rookAttackMagicMasks[square] |= 1ULL << i;
+        if ((1ULL << i) & blockers != 0) {
+            break;
+        }
+    }
+
+    return attackBitboard;
+}
+// Magics
 void computeMagics() {
     computeMagicAttackMasks();
 
@@ -173,7 +287,6 @@ bool testMagic(uint64_t magic, uint64_t mask, bool isBishop) {
 
     return indices.size() == occupancies.size();
 }
-
 
 vector<uint64_t> generateAllOccupancies(uint64_t mask) {
     vector<uint64_t> occupancies;
