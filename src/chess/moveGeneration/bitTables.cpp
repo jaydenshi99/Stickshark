@@ -37,10 +37,13 @@ uint64_t rookMagics[NUM_SQUARES];
 
 void computeAllTables() {
     computeNotBitboards();
-    cout << "file and rank bitboards computed" << endl;
+    cout << "File and rank bitboards computed" << endl;
 
     computeKnightAttacks();
-    cout << "knight attacks computed" << endl;
+    cout << "Knight attacks computed" << endl;
+
+    loadMagics();
+    cout << "Magic numbers loaded" << endl;
 }
 
 void computeNotBitboards() {
@@ -194,6 +197,33 @@ vector<uint64_t> generateAllOccupancies(uint64_t mask) {
     }
 
     return occupancies;
+}
+
+void loadMagics() {
+    ifstream inFile("data/magics.txt");
+
+    if (!inFile) {
+        cerr << "Error opening file for reading\n";
+        exit(1);
+    }
+
+    int lineNum = 0;
+    string line;
+    while (getline(inFile, line) && lineNum < 128) {
+        try {
+            if (lineNum >= 64) {
+                rookMagics[lineNum - 64] = stoull(line);
+            } else {
+                bishopMagics[lineNum] = stoull(line);
+            }
+        } catch (const exception& e) {
+            cerr << "Error parsing line\n";
+        }
+
+        lineNum++;
+    }
+
+    inFile.close();
 }
 
 void saveMagics() {

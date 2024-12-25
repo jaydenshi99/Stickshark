@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <string>
 
 #include "../bit.h"
 
@@ -47,4 +48,6 @@ void computeMagicAttackMasks();
 uint64_t generateRandomMagic();
 bool testMagic(uint64_t magic, uint64_t mask, bool isBishop);
 std::vector<uint64_t> generateAllOccupancies(uint64_t mask);
+
+void loadMagics();
 void saveMagics();
