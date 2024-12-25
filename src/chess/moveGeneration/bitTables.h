@@ -15,8 +15,8 @@
 #define NUM_RANKS 8
 #define NUM_SQUARES 64
 
-#define BISHOP_MOVE_TABLE_SIZE 0
-#define ROOK_MOVE_TABLE_SIZE 0
+#define BISHOP_MOVE_TABLE_SIZE 32768
+#define ROOK_MOVE_TABLE_SIZE 262144
 
 
 extern const uint64_t fileBitboards[NUM_FILES];

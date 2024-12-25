@@ -37,7 +37,10 @@ uint64_t rookMagics[NUM_SQUARES];
 
 void computeAllTables() {
     computeNotBitboards();
+    cout << "file and rank bitboards computed" << endl;
+
     computeKnightAttacks();
+    cout << "knight attacks computed" << endl;
 }
 
 void computeNotBitboards() {
