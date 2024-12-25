@@ -64,6 +64,8 @@ void computeKnightAttacks() {
 void computeMagics() {
     computeMagicAttackMasks();
 
+    srand(static_cast<unsigned>(time(0)));
+
     // Generate Rook Magics
     cout << "Finding rook magics" << endl;
     for (int i = 0; i < 64; i++) {
@@ -86,7 +88,7 @@ void computeMagics() {
         bishopMagics[i] = magic;
     }
 
-    void saveMagics();
+    saveMagics();
 }
 
 void computeMagicAttackMasks() {
@@ -139,7 +141,6 @@ void computeMagicAttackMasks() {
 // Generates sparse random magics
 uint64_t generateRandomMagic() {
     uint64_t magic = 0;
-    srand(static_cast<unsigned>(time(0)));
     int numSetBits = std::rand() % 10 + 1;
 
     for (int i = 0; i < numSetBits; ++i) {
@@ -193,7 +194,7 @@ vector<uint64_t> generateAllOccupancies(uint64_t mask) {
 }
 
 void saveMagics() {
-    ofstream outFile("../data/magics.txt");
+    ofstream outFile("data/magics.txt");
 
     if (!outFile) {
         cerr << "Error opening file for writing\n";
