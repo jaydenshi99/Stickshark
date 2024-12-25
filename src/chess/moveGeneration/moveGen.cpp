@@ -2,7 +2,9 @@
 
 using namespace std;
 
-MoveGen::MoveGen() {};
+MoveGen::MoveGen() {
+    moves.reserve(MAX_MOVES);
+};
 
 void MoveGen::generatePseudoMoves(Board b) {
     clearMoves();

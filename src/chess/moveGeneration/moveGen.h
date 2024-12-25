@@ -8,6 +8,8 @@
 #include "../../utility.h"
 #include "bitTables.h"
 
+#define MAX_MOVES 200 // Arbitrary
+
 class MoveGen {
     public:
     std::vector<Move> moves;
