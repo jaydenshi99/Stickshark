@@ -17,10 +17,11 @@ class MoveGen {
     // Constructor
     MoveGen();
 
-    void generatePseudoMoves(Board b);
+    void generatePseudoMoves(const Board& b);
 
-    void generatePawnMoves(Board b);
-    void generateKnightMoves(Board b);
+    void generatePawnMoves(const Board& b);
+    void generateKnightMoves(const Board& b);
+    void generateSlidingMoves(const Board& b);
 
     void clearMoves();
 };
