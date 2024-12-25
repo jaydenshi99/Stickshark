@@ -38,7 +38,6 @@ uint64_t rookMagics[NUM_SQUARES];
 void computeAllTables() {
     computeNotBitboards();
     computeKnightAttacks();
-    computeMagicAttackMasks();
 }
 
 void computeNotBitboards() {
@@ -59,6 +58,32 @@ void computeKnightAttacks() {
         knightAttackBitboards[i] |= (knightPos >> 6) & notFileBitboards[6] & notFileBitboards[7] & notRankBitboards[7];
         knightAttackBitboards[i] |= (knightPos << 10) & notFileBitboards[6] & notFileBitboards[7] & notRankBitboards[0];
         knightAttackBitboards[i] |= (knightPos << 17) & notFileBitboards[7] & notRankBitboards[0] & notRankBitboards[1];
+    }
+}
+
+void computeMagics() {
+    computeMagicAttackMasks();
+
+    // Generate Rook Magics
+    cout << "Finding rook magics" << endl;
+    for (int i = 0; i < 64; i++) {
+        uint64_t magic = generateRandomMagic();
+        while (!testMagic(magic, rookAttackMagicMasks[i], false)) {
+            magic = generateRandomMagic();
+        }
+        cout << "Found " << i << ": " << magic << endl;;
+        rookMagics[i] = magic;
+    }
+
+    // Generate Bishop Magics
+    cout << endl << "Finding bishop magics" << endl;
+    for (int i = 0; i < 64; i++) {
+        uint64_t magic = generateRandomMagic();
+        while (!testMagic(magic, bishopAttackMagicMasks[i], true)) {
+            magic = generateRandomMagic();
+        }
+        cout << "Found " << i << ": " << magic << endl;;
+        bishopMagics[i] = magic;
     }
 }
 
@@ -109,17 +134,18 @@ void computeMagicAttackMasks() {
     }
 }
 
-void computeMagics() {
-
-}
-
+// Generates sparse random magics
 uint64_t generateRandomMagic() {
-    uint64_t magic = random_uint64();
+    uint64_t magic = 0;
+    int numSetBits = std::rand() % 10 + 1;
 
-    for (int i = 0; i < 32; ++i) {
-        if (std::rand() % 2 == 0) {
-            magic &= ~(1ULL << (std::rand() % 64));
-        }
+    for (int i = 0; i < numSetBits; ++i) {
+        int bitPosition;
+        do {
+            bitPosition = std::rand() % 64; 
+        } while (magic & (1ULL << bitPosition)); 
+
+        magic |= (1ULL << bitPosition); 
     }
 
     return magic;
@@ -127,7 +153,7 @@ uint64_t generateRandomMagic() {
 
 bool testMagic(uint64_t magic, uint64_t mask, bool isBishop) {
     unordered_set<uint64_t> indices;
-    int shiftAmt = isBishop ? 55 : 50;
+    int shiftAmt = isBishop ? 55 : 52;
 
     vector<uint64_t> occupancies = generateAllOccupancies(mask);
     for (uint64_t occupancy : occupancies) {
@@ -162,3 +188,4 @@ vector<uint64_t> generateAllOccupancies(uint64_t mask) {
 
     return occupancies;
 }
+
