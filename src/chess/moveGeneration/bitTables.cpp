@@ -1,5 +1,7 @@
 #include "bitTables.h"
 
+using namespace std;
+
 const uint64_t fileBitboards[NUMFILES] = {
     0x8080808080808080,
     0x4040404040404040,
@@ -29,6 +31,8 @@ uint64_t knightAttackBitboards[NUMSQUARES];
 
 uint64_t bishopAttackMagicMasks[NUMSQUARES];
 uint64_t rookAttackMagicMasks[NUMSQUARES];
+uint64_t bishopMagics[NUMSQUARES];
+uint64_t rookMagics[NUMSQUARES];
 
 
 void computeAllTables() {
@@ -103,4 +107,32 @@ void computeMagicAttackMasks() {
             bishopAttackMagicMasks[square] |= 1ULL << i;
         }
     }
+}
+
+void computeMagics() {
+
+}
+
+vector<uint64_t> generateAllOccupancies(uint64_t mask) {
+    vector<uint64_t> occupancies;
+
+    int numBits = __libcpp_popcount(mask);
+    
+    vector<int> setBits;
+    while (mask != 0) {
+        setBits.push_back(popLSB(&mask));
+    }
+
+    for (uint64_t i = 0; i < pow(2, numBits); i++) {
+        uint64_t occupancy = 0;
+        for (int j = 0; j < numBits; j++) {
+            if ((i & (1ULL << j)) != 0) {
+                occupancy |= 1ULL << setBits[j];
+            }
+        }
+
+        occupancies.push_back(occupancy);
+    }
+
+    return occupancies;
 }

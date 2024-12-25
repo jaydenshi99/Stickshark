@@ -5,11 +5,11 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    for (int i = 0; i < 64; i++) {
-        cout << "Bishop Magic Attacks Square " << i << endl;
-        displayBitboard(bishopAttackMagicMasks[i]);
-        cout << "Rook Magic Attacks Square " << i << endl;
-        displayBitboard(rookAttackMagicMasks[i]);
+    vector<uint64_t> occupancies = generateAllOccupancies(rookAttackMagicMasks[30]);
+
+    displayBitboard(rookAttackMagicMasks[30]);
+    for (uint64_t occupancy : occupancies) {
+        displayBitboard(occupancy);
     }
 
     // simulateRandomMoves();
