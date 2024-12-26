@@ -11,6 +11,7 @@ void MoveGen::generatePseudoMoves(const Board& b) {
     generatePawnMoves(b);
     generateKnightMoves(b);
     generateSlidingMoves(b);
+    generateKingMoves(b);
 }
 
 void MoveGen::generatePawnMoves(const Board& b) {
