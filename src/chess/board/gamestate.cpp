@@ -51,7 +51,7 @@ Gamestate::Gamestate(uint64_t pieceBitboards[12], int cptPiece) {
         int source = popLSB(wRookBB);
 
         uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
-        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
+        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
         whiteAttacks |= rookAttackBitboards[index];
     }
 
@@ -60,7 +60,7 @@ Gamestate::Gamestate(uint64_t pieceBitboards[12], int cptPiece) {
         int source = popLSB(bRookBB);
 
         uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
-        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
+        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
         blackAttacks |= rookAttackBitboards[index];
     }
 
@@ -99,7 +99,7 @@ Gamestate::Gamestate(uint64_t pieceBitboards[12], int cptPiece) {
 
     uint64_t bKingBB = pieceBitboards[BKING];
     while (bKingBB) {
-        whiteAttacks |= kingAttackBitboards[popLSB(bKingBB)];
+        blackAttacks |= kingAttackBitboards[popLSB(bKingBB)];
     }
 
     capturedPiece = cptPiece;

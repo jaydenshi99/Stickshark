@@ -31,7 +31,7 @@ void simulateRandomMoves() {
     moveGen.generatePseudoMoves(board);
 
     int move = 1;
-    while (moveGen.moves.size() != 0) {
+    while (moveGen.moves.size() != 0 && move <= 10) {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dist(0, moveGen.moves.size() - 1);
@@ -49,6 +49,9 @@ void simulateRandomMoves() {
         cout << endl;
 
         board.displayBoard();
+
+        displayBitboard(board.history.top().whiteAttacks);
+        displayBitboard(board.history.top().blackAttacks);
 
         moveGen.clearMoves();
         moveGen.generatePseudoMoves(board);

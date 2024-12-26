@@ -55,6 +55,8 @@ void Board::setStartingPosition() {
     }
 
     turn = true;
+
+    history.push(Gamestate(pieceBitboards, EMPTY));
 }
 
 void Board::swapTurn() {
