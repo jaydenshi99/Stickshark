@@ -5,7 +5,10 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    perft(7);
+    for (int i = 0; i < 64; i++) {
+        cout << i << ". " << endl;
+        displayBitboard(kingAttackBitboards[i]);
+    }
     
     return 0;
 }

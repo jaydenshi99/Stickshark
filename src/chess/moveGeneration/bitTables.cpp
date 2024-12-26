@@ -32,6 +32,8 @@ uint64_t knightAttackBitboards[NUM_SQUARES];
 uint64_t bishopAttackBitboards[BISHOP_ATTACK_TABLE_SIZE];
 uint64_t rookAttackBitboards[ROOK_ATTACK_TABLE_SIZE];
 
+uint64_t kingAttackBitboards[NUM_SQUARES];;
+
 uint64_t bishopAttackMagicMasks[NUM_SQUARES];
 uint64_t rookAttackMagicMasks[NUM_SQUARES];
 uint64_t bishopMagics[NUM_SQUARES];
@@ -47,6 +49,9 @@ void computeAllTables() {
 
     computeSlidingAttacks();
     cout << "Sliding attacks computed" << endl;
+
+    computeKingAttacks();
+    cout << "King attacks computed" << endl;
 }
 
 void computeNotBitboards() {
@@ -104,6 +109,20 @@ void computeSlidingAttacks() {
             
             rookAttackBitboards[index] = attackBitboard;
         }
+    }
+}
+
+void computeKingAttacks() {
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        uint64_t kingPos = 1ULL << i;
+        kingAttackBitboards[i] = kingPos << 8;
+        kingAttackBitboards[i] |= (kingPos << 7) & notFileBitboards[0];
+        kingAttackBitboards[i] |= (kingPos >> 1) & notFileBitboards[0];
+        kingAttackBitboards[i] |= (kingPos >> 9) & notFileBitboards[0];
+        kingAttackBitboards[i] |= kingPos >> 8;
+        kingAttackBitboards[i] |= (kingPos >> 7) & notFileBitboards[7];
+        kingAttackBitboards[i] |= (kingPos << 1) & notFileBitboards[7];
+        kingAttackBitboards[i] |= (kingPos << 9) & notFileBitboards[7];
     }
 }
 
@@ -182,6 +201,7 @@ uint64_t computeRookAttackBitboard(int square, uint64_t blockers) {
 
     return attackBitboard;
 }
+
 // Magics
 void computeMagics() {
     computeMagicAttackMasks();

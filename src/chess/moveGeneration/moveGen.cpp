@@ -126,6 +126,21 @@ void MoveGen::generateSlidingMoves(const Board& b) {
     }
 }
 
+void MoveGen::generateKingMoves(const Board& b) {
+    uint64_t kingBitboard = b.turn ? b.pieceBitboards[WKING] : b.pieceBitboards[BKING];
+    uint64_t enemyOrEmpty = b.turn ? ~b.getWhitePositions() : ~b.getBlackPositions();
+
+    while (kingBitboard) {
+        int source = popLSB(&kingBitboard);
+        uint64_t movesBitboard = kingAttackBitboards[source] & enemyOrEmpty;
+
+        while (movesBitboard) {
+            int target = popLSB(&movesBitboard);
+            moves.push_back(Move(source, target, NONE));
+        }
+    }
+}
+
 void MoveGen::clearMoves() {
     moves.clear();
 }

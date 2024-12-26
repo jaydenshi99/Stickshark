@@ -34,6 +34,8 @@ extern uint64_t knightAttackBitboards[NUM_SQUARES];
 extern uint64_t bishopAttackBitboards[BISHOP_ATTACK_TABLE_SIZE];
 extern uint64_t rookAttackBitboards[ROOK_ATTACK_TABLE_SIZE];
 
+extern uint64_t kingAttackBitboards[NUM_SQUARES];
+
 extern uint64_t bishopAttackMagicMasks[NUM_SQUARES];
 extern uint64_t rookAttackMagicMasks[NUM_SQUARES];
 
@@ -50,6 +52,8 @@ void computeKnightAttacks();
 void computeSlidingAttacks();
 uint64_t computeBishopAttackBitboard(int square, uint64_t blockers);
 uint64_t computeRookAttackBitboard(int square, uint64_t blockers);
+
+void computeKingAttacks();
 
 // Magics
 void computeMagics();
