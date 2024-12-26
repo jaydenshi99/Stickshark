@@ -22,13 +22,15 @@
 #define BQUEEN  10
 #define BKING   11
 
+#define NUM_PIECES 12
+
 class Board {
     public:
     // Constructor
     Board();
 
     // Board Data
-    uint64_t pieceBitboards[12];
+    uint64_t pieceBitboards[NUM_PIECES];
     int squares[64];
     bool turn; // true - white | false - black
 

@@ -38,25 +38,25 @@ void MoveGen::generatePawnMoves(const Board& b) {
     
     int singlePushOffset = b.turn ? -8 : 8;
     while (singlePushes) {
-        int target = popLSB(&singlePushes);
+        int target = popLSB(singlePushes);
         moves.push_back(Move(target + singlePushOffset, target, NONE));
     }
 
     int doublePushOffset = b.turn ? -16 : 16;
     while (doublePushes) {
-        int target = popLSB(&doublePushes);
+        int target = popLSB(doublePushes);
         moves.push_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
     }
 
     int leftDiagonalAttackOffset = b.turn ? -9 : 7;
     while (leftDiagonalAttacks) {
-        int target = popLSB(&leftDiagonalAttacks);
+        int target = popLSB(leftDiagonalAttacks);
         moves.push_back(Move(target + leftDiagonalAttackOffset, target, NONE));
     }
 
     int rightDiagonalAttackOffset = b.turn ? -7 : 9;
     while (rightDiagonalAttacks) {
-        int target = popLSB(&rightDiagonalAttacks);
+        int target = popLSB(rightDiagonalAttacks);
         moves.push_back(Move(target + rightDiagonalAttackOffset, target, NONE));
     }
 }
@@ -66,11 +66,11 @@ void MoveGen::generateKnightMoves(const Board& b) {
     uint64_t enemyOrEmpty = b.turn ? ~b.getWhitePositions() : ~b.getBlackPositions();
 
     while (knightBitboard) {
-        int source = popLSB(&knightBitboard);
+        int source = popLSB(knightBitboard);
         uint64_t movesBitboard = knightAttackBitboards[source] & enemyOrEmpty;
 
         while (movesBitboard) {
-            int target = popLSB(&movesBitboard);
+            int target = popLSB(movesBitboard);
             moves.push_back(Move(source, target, NONE));
         }
     }
@@ -85,33 +85,33 @@ void MoveGen::generateSlidingMoves(const Board& b) {
 
     // Bishop moves
     while (bishopBitboard) {
-        int source = popLSB(&bishopBitboard);
+        int source = popLSB(bishopBitboard);
 
         uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
         int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
         uint64_t movesBitboard = bishopAttackBitboards[index] & ~friendlyBitboard;
         while (movesBitboard) {
-            int target = popLSB(&movesBitboard);
+            int target = popLSB(movesBitboard);
             moves.push_back(Move(source, target, NONE));
         }
     }
 
     // Rook moves
     while (rookBitboard) {
-        int source = popLSB(&rookBitboard);
+        int source = popLSB(rookBitboard);
 
         uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
         int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
         uint64_t movesBitboard = rookAttackBitboards[index] & ~friendlyBitboard;
         while (movesBitboard) {
-            int target = popLSB(&movesBitboard);
+            int target = popLSB(movesBitboard);
             moves.push_back(Move(source, target, NONE));
         }
     }
 
     // Queen moves
     while (queenBitboard) {
-        int source = popLSB(&queenBitboard);
+        int source = popLSB(queenBitboard);
 
         uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
         int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
@@ -121,7 +121,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
 
         uint64_t movesBitboard = (bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex]) & ~friendlyBitboard;
         while (movesBitboard) {
-            int target = popLSB(&movesBitboard);
+            int target = popLSB(movesBitboard);
             moves.push_back(Move(source, target, NONE));
         }
     }
@@ -132,11 +132,11 @@ void MoveGen::generateKingMoves(const Board& b) {
     uint64_t enemyOrEmpty = b.turn ? ~b.getWhitePositions() : ~b.getBlackPositions();
 
     while (kingBitboard) {
-        int source = popLSB(&kingBitboard);
+        int source = popLSB(kingBitboard);
         uint64_t movesBitboard = kingAttackBitboards[source] & enemyOrEmpty;
 
         while (movesBitboard) {
-            int target = popLSB(&movesBitboard);
+            int target = popLSB(movesBitboard);
             moves.push_back(Move(source, target, NONE));
         }
     }

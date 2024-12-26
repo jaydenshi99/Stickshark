@@ -4,6 +4,10 @@ using namespace std;
 
 Board::Board() : pieceBitboards{0ULL}, squares{0} {
     turn = true;
+
+    Gamestate gState = Gamestate(pieceBitboards, EMPTY);
+    history.push(gState);
+
 }
 
 uint64_t Board::getBlockers() const {
@@ -95,7 +99,7 @@ void Board::makeMove(Move move) {
     int capturedPiece = squares[targetSquare];
 
     // Update Gamestate
-    Gamestate gState = Gamestate(capturedPiece);
+    Gamestate gState = Gamestate(pieceBitboards, capturedPiece);
 
     // Update Bitboards
     pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;

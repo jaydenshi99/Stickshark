@@ -317,7 +317,7 @@ vector<uint64_t> generateAllOccupancies(uint64_t mask) {
     
     vector<int> setBits;
     while (mask != 0) {
-        setBits.push_back(popLSB(&mask));
+        setBits.push_back(popLSB(mask));
     }
 
     for (uint64_t i = 0; i < pow(2, numBits); i++) {

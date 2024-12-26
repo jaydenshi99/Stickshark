@@ -11,7 +11,6 @@
 #include <string>
 
 #include "../bit.h"
-#include "../../utility.h"
 
 #define NUM_FILES 8 
 #define NUM_RANKS 8
