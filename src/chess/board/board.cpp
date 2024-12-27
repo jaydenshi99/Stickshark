@@ -5,7 +5,7 @@ using namespace std;
 Board::Board() : pieceBitboards{0ULL}, squares{0} {
     turn = true;
 
-    Gamestate gState = Gamestate(pieceBitboards, EMPTY);
+    Gamestate gState = Gamestate(EMPTY);
     history.push(gState);
 
 }
@@ -56,7 +56,7 @@ void Board::setStartingPosition() {
 
     turn = true;
 
-    history.push(Gamestate(pieceBitboards, EMPTY));
+    history.push(Gamestate(EMPTY));
 }
 
 void Board::swapTurn() {
@@ -101,7 +101,7 @@ void Board::makeMove(Move move) {
     int capturedPiece = squares[targetSquare];
 
     // Update Gamestate
-    Gamestate gState = Gamestate(pieceBitboards, capturedPiece);
+    Gamestate gState = Gamestate(capturedPiece);
 
     // Update Bitboards
     pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;

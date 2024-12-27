@@ -21,10 +21,8 @@
 class Gamestate {
     public:
     // Constructor
-    Gamestate(uint64_t pieceBitboards[12], int cptPiece);
+    Gamestate(int cptPiece);
 
     // Data
     int capturedPiece;
-    uint64_t whiteAttacks;  // Set on initialisation
-    uint64_t blackAttacks;  // Set on initialisation
 };
