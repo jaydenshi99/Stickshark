@@ -131,6 +131,7 @@ void Board::makeMove(Move move) {
     pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
+        updatePieceAttacks(capturedPiece);
     }
 
     // Update Squares
@@ -142,6 +143,9 @@ void Board::makeMove(Move move) {
 
     // Push Gamestate
     history.push(gState);
+
+    // Update attack of moved piece
+    updatePieceAttacks(movedPiece);
 }
 
 void Board::unmakeMove(Move move) {
@@ -162,6 +166,7 @@ void Board::unmakeMove(Move move) {
     pieceBitboards[movedPiece] ^= oldSquareMask | currSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
+        updatePieceAttacks(capturedPiece);
     }
 
     // Toggle turn
@@ -169,7 +174,10 @@ void Board::unmakeMove(Move move) {
 
     // Update Squares
     squares[currSquare] = capturedPiece;
-    squares[oldSquare] = movedPiece;
+    squares[oldSquare] = movedPiece;  
+
+    // Update attack of moved piece
+    updatePieceAttacks(movedPiece);
 }
 
 void Board::updatePieceAttacks(int piece) {

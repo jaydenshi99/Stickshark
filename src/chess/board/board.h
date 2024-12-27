@@ -26,7 +26,7 @@
 #define NUM_PIECES 12
 
 class Board {
-    private:
+    public:
     // Board Data
     uint64_t pieceBitboards[NUM_PIECES];
     uint64_t attackBitboards[NUM_PIECES];
@@ -39,18 +39,9 @@ class Board {
     // Set individual piece attack
     void (Board::*setAttackFunctions[6])(bool white);
 
-    void setPawnAttacks(bool white);
-    void setKnightAttacks(bool white);
-    void setBishopAttacks(bool white);
-    void setRookAttacks(bool white);
-    void setQueenAttacks(bool white);
-    void setKingAttacks(bool white);
 
-    public:
     // Constructor
     Board();
-
-    
 
     // Get methods
     uint64_t getBlockers() const;
@@ -60,6 +51,14 @@ class Board {
     // Set methods
     void setStartingPosition();
     void swapTurn();
+
+    // Set attack bitboards
+    void setPawnAttacks(bool white);
+    void setKnightAttacks(bool white);
+    void setBishopAttacks(bool white);
+    void setRookAttacks(bool white);
+    void setQueenAttacks(bool white);
+    void setKingAttacks(bool white);
 
     void updatePieceAttacks(int piece);
 

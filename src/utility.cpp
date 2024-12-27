@@ -50,9 +50,6 @@ void simulateRandomMoves() {
 
         board.displayBoard();
 
-        displayBitboard(board.history.top().whiteAttacks);
-        displayBitboard(board.history.top().blackAttacks);
-
         moveGen.clearMoves();
         moveGen.generatePseudoMoves(board);
     }
