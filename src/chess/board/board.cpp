@@ -2,12 +2,30 @@
 
 using namespace std;
 
+// Initialise empty board
 Board::Board() : pieceBitboards{0ULL}, squares{0} {
+    // Set turn
     turn = true;
 
+    // Set gamestate
     Gamestate gState = Gamestate(EMPTY);
     history.push(gState);
 
+    // Initialise setAttackFunctions
+    setAttackFunctions[0] = &Board::setPawnAttacks;
+    setAttackFunctions[1] = &Board::setKnightAttacks;
+    setAttackFunctions[2] = &Board::setBishopAttacks;
+    setAttackFunctions[3] = &Board::setRookAttacks;
+    setAttackFunctions[4] = &Board::setQueenAttacks;
+    setAttackFunctions[5] = &Board::setKingAttacks;
+
+    // Calculate precomputed bitboards
+
+    // Initialise attack bitboards
+    for (int i = 0; i < NUM_PIECES; i++) {
+        (this->*setAttackFunctions[i])(true);
+        (this->*setAttackFunctions[i])(false);
+    }
 }
 
 uint64_t Board::getBlockers() const {
@@ -57,6 +75,12 @@ void Board::setStartingPosition() {
     turn = true;
 
     history.push(Gamestate(EMPTY));
+
+    // Set attack bitboards
+    for (int i = 0; i < NUM_PIECES; i++) {
+        (this->*setAttackFunctions[i])(true);
+        (this->*setAttackFunctions[i])(false);
+    }
 }
 
 void Board::swapTurn() {
@@ -146,4 +170,83 @@ void Board::unmakeMove(Move move) {
     // Update Squares
     squares[currSquare] = capturedPiece;
     squares[oldSquare] = movedPiece;
+}
+
+void Board::updatePieceAttacks(int piece) {
+    bool white = piece < 6;
+    (this->*setAttackFunctions[piece % 6])(white);
+}
+
+void Board::setPawnAttacks(bool white) {
+    if (white) {
+        attackBitboards[WPAWN] |= (pieceBitboards[WPAWN] << 7) & notFileBitboards[0];
+        attackBitboards[WPAWN] |= (pieceBitboards[WPAWN] << 9) & notFileBitboards[7];
+    } else {
+        attackBitboards[BPAWN] |= (pieceBitboards[BPAWN] >> 9) & notFileBitboards[0];
+        attackBitboards[BPAWN] |= (pieceBitboards[BPAWN] >> 7) & notFileBitboards[7];
+    }
+}
+
+void Board::setKnightAttacks(bool white) {
+    int pieceIndex = white ? WKNIGHT : BKNIGHT;
+
+    uint64_t knightBB = pieceBitboards[pieceIndex];
+    while (knightBB) {
+        attackBitboards[pieceIndex] |= knightAttackBitboards[popLSB(knightBB)];
+    }
+}
+
+void Board::setBishopAttacks(bool white) {
+    int pieceIndex = white ? WBISHOP : BBISHOP;
+    uint64_t blockers = getBlockers();
+
+    uint64_t bishopBB = pieceBitboards[pieceIndex];
+    while (bishopBB) {
+        int source = popLSB(bishopBB);
+
+        uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
+        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
+        attackBitboards[pieceIndex] |= bishopAttackBitboards[index];
+    }
+}
+
+void Board::setRookAttacks(bool white) {
+    int pieceIndex = white ? WROOK : BROOK;
+    uint64_t blockers = getBlockers();
+
+    uint64_t rookBB = pieceBitboards[pieceIndex];
+    while (rookBB) {
+        int source = popLSB(rookBB);
+
+        uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
+        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
+        attackBitboards[pieceIndex] |= rookAttackBitboards[index];
+    }
+}
+
+void Board::setQueenAttacks(bool white) {
+    int pieceIndex = white ? WQUEEN : BQUEEN;
+    uint64_t blockers = getBlockers();
+
+    uint64_t queenBB = pieceBitboards[pieceIndex];
+    while (queenBB) {
+        int source = popLSB(queenBB);
+
+        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
+        int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
+
+        uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
+        int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
+
+        attackBitboards[pieceIndex] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
+    }
+}
+
+void Board::setKingAttacks(bool white) {
+    int pieceIndex = white ? WKING : BKING;
+
+    uint64_t kingBB = pieceBitboards[pieceIndex];
+    while (kingBB) {
+        attackBitboards[pieceIndex] |= kingAttackBitboards[popLSB(kingBB)];
+    }
 }

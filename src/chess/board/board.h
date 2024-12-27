@@ -7,6 +7,7 @@
 
 #include "move.h"
 #include "gamestate.h"
+#include "../moveGeneration/bitTables.h"
 
 #define EMPTY   -1
 #define WPAWN   0
@@ -25,17 +26,31 @@
 #define NUM_PIECES 12
 
 class Board {
-    public:
-    // Constructor
-    Board();
-
+    private:
     // Board Data
     uint64_t pieceBitboards[NUM_PIECES];
+    uint64_t attackBitboards[NUM_PIECES];
     int squares[64];
     bool turn; // true - white | false - black
 
     // Gamestate History
     std::stack<Gamestate> history;
+
+    // Set individual piece attack
+    void (Board::*setAttackFunctions[6])(bool white);
+
+    void setPawnAttacks(bool white);
+    void setKnightAttacks(bool white);
+    void setBishopAttacks(bool white);
+    void setRookAttacks(bool white);
+    void setQueenAttacks(bool white);
+    void setKingAttacks(bool white);
+
+    public:
+    // Constructor
+    Board();
+
+    
 
     // Get methods
     uint64_t getBlockers() const;
@@ -45,6 +60,10 @@ class Board {
     // Set methods
     void setStartingPosition();
     void swapTurn();
+
+    void updatePieceAttacks(int piece);
+
+
 
     void makeMove(Move move);
     void unmakeMove(Move move);
