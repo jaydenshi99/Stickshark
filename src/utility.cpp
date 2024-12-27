@@ -31,7 +31,7 @@ void simulateRandomMoves() {
     moveGen.generatePseudoMoves(board);
 
     int move = 1;
-    while (moveGen.moves.size() != 0 && move <= 10) {
+    while (moveGen.moves.size() != 0 && move <= 1) {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dist(0, moveGen.moves.size() - 1);
@@ -94,6 +94,12 @@ void perft(int depth) {
 
     cout << fixed << setprecision(0);
     cout << "Moves / Second: " << movesPerSecond << endl;
+
+    board.displayBoard();
+    for (int i = 0; i < 12; i++) {
+        cout << i << endl;
+        displayBitboard(board.attackBitboards[i]);
+    }
 }
 
 long perftRecursive(Board& b, int depth) {

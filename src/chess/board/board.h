@@ -36,8 +36,8 @@ class Board {
     // Gamestate History
     std::stack<Gamestate> history;
 
-    // Set individual piece attack
-    void (Board::*setAttackFunctions[6])(bool white);
+    // Array of set attack methods
+    void (Board::*setAttackMethods[6])(bool white);
 
 
     // Constructor

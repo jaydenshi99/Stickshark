@@ -3,29 +3,26 @@
 using namespace std;
 
 // Initialise empty board
-Board::Board() : pieceBitboards{0ULL}, squares{0} {
+Board::Board() : pieceBitboards{0ULL}, attackBitboards{0ULL} {
     // Set turn
     turn = true;
+
+    // Set squares
+    for (int i = 0; i < 64; i++) {
+        squares[i] = EMPTY;
+    }
 
     // Set gamestate
     Gamestate gState = Gamestate(EMPTY);
     history.push(gState);
 
     // Initialise setAttackFunctions
-    setAttackFunctions[0] = &Board::setPawnAttacks;
-    setAttackFunctions[1] = &Board::setKnightAttacks;
-    setAttackFunctions[2] = &Board::setBishopAttacks;
-    setAttackFunctions[3] = &Board::setRookAttacks;
-    setAttackFunctions[4] = &Board::setQueenAttacks;
-    setAttackFunctions[5] = &Board::setKingAttacks;
-
-    // Calculate precomputed bitboards
-
-    // Initialise attack bitboards
-    for (int i = 0; i < NUM_PIECES; i++) {
-        (this->*setAttackFunctions[i])(true);
-        (this->*setAttackFunctions[i])(false);
-    }
+    setAttackMethods[0] = &Board::setPawnAttacks;
+    setAttackMethods[1] = &Board::setBishopAttacks;
+    setAttackMethods[2] = &Board::setKnightAttacks;
+    setAttackMethods[3] = &Board::setRookAttacks;
+    setAttackMethods[4] = &Board::setQueenAttacks;
+    setAttackMethods[5] = &Board::setKingAttacks;
 }
 
 uint64_t Board::getBlockers() const {
@@ -85,9 +82,9 @@ void Board::setStartingPosition() {
     history.push(Gamestate(EMPTY));
 
     // Set attack bitboards
-    for (int i = 0; i < NUM_PIECES; i++) {
-        (this->*setAttackFunctions[i])(true);
-        (this->*setAttackFunctions[i])(false);
+    for (int i = 0; i < 6; i++) {
+        (this->*setAttackMethods[i])(true);
+        (this->*setAttackMethods[i])(false);
     }
 }
 
@@ -190,21 +187,22 @@ void Board::unmakeMove(Move move) {
 
 void Board::updatePieceAttacks(int piece) {
     bool white = piece < 6;
-    (this->*setAttackFunctions[piece % 6])(white);
+    (this->*setAttackMethods[piece % 6])(white);
 }
 
 void Board::setPawnAttacks(bool white) {
     if (white) {
-        attackBitboards[WPAWN] |= (pieceBitboards[WPAWN] << 7) & notFileBitboards[0];
+        attackBitboards[WPAWN] = (pieceBitboards[WPAWN] << 7) & notFileBitboards[0];
         attackBitboards[WPAWN] |= (pieceBitboards[WPAWN] << 9) & notFileBitboards[7];
     } else {
-        attackBitboards[BPAWN] |= (pieceBitboards[BPAWN] >> 9) & notFileBitboards[0];
+        attackBitboards[BPAWN] = (pieceBitboards[BPAWN] >> 9) & notFileBitboards[0];
         attackBitboards[BPAWN] |= (pieceBitboards[BPAWN] >> 7) & notFileBitboards[7];
     }
 }
 
 void Board::setKnightAttacks(bool white) {
     int pieceIndex = white ? WKNIGHT : BKNIGHT;
+    attackBitboards[pieceIndex] = 0ULL;
 
     uint64_t knightBB = pieceBitboards[pieceIndex];
     while (knightBB) {
@@ -215,6 +213,7 @@ void Board::setKnightAttacks(bool white) {
 void Board::setBishopAttacks(bool white) {
     int pieceIndex = white ? WBISHOP : BBISHOP;
     uint64_t blockers = getBlockers();
+    attackBitboards[pieceIndex] = 0ULL;
 
     uint64_t bishopBB = pieceBitboards[pieceIndex];
     while (bishopBB) {
@@ -229,6 +228,7 @@ void Board::setBishopAttacks(bool white) {
 void Board::setRookAttacks(bool white) {
     int pieceIndex = white ? WROOK : BROOK;
     uint64_t blockers = getBlockers();
+    attackBitboards[pieceIndex] = 0ULL;
 
     uint64_t rookBB = pieceBitboards[pieceIndex];
     while (rookBB) {
@@ -243,6 +243,7 @@ void Board::setRookAttacks(bool white) {
 void Board::setQueenAttacks(bool white) {
     int pieceIndex = white ? WQUEEN : BQUEEN;
     uint64_t blockers = getBlockers();
+    attackBitboards[pieceIndex] = 0ULL;
 
     uint64_t queenBB = pieceBitboards[pieceIndex];
     while (queenBB) {
@@ -260,6 +261,7 @@ void Board::setQueenAttacks(bool white) {
 
 void Board::setKingAttacks(bool white) {
     int pieceIndex = white ? WKING : BKING;
+    attackBitboards[pieceIndex] = 0ULL;
 
     uint64_t kingBB = pieceBitboards[pieceIndex];
     while (kingBB) {
