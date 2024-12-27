@@ -40,6 +40,14 @@ uint64_t Board::getBlackPositions() const {
     return pieceBitboards[BPAWN] | pieceBitboards[BBISHOP] | pieceBitboards[BKNIGHT] | pieceBitboards[BROOK] | pieceBitboards[BQUEEN] | pieceBitboards[BKING];
 }
 
+uint64_t Board::getWhiteAttacks() const {
+    return attackBitboards[WPAWN] | attackBitboards[WBISHOP] | attackBitboards[WKNIGHT] | attackBitboards[WROOK] | attackBitboards[WQUEEN] | attackBitboards[WKING];
+}
+
+uint64_t Board::getBlackAttacks() const {
+    return attackBitboards[BPAWN] | attackBitboards[BBISHOP] | attackBitboards[BKNIGHT] | attackBitboards[BROOK] | attackBitboards[BQUEEN] | attackBitboards[BKING];
+}
+
 void Board::setStartingPosition() {
     // White pieces
     pieceBitboards[WPAWN]   = 0x000000000000FF00;

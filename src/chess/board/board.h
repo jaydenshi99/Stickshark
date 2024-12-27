@@ -48,24 +48,25 @@ class Board {
     uint64_t getWhitePositions() const;
     uint64_t getBlackPositions() const;
 
+    uint64_t getWhiteAttacks() const;
+    uint64_t getBlackAttacks() const;
+
     // Set methods
     void setStartingPosition();
     void swapTurn();
 
+    void makeMove(Move move);
+    void unmakeMove(Move move);
+
     // Set attack bitboards
+    void updatePieceAttacks(int piece);
+    
     void setPawnAttacks(bool white);
     void setKnightAttacks(bool white);
     void setBishopAttacks(bool white);
     void setRookAttacks(bool white);
     void setQueenAttacks(bool white);
     void setKingAttacks(bool white);
-
-    void updatePieceAttacks(int piece);
-
-
-
-    void makeMove(Move move);
-    void unmakeMove(Move move);
 
     // Display methods
     void displayBoard() const;
