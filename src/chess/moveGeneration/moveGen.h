@@ -11,6 +11,17 @@
 #define MAX_MOVES 200 // Arbitrary
 
 class MoveGen {
+    private:
+    // Storing data that is used accross all functions
+    uint64_t friendly;
+    uint64_t enemyOrEmpty;
+
+    // These functions require the working of generatePseudoMoves
+    void generatePawnMoves(const Board& b);
+    void generateKnightMoves(const Board& b);
+    void generateSlidingMoves(const Board& b);
+    void generateKingMoves(const Board& b);
+
     public:
     std::vector<Move> moves;
 
@@ -19,10 +30,7 @@ class MoveGen {
 
     void generatePseudoMoves(const Board& b);
 
-    void generatePawnMoves(const Board& b);
-    void generateKnightMoves(const Board& b);
-    void generateSlidingMoves(const Board& b);
-    void generateKingMoves(const Board& b);
+
 
     void clearMoves();
 };
