@@ -261,19 +261,17 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
 
     // Bishops
     gamestate.attackBitboards[WBISHOP] = calculateAttacks(pieceBitboards[WBISHOP],
-                                                          bishopAttackMagicMasks, bishopMagics,
-                                                          bishopAttackBitboards, BISHOP_ATTACKS_PER_SQUARE, 55);
+    bishopAttackMagicMasks, bishopMagics, bishopAttackBitboards, BISHOP_ATTACKS_PER_SQUARE, 55);
+
     gamestate.attackBitboards[BBISHOP] = calculateAttacks(pieceBitboards[BBISHOP],
-                                                          bishopAttackMagicMasks, bishopMagics,
-                                                          bishopAttackBitboards, BISHOP_ATTACKS_PER_SQUARE, 55);
+    bishopAttackMagicMasks, bishopMagics, bishopAttackBitboards, BISHOP_ATTACKS_PER_SQUARE, 55);
 
     // Rooks
     gamestate.attackBitboards[WROOK] = calculateAttacks(pieceBitboards[WROOK],
-                                                        rookAttackMagicMasks, rookMagics,
-                                                        rookAttackBitboards, ROOK_ATTACKS_PER_SQUARE, 52);
+    rookAttackMagicMasks, rookMagics, rookAttackBitboards, ROOK_ATTACKS_PER_SQUARE, 52);
+
     gamestate.attackBitboards[BROOK] = calculateAttacks(pieceBitboards[BROOK],
-                                                        rookAttackMagicMasks, rookMagics,
-                                                        rookAttackBitboards, ROOK_ATTACKS_PER_SQUARE, 52);
+    rookAttackMagicMasks, rookMagics, rookAttackBitboards, ROOK_ATTACKS_PER_SQUARE, 52);
 
     // Queens
     auto calculateQueenAttacks = [&](uint64_t queenBB, uint64_t* bishopMasks, uint64_t* bishopMagics,
@@ -294,11 +292,10 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
     };
 
     gamestate.attackBitboards[WQUEEN] = calculateQueenAttacks(pieceBitboards[WQUEEN],
-                                                              bishopAttackMagicMasks, bishopMagics,
-                                                              rookAttackMagicMasks, rookMagics);
+    bishopAttackMagicMasks, bishopMagics, rookAttackMagicMasks, rookMagics);
+
     gamestate.attackBitboards[BQUEEN] = calculateQueenAttacks(pieceBitboards[BQUEEN],
-                                                              bishopAttackMagicMasks, bishopMagics,
-                                                              rookAttackMagicMasks, rookMagics);
+    bishopAttackMagicMasks, bishopMagics, rookAttackMagicMasks, rookMagics);
 }
 
 
