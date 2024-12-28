@@ -244,77 +244,63 @@ void Board::setKingAttacks(Gamestate& gamestate, bool white) {
 }
 
 void Board::setSliderAttacks(Gamestate& gamestate) {
+    // Helper lambda to calculate attacks for sliding pieces
+    auto calculateAttacks = [&](uint64_t pieceBB, uint64_t* magicMasks, uint64_t* magics,
+                                uint64_t* attackBitboards, int attacksPerSquare, int shift) {
+        uint64_t attacks = 0ULL;
+        while (pieceBB) {
+            int source = popLSB(pieceBB);
+
+            uint64_t occupancy = magicMasks[source] & blockers;
+            int index = attacksPerSquare * source + ((magics[source] * occupancy) >> shift);
+
+            attacks |= attackBitboards[index];
+        }
+        return attacks;
+    };
+
     // Bishops
-    gamestate.attackBitboards[WBISHOP] = 0ULL;
-    uint64_t wBishopBB = pieceBitboards[WBISHOP];
-    while (wBishopBB) {
-        int source = popLSB(wBishopBB);
-
-        uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
-        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
-        gamestate.attackBitboards[WBISHOP] |= bishopAttackBitboards[index];
-    }
-
-    gamestate.attackBitboards[BBISHOP] = 0ULL;
-    uint64_t bBishopBB = pieceBitboards[BBISHOP];
-    while (bBishopBB) {
-        int source = popLSB(bBishopBB);
-
-        uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
-        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
-        gamestate.attackBitboards[BBISHOP] |= bishopAttackBitboards[index];
-    }
+    gamestate.attackBitboards[WBISHOP] = calculateAttacks(pieceBitboards[WBISHOP],
+                                                          bishopAttackMagicMasks, bishopMagics,
+                                                          bishopAttackBitboards, BISHOP_ATTACKS_PER_SQUARE, 55);
+    gamestate.attackBitboards[BBISHOP] = calculateAttacks(pieceBitboards[BBISHOP],
+                                                          bishopAttackMagicMasks, bishopMagics,
+                                                          bishopAttackBitboards, BISHOP_ATTACKS_PER_SQUARE, 55);
 
     // Rooks
-    gamestate.attackBitboards[WROOK] = 0ULL;
-    uint64_t wRookBB = pieceBitboards[WROOK];
-    while (wRookBB) {
-        int source = popLSB(wRookBB);
-
-        uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
-        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
-        gamestate.attackBitboards[WROOK] |= rookAttackBitboards[index];
-    }
-
-    gamestate.attackBitboards[BROOK] = 0ULL;
-    uint64_t bRookBB = pieceBitboards[BROOK];
-    while (bRookBB) {
-        int source = popLSB(bRookBB);
-
-        uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
-        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
-        gamestate.attackBitboards[BROOK] |= rookAttackBitboards[index];
-    }
+    gamestate.attackBitboards[WROOK] = calculateAttacks(pieceBitboards[WROOK],
+                                                        rookAttackMagicMasks, rookMagics,
+                                                        rookAttackBitboards, ROOK_ATTACKS_PER_SQUARE, 52);
+    gamestate.attackBitboards[BROOK] = calculateAttacks(pieceBitboards[BROOK],
+                                                        rookAttackMagicMasks, rookMagics,
+                                                        rookAttackBitboards, ROOK_ATTACKS_PER_SQUARE, 52);
 
     // Queens
-    gamestate.attackBitboards[WQUEEN] = 0ULL;
-    uint64_t wQueenBB = pieceBitboards[WQUEEN];
-    while (wQueenBB) {
-        int source = popLSB(wQueenBB);
+    auto calculateQueenAttacks = [&](uint64_t queenBB, uint64_t* bishopMasks, uint64_t* bishopMagics,
+                                     uint64_t* rookMasks, uint64_t* rookMagics) {
+        uint64_t attacks = 0ULL;
+        while (queenBB) {
+            int source = popLSB(queenBB);
 
-        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
-        int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
+            uint64_t bishopOccupancy = bishopMasks[source] & blockers;
+            int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
 
-        uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
-        int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
+            uint64_t rookOccupancy = rookMasks[source] & blockers;
+            int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
 
-        gamestate.attackBitboards[WQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
-    }
+            attacks |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
+        }
+        return attacks;
+    };
 
-    gamestate.attackBitboards[BQUEEN] = 0ULL;
-    uint64_t bQueenBB = pieceBitboards[BQUEEN];
-    while (bQueenBB) {
-        int source = popLSB(bQueenBB);
-
-        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
-        int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
-
-        uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
-        int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
-
-        gamestate.attackBitboards[BQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
-    }
+    gamestate.attackBitboards[WQUEEN] = calculateQueenAttacks(pieceBitboards[WQUEEN],
+                                                              bishopAttackMagicMasks, bishopMagics,
+                                                              rookAttackMagicMasks, rookMagics);
+    gamestate.attackBitboards[BQUEEN] = calculateQueenAttacks(pieceBitboards[BQUEEN],
+                                                              bishopAttackMagicMasks, bishopMagics,
+                                                              rookAttackMagicMasks, rookMagics);
 }
+
 
 bool isNonSliding(int piece) {
     int pieceNoColour = piece % 6;
