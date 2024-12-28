@@ -58,8 +58,8 @@ class Board {
     void setStartingPosition();
     void swapTurn();
 
-    void makeMove(Move move);
-    void unmakeMove(Move move);
+    void makeMove(const Move& move);
+    void unmakeMove(const Move& move);
 
     // Set attack bitboards
     void setBlockers();

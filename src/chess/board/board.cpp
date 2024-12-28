@@ -121,7 +121,7 @@ void Board::displayBoard() const {
     cout << endl;
 }
 
-void Board::makeMove(Move move) {
+void Board::makeMove(const Move& move) {
     uint64_t sourceSquare = move.getSource();
     uint64_t targetSquare = move.getTarget();
 
@@ -161,7 +161,7 @@ void Board::makeMove(Move move) {
     setSliderAttacks();
 }
 
-void Board::unmakeMove(Move move) {
+void Board::unmakeMove(const Move& move) {
     uint64_t oldSquare = move.getSource();
     uint64_t currSquare = move.getTarget();
 
