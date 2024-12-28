@@ -43,25 +43,25 @@ void MoveGen::generatePawnMoves(const Board& b) {
     int singlePushOffset = b.turn ? -8 : 8;
     while (singlePushes) {
         int target = popLSB(singlePushes);
-        moves.push_back(Move(target + singlePushOffset, target, NONE));
+        moves.emplace_back(Move(target + singlePushOffset, target, NONE));
     }
 
     int doublePushOffset = b.turn ? -16 : 16;
     while (doublePushes) {
         int target = popLSB(doublePushes);
-        moves.push_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
+        moves.emplace_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
     }
 
     int leftDiagonalAttackOffset = b.turn ? -9 : 7;
     while (leftDiagonalAttacks) {
         int target = popLSB(leftDiagonalAttacks);
-        moves.push_back(Move(target + leftDiagonalAttackOffset, target, NONE));
+        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, NONE));
     }
 
     int rightDiagonalAttackOffset = b.turn ? -7 : 9;
     while (rightDiagonalAttacks) {
         int target = popLSB(rightDiagonalAttacks);
-        moves.push_back(Move(target + rightDiagonalAttackOffset, target, NONE));
+        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, NONE));
     }
 }
 
@@ -75,7 +75,7 @@ void MoveGen::generateKnightMoves(const Board& b) {
 
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.push_back(Move(source, target, NONE));
+            moves.emplace_back(Move(source, target, NONE));
         }
     }
 }
@@ -94,7 +94,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = bishopAttackBitboards[index] & ~friendly;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.push_back(Move(source, target, NONE));
+            moves.emplace_back(Move(source, target, NONE));
         }
     }
 
@@ -107,7 +107,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = rookAttackBitboards[index] & ~friendly;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.push_back(Move(source, target, NONE));
+            moves.emplace_back(Move(source, target, NONE));
         }
     }
 
@@ -124,7 +124,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = (bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex]) & ~friendly;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.push_back(Move(source, target, NONE));
+            moves.emplace_back(Move(source, target, NONE));
         }
     }
 }
@@ -138,7 +138,7 @@ void MoveGen::generateKingMoves(const Board& b) {
 
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.push_back(Move(source, target, NONE));
+            moves.emplace_back(Move(source, target, NONE));
         }
     }
 }
