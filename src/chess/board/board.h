@@ -72,5 +72,3 @@ class Board {
     // Display methods
     void displayBoard() const;
 };
-
-bool isNonSliding(int piece);

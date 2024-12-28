@@ -35,12 +35,12 @@ uint64_t Board::getBlackPositions() const {
 }
 
 uint64_t Board::getWhiteAttacks() const {
-    Gamestate gamestate = history.top();
+    const Gamestate& gamestate = history.top();
     return gamestate.attackBitboards[WPAWN] | gamestate.attackBitboards[WBISHOP] | gamestate.attackBitboards[WKNIGHT] | gamestate.attackBitboards[WROOK] | gamestate.attackBitboards[WQUEEN] | gamestate.attackBitboards[WKING];
 }
 
 uint64_t Board::getBlackAttacks() const {
-    Gamestate gamestate = history.top();
+    const Gamestate& gamestate = history.top();
     return gamestate.attackBitboards[BPAWN] | gamestate.attackBitboards[BBISHOP] | gamestate.attackBitboards[BKNIGHT] | gamestate.attackBitboards[BROOK] | gamestate.attackBitboards[BQUEEN] | gamestate.attackBitboards[BKING];
 }
 
@@ -85,7 +85,7 @@ void Board::setStartingPosition() {
 
     // Set attack bitboards
     for (int i = 0; i < 6; i++) {
-        if (isNonSliding(i)) {
+        if (isNonSliding[i]) {
             (this->*setAttackMethods[i])(startingState, true);
             (this->*setAttackMethods[i])(startingState, false);
         }
@@ -156,19 +156,19 @@ void Board::makeMove(const Move& move) {
 
     // Update Bitboards
     pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;
+    blockers ^= sourceSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
+    } else {
+        blockers ^= targetSquareMask;
     }
-
-    // Update blockers
-    setBlockers();
 
     // Toggle turn
     swapTurn();
 
     // Update attack of moved piece
-    if (isNonSliding(movedPiece)) updatePieceAttacks(gState, movedPiece);
-    if (isNonSliding(capturedPiece)) updatePieceAttacks(gState, capturedPiece);
+    if (isNonSliding[movedPiece]) updatePieceAttacks(gState, movedPiece);
+    if (isNonSliding[capturedPiece]) updatePieceAttacks(gState, capturedPiece);
 
     // Update attack of sliding pieces
     setSliderAttacks(gState);
@@ -195,14 +195,14 @@ void Board::unmakeMove(const Move& move) {
     squares[currSquare] = capturedPiece;
     squares[oldSquare] = movedPiece;  
 
-    // Update Bitboards
+    // Update piece bitboards and blockers
     pieceBitboards[movedPiece] ^= oldSquareMask | currSquareMask;
+    blockers ^= oldSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
+    } else {
+        blockers ^= currSquareMask;
     }
-
-    // Update blockers
-    setBlockers();
 
     // Toggle turn
     swapTurn();
@@ -296,10 +296,4 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
 
     gamestate.attackBitboards[BQUEEN] = calculateQueenAttacks(pieceBitboards[BQUEEN],
     bishopAttackMagicMasks, bishopMagics, rookAttackMagicMasks, rookMagics);
-}
-
-
-bool isNonSliding(int piece) {
-    int pieceNoColour = piece % 6;
-    return pieceNoColour == 0 || pieceNoColour == 2 || pieceNoColour == 5;
 }
