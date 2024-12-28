@@ -94,12 +94,6 @@ void perft(int depth) {
 
     cout << fixed << setprecision(0);
     cout << "Moves / Second: " << movesPerSecond << endl;
-
-    board.displayBoard();
-    for (int i = 0; i < 12; i++) {
-        cout << i << endl;
-        displayBitboard(board.attackBitboards[i]);
-    }
 }
 
 long perftRecursive(Board& b, int depth) {

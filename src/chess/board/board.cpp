@@ -22,8 +22,8 @@ Board::Board() : pieceBitboards{0ULL}, attackBitboards{0ULL} {
     setAttackMethods[5] = &Board::setKingAttacks;
 }
 
-uint64_t Board::getBlockers() const {
-    return Board::getWhitePositions() | Board::getBlackPositions();
+void Board::setBlockers() {
+    blockers = getWhitePositions() | getBlackPositions();
 }
 
 uint64_t Board::getWhitePositions() const {
@@ -77,6 +77,9 @@ void Board::setStartingPosition() {
     turn = true;
 
     history.push(Gamestate(EMPTY));
+
+    // Update blockers
+    setBlockers();
 
     // Set attack bitboards
     for (int i = 0; i < 6; i++) {
@@ -139,8 +142,10 @@ void Board::makeMove(Move move) {
     pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
-        if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
     }
+
+    // Update blockers
+    setBlockers();
 
     // Toggle turn
     swapTurn();
@@ -150,6 +155,7 @@ void Board::makeMove(Move move) {
 
     // Update attack of moved piece
     if (isNonSliding(movedPiece)) updatePieceAttacks(movedPiece);
+    if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
 
     // Update attack of sliding pieces
     setSliderAttacks();
@@ -177,14 +183,17 @@ void Board::unmakeMove(Move move) {
     pieceBitboards[movedPiece] ^= oldSquareMask | currSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
-        if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
     }
+
+    // Update blockers
+    setBlockers();
 
     // Toggle turn
     swapTurn();
 
     // Update attack of moved piece
     if (isNonSliding(movedPiece)) updatePieceAttacks(movedPiece);
+    if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
 
     // Update slider attacks
     setSliderAttacks();
@@ -226,8 +235,6 @@ void Board::setKingAttacks(bool white) {
 }
 
 void Board::setSliderAttacks() {
-    uint64_t blockers = getBlockers();
-
     // Bishops
     attackBitboards[WBISHOP] = 0ULL;
     uint64_t wBishopBB = pieceBitboards[WBISHOP];

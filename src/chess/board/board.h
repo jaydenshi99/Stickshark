@@ -29,8 +29,13 @@ class Board {
     public:
     // Board Data
     uint64_t pieceBitboards[NUM_PIECES];
+
+    uint64_t blockers;
+
     uint64_t attackBitboards[NUM_PIECES];
+
     int squares[64];
+
     bool turn; // true - white | false - black
 
     // Gamestate History
@@ -43,7 +48,6 @@ class Board {
     Board();
 
     // Get methods
-    uint64_t getBlockers() const;
     uint64_t getWhitePositions() const;
     uint64_t getBlackPositions() const;
 
@@ -58,6 +62,8 @@ class Board {
     void unmakeMove(Move move);
 
     // Set attack bitboards
+    void setBlockers();
+
     void updatePieceAttacks(int piece);
     
     void setPawnAttacks(bool white);

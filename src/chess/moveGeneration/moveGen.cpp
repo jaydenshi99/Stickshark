@@ -17,16 +17,15 @@ void MoveGen::generatePseudoMoves(const Board& b) {
 void MoveGen::generatePawnMoves(const Board& b) {
     uint64_t pawnBitboard = b.turn ? b.pieceBitboards[WPAWN] : b.pieceBitboards[BPAWN];
     uint64_t doublePushRank = b.turn ? rankBitboards[3] : rankBitboards[4];
-    uint64_t blockers = b.getBlockers();
     uint64_t enemy = b.turn ? b.getBlackPositions() : b.getWhitePositions();
 
     uint64_t singlePushes = b.turn 
-        ? (pawnBitboard << 8) & ~blockers
-        : (pawnBitboard >> 8) & ~blockers;
+        ? (pawnBitboard << 8) & ~b.blockers
+        : (pawnBitboard >> 8) & ~b.blockers;
 
     uint64_t doublePushes = b.turn 
-        ? (singlePushes << 8) & ~blockers & doublePushRank
-        : (singlePushes >> 8) & ~blockers & doublePushRank;
+        ? (singlePushes << 8) & ~b.blockers & doublePushRank
+        : (singlePushes >> 8) & ~b.blockers & doublePushRank;
 
     uint64_t leftDiagonalAttacks = b.turn
         ? (pawnBitboard << 9) & enemy & notFileBitboards[7]
@@ -81,13 +80,12 @@ void MoveGen::generateSlidingMoves(const Board& b) {
     uint64_t rookBitboard = b.turn ? b.pieceBitboards[WROOK] : b.pieceBitboards[BROOK];
     uint64_t queenBitboard = b.turn ? b.pieceBitboards[WQUEEN] : b.pieceBitboards[BQUEEN];
     uint64_t friendlyBitboard = b.turn ? b.getWhitePositions() : b.getBlackPositions();
-    uint64_t blockers = b.getBlockers();
 
     // Bishop moves
     while (bishopBitboard) {
         int source = popLSB(bishopBitboard);
 
-        uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
+        uint64_t occupancy = bishopAttackMagicMasks[source] & b.blockers;
         int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
         uint64_t movesBitboard = bishopAttackBitboards[index] & ~friendlyBitboard;
         while (movesBitboard) {
@@ -100,7 +98,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
     while (rookBitboard) {
         int source = popLSB(rookBitboard);
 
-        uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
+        uint64_t occupancy = rookAttackMagicMasks[source] & b.blockers;
         int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
         uint64_t movesBitboard = rookAttackBitboards[index] & ~friendlyBitboard;
         while (movesBitboard) {
@@ -113,10 +111,10 @@ void MoveGen::generateSlidingMoves(const Board& b) {
     while (queenBitboard) {
         int source = popLSB(queenBitboard);
 
-        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
+        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & b.blockers;
         int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
 
-        uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
+        uint64_t rookOccupancy = rookAttackMagicMasks[source] & b.blockers;
         int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
 
         uint64_t movesBitboard = (bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex]) & ~friendlyBitboard;
