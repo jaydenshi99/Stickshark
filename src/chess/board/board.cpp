@@ -245,8 +245,8 @@ void Board::setKingAttacks(Gamestate& gamestate, bool white) {
 
 void Board::setSliderAttacks(Gamestate& gamestate) {
     // Helper lambda to calculate attacks for sliding pieces
-    auto calculateAttacks = [&](uint64_t pieceBB, uint64_t* magicMasks, uint64_t* magics,
-                                uint64_t* attackBitboards, int attacksPerSquare, int shift) {
+    auto calculateAttacks = [&](uint64_t pieceBB, uint64_t *magicMasks, uint64_t *magics,
+                                uint64_t *attackBitboards, int attacksPerSquare, int shift) {
         uint64_t attacks = 0ULL;
         while (pieceBB) {
             int source = popLSB(pieceBB);
@@ -274,8 +274,8 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
     rookAttackMagicMasks, rookMagics, rookAttackBitboards, ROOK_ATTACKS_PER_SQUARE, 52);
 
     // Queens
-    auto calculateQueenAttacks = [&](uint64_t queenBB, uint64_t* bishopMasks, uint64_t* bishopMagics,
-                                     uint64_t* rookMasks, uint64_t* rookMagics) {
+    auto calculateQueenAttacks = [&](uint64_t queenBB, uint64_t *bishopMasks, uint64_t *bishopMagics,
+                                     uint64_t *rookMasks, uint64_t *rookMagics) {
         uint64_t attacks = 0ULL;
         while (queenBB) {
             int source = popLSB(queenBB);
