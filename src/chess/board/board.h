@@ -32,8 +32,6 @@ class Board {
 
     uint64_t blockers;
 
-    uint64_t attackBitboards[NUM_PIECES];
-
     int squares[64];
 
     bool turn; // true - white | false - black
@@ -42,7 +40,7 @@ class Board {
     std::stack<Gamestate> history;
 
     // Array of set attack methods
-    void (Board::*setAttackMethods[6])(bool white);
+    void (Board::*setAttackMethods[6])(Gamestate& gamestate, bool white);
 
     // Constructor
     Board();
@@ -64,12 +62,12 @@ class Board {
     // Set attack bitboards
     void setBlockers();
 
-    void updatePieceAttacks(int piece);
+    void updatePieceAttacks(Gamestate& gamestate, int piece);
     
-    void setPawnAttacks(bool white);
-    void setKnightAttacks(bool white);
-    void setKingAttacks(bool white);
-    void setSliderAttacks();
+    void setPawnAttacks(Gamestate& gamestate, bool white);
+    void setKnightAttacks(Gamestate& gamestate, bool white);
+    void setKingAttacks(Gamestate& gamestate, bool white);
+    void setSliderAttacks(Gamestate& gamestate);
 
     // Display methods
     void displayBoard() const;

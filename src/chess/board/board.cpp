@@ -3,7 +3,7 @@
 using namespace std;
 
 // Initialise empty board
-Board::Board() : pieceBitboards{0ULL}, attackBitboards{0ULL} {
+Board::Board() : pieceBitboards{0ULL} {
     // Set turn
     turn = true;
 
@@ -35,11 +35,13 @@ uint64_t Board::getBlackPositions() const {
 }
 
 uint64_t Board::getWhiteAttacks() const {
-    return attackBitboards[WPAWN] | attackBitboards[WBISHOP] | attackBitboards[WKNIGHT] | attackBitboards[WROOK] | attackBitboards[WQUEEN] | attackBitboards[WKING];
+    Gamestate gamestate = history.top();
+    return gamestate.attackBitboards[WPAWN] | gamestate.attackBitboards[WBISHOP] | gamestate.attackBitboards[WKNIGHT] | gamestate.attackBitboards[WROOK] | gamestate.attackBitboards[WQUEEN] | gamestate.attackBitboards[WKING];
 }
 
 uint64_t Board::getBlackAttacks() const {
-    return attackBitboards[BPAWN] | attackBitboards[BBISHOP] | attackBitboards[BKNIGHT] | attackBitboards[BROOK] | attackBitboards[BQUEEN] | attackBitboards[BKING];
+    Gamestate gamestate = history.top();
+    return gamestate.attackBitboards[BPAWN] | gamestate.attackBitboards[BBISHOP] | gamestate.attackBitboards[BKNIGHT] | gamestate.attackBitboards[BROOK] | gamestate.attackBitboards[BQUEEN] | gamestate.attackBitboards[BKING];
 }
 
 void Board::setStartingPosition() {
@@ -76,18 +78,22 @@ void Board::setStartingPosition() {
 
     turn = true;
 
-    history.push(Gamestate(EMPTY));
-
     // Update blockers
     setBlockers();
+
+    Gamestate startingState = Gamestate(EMPTY);
 
     // Set attack bitboards
     for (int i = 0; i < 6; i++) {
         if (isNonSliding(i)) {
-            (this->*setAttackMethods[i])(true);
-            (this->*setAttackMethods[i])(false);
+            (this->*setAttackMethods[i])(startingState, true);
+            (this->*setAttackMethods[i])(startingState, false);
         }
     }
+
+    setSliderAttacks(startingState);
+
+    history.push(startingState);
 }
 
 void Board::swapTurn() {
@@ -131,8 +137,18 @@ void Board::makeMove(const Move& move) {
     int movedPiece = squares[sourceSquare];
     int capturedPiece = squares[targetSquare];
 
-    // Update Gamestate
+    // Set new gamestate
     Gamestate gState = Gamestate(capturedPiece);
+    Gamestate oldGamestate = history.top();
+
+    // Copy attacks of non sliding pieces
+    gState.attackBitboards[WPAWN] = oldGamestate.attackBitboards[WPAWN];
+    gState.attackBitboards[BPAWN] = oldGamestate.attackBitboards[BPAWN];
+    gState.attackBitboards[WKNIGHT] = oldGamestate.attackBitboards[WKNIGHT];
+    gState.attackBitboards[BKNIGHT] = oldGamestate.attackBitboards[BKNIGHT];
+    gState.attackBitboards[WKING] = oldGamestate.attackBitboards[WKING];
+    gState.attackBitboards[BKING] = oldGamestate.attackBitboards[BKING];
+    
 
     // Update Squares
     squares[sourceSquare] = EMPTY;
@@ -150,15 +166,15 @@ void Board::makeMove(const Move& move) {
     // Toggle turn
     swapTurn();
 
-    // Push Gamestate
-    history.push(gState);
-
     // Update attack of moved piece
-    if (isNonSliding(movedPiece)) updatePieceAttacks(movedPiece);
-    if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
+    if (isNonSliding(movedPiece)) updatePieceAttacks(gState, movedPiece);
+    if (isNonSliding(capturedPiece)) updatePieceAttacks(gState, capturedPiece);
 
     // Update attack of sliding pieces
-    setSliderAttacks();
+    setSliderAttacks(gState);
+
+    // Push Gamestate
+    history.push(gState);
 }
 
 void Board::unmakeMove(const Move& move) {
@@ -190,95 +206,88 @@ void Board::unmakeMove(const Move& move) {
 
     // Toggle turn
     swapTurn();
-
-    // Update attack of moved piece
-    if (isNonSliding(movedPiece)) updatePieceAttacks(movedPiece);
-    if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
-
-    // Update slider attacks
-    setSliderAttacks();
 }
 
-void Board::updatePieceAttacks(int piece) {
+void Board::updatePieceAttacks(Gamestate& gamestate, int piece) {
     bool white = piece < 6;
-    (this->*setAttackMethods[piece % 6])(white);
+    (this->*setAttackMethods[piece % 6])(gamestate, white);
 }
 
-void Board::setPawnAttacks(bool white) {
+void Board::setPawnAttacks(Gamestate& gamestate, bool white) {
     if (white) {
-        attackBitboards[WPAWN] = (pieceBitboards[WPAWN] << 7) & notFileBitboards[0];
-        attackBitboards[WPAWN] |= (pieceBitboards[WPAWN] << 9) & notFileBitboards[7];
+        gamestate.attackBitboards[WPAWN] = (pieceBitboards[WPAWN] << 7) & notFileBitboards[0];
+        gamestate.attackBitboards[WPAWN] |= (pieceBitboards[WPAWN] << 9) & notFileBitboards[7];
     } else {
-        attackBitboards[BPAWN] = (pieceBitboards[BPAWN] >> 9) & notFileBitboards[0];
-        attackBitboards[BPAWN] |= (pieceBitboards[BPAWN] >> 7) & notFileBitboards[7];
+        gamestate.attackBitboards[BPAWN] = (pieceBitboards[BPAWN] >> 9) & notFileBitboards[0];
+        gamestate.attackBitboards[BPAWN] |= (pieceBitboards[BPAWN] >> 7) & notFileBitboards[7];
     }
 }
 
-void Board::setKnightAttacks(bool white) {
+void Board::setKnightAttacks(Gamestate& gamestate, bool white) {
     int pieceIndex = white ? WKNIGHT : BKNIGHT;
-    attackBitboards[pieceIndex] = 0ULL;
+    gamestate.attackBitboards[pieceIndex] = 0ULL;
 
     uint64_t knightBB = pieceBitboards[pieceIndex];
     while (knightBB) {
-        attackBitboards[pieceIndex] |= knightAttackBitboards[popLSB(knightBB)];
+        gamestate.attackBitboards[pieceIndex] |= knightAttackBitboards[popLSB(knightBB)];
     }
 }
 
-void Board::setKingAttacks(bool white) {
+void Board::setKingAttacks(Gamestate& gamestate, bool white) {
     int pieceIndex = white ? WKING : BKING;
-    attackBitboards[pieceIndex] = 0ULL;
+    gamestate.attackBitboards[pieceIndex] = 0ULL;
 
     uint64_t kingBB = pieceBitboards[pieceIndex];
     while (kingBB) {
-        attackBitboards[pieceIndex] |= kingAttackBitboards[popLSB(kingBB)];
+        gamestate.attackBitboards[pieceIndex] |= kingAttackBitboards[popLSB(kingBB)];
     }
 }
 
-void Board::setSliderAttacks() {
+void Board::setSliderAttacks(Gamestate& gamestate) {
     // Bishops
-    attackBitboards[WBISHOP] = 0ULL;
+    gamestate.attackBitboards[WBISHOP] = 0ULL;
     uint64_t wBishopBB = pieceBitboards[WBISHOP];
     while (wBishopBB) {
         int source = popLSB(wBishopBB);
 
         uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
         int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
-        attackBitboards[WBISHOP] |= bishopAttackBitboards[index];
+        gamestate.attackBitboards[WBISHOP] |= bishopAttackBitboards[index];
     }
 
-    attackBitboards[BBISHOP] = 0ULL;
+    gamestate.attackBitboards[BBISHOP] = 0ULL;
     uint64_t bBishopBB = pieceBitboards[BBISHOP];
     while (bBishopBB) {
         int source = popLSB(bBishopBB);
 
         uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
         int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
-        attackBitboards[BBISHOP] |= bishopAttackBitboards[index];
+        gamestate.attackBitboards[BBISHOP] |= bishopAttackBitboards[index];
     }
 
     // Rooks
-    attackBitboards[WROOK] = 0ULL;
+    gamestate.attackBitboards[WROOK] = 0ULL;
     uint64_t wRookBB = pieceBitboards[WROOK];
     while (wRookBB) {
         int source = popLSB(wRookBB);
 
         uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
         int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
-        attackBitboards[WROOK] |= rookAttackBitboards[index];
+        gamestate.attackBitboards[WROOK] |= rookAttackBitboards[index];
     }
 
-    attackBitboards[BROOK] = 0ULL;
+    gamestate.attackBitboards[BROOK] = 0ULL;
     uint64_t bRookBB = pieceBitboards[BROOK];
     while (bRookBB) {
         int source = popLSB(bRookBB);
 
         uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
         int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
-        attackBitboards[BROOK] |= rookAttackBitboards[index];
+        gamestate.attackBitboards[BROOK] |= rookAttackBitboards[index];
     }
 
     // Queens
-    attackBitboards[WQUEEN] = 0ULL;
+    gamestate.attackBitboards[WQUEEN] = 0ULL;
     uint64_t wQueenBB = pieceBitboards[WQUEEN];
     while (wQueenBB) {
         int source = popLSB(wQueenBB);
@@ -289,10 +298,10 @@ void Board::setSliderAttacks() {
         uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
         int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
 
-        attackBitboards[WQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
+        gamestate.attackBitboards[WQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
     }
 
-    attackBitboards[BQUEEN] = 0ULL;
+    gamestate.attackBitboards[BQUEEN] = 0ULL;
     uint64_t bQueenBB = pieceBitboards[BQUEEN];
     while (bQueenBB) {
         int source = popLSB(bQueenBB);
@@ -303,7 +312,7 @@ void Board::setSliderAttacks() {
         uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
         int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
 
-        attackBitboards[BQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
+        gamestate.attackBitboards[BQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
     }
 }
 
