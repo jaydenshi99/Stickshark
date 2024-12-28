@@ -46,6 +46,8 @@ uint64_t rookMagics[NUM_SQUARES];
 
 
 void computeAllTables() {
+    auto start = chrono::high_resolution_clock::now();
+
     computeNotBitboards();
     cout << "File and rank bitboards computed" << endl;
 
@@ -57,6 +59,12 @@ void computeAllTables() {
 
     computeKingAttacks();
     cout << "King attacks computed" << endl;
+
+    auto end = chrono::high_resolution_clock::now();
+
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+
+    cout << "Time taken: " << duration.count() << " ms" << endl << endl;
 }
 
 void computeNotBitboards() {

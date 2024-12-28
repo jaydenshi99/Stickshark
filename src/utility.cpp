@@ -79,6 +79,7 @@ void displayPossibleMoves() {
 }
 
 void perft(int depth) {
+    cout << "Performance testing move generation " << depth << " moves deep..." << endl;
     Board board;
 
     board.setStartingPosition();
@@ -91,7 +92,7 @@ void perft(int depth) {
 
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-    std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+    cout << "Time taken: " << duration.count() << " ms" << endl;
 
     cout << "Total Moves: " << totalMoves << endl;
 

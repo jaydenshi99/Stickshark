@@ -5,7 +5,7 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    perft(4);
+    perft(6);
     
     return 0;
 }
