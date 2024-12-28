@@ -39,7 +39,6 @@ class Board {
     // Array of set attack methods
     void (Board::*setAttackMethods[6])(bool white);
 
-
     // Constructor
     Board();
 
@@ -63,11 +62,11 @@ class Board {
     
     void setPawnAttacks(bool white);
     void setKnightAttacks(bool white);
-    void setBishopAttacks(bool white);
-    void setRookAttacks(bool white);
-    void setQueenAttacks(bool white);
     void setKingAttacks(bool white);
+    void setSliderAttacks();
 
     // Display methods
     void displayBoard() const;
 };
+
+bool isNonSliding(int piece);

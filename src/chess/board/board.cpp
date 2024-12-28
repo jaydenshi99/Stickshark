@@ -18,10 +18,7 @@ Board::Board() : pieceBitboards{0ULL}, attackBitboards{0ULL} {
 
     // Initialise setAttackFunctions
     setAttackMethods[0] = &Board::setPawnAttacks;
-    setAttackMethods[1] = &Board::setBishopAttacks;
     setAttackMethods[2] = &Board::setKnightAttacks;
-    setAttackMethods[3] = &Board::setRookAttacks;
-    setAttackMethods[4] = &Board::setQueenAttacks;
     setAttackMethods[5] = &Board::setKingAttacks;
 }
 
@@ -83,8 +80,10 @@ void Board::setStartingPosition() {
 
     // Set attack bitboards
     for (int i = 0; i < 6; i++) {
-        (this->*setAttackMethods[i])(true);
-        (this->*setAttackMethods[i])(false);
+        if (isNonSliding(i)) {
+            (this->*setAttackMethods[i])(true);
+            (this->*setAttackMethods[i])(false);
+        }
     }
 }
 
@@ -132,16 +131,16 @@ void Board::makeMove(Move move) {
     // Update Gamestate
     Gamestate gState = Gamestate(capturedPiece);
 
+    // Update Squares
+    squares[sourceSquare] = EMPTY;
+    squares[targetSquare] = movedPiece;
+
     // Update Bitboards
     pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
-        updatePieceAttacks(capturedPiece);
+        if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
     }
-
-    // Update Squares
-    squares[sourceSquare] = EMPTY;
-    squares[targetSquare] = movedPiece;
 
     // Toggle turn
     swapTurn();
@@ -150,7 +149,10 @@ void Board::makeMove(Move move) {
     history.push(gState);
 
     // Update attack of moved piece
-    updatePieceAttacks(movedPiece);
+    if (isNonSliding(movedPiece)) updatePieceAttacks(movedPiece);
+
+    // Update attack of sliding pieces
+    setSliderAttacks();
 }
 
 void Board::unmakeMove(Move move) {
@@ -167,22 +169,25 @@ void Board::unmakeMove(Move move) {
     int movedPiece = squares[currSquare];
     int capturedPiece = gState.capturedPiece;
 
+    // Update Squares
+    squares[currSquare] = capturedPiece;
+    squares[oldSquare] = movedPiece;  
+
     // Update Bitboards
     pieceBitboards[movedPiece] ^= oldSquareMask | currSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
-        updatePieceAttacks(capturedPiece);
+        if (isNonSliding(capturedPiece)) updatePieceAttacks(capturedPiece);
     }
 
     // Toggle turn
     swapTurn();
 
-    // Update Squares
-    squares[currSquare] = capturedPiece;
-    squares[oldSquare] = movedPiece;  
-
     // Update attack of moved piece
-    updatePieceAttacks(movedPiece);
+    if (isNonSliding(movedPiece)) updatePieceAttacks(movedPiece);
+
+    // Update slider attacks
+    setSliderAttacks();
 }
 
 void Board::updatePieceAttacks(int piece) {
@@ -210,55 +215,6 @@ void Board::setKnightAttacks(bool white) {
     }
 }
 
-void Board::setBishopAttacks(bool white) {
-    int pieceIndex = white ? WBISHOP : BBISHOP;
-    uint64_t blockers = getBlockers();
-    attackBitboards[pieceIndex] = 0ULL;
-
-    uint64_t bishopBB = pieceBitboards[pieceIndex];
-    while (bishopBB) {
-        int source = popLSB(bishopBB);
-
-        uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
-        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
-        attackBitboards[pieceIndex] |= bishopAttackBitboards[index];
-    }
-}
-
-void Board::setRookAttacks(bool white) {
-    int pieceIndex = white ? WROOK : BROOK;
-    uint64_t blockers = getBlockers();
-    attackBitboards[pieceIndex] = 0ULL;
-
-    uint64_t rookBB = pieceBitboards[pieceIndex];
-    while (rookBB) {
-        int source = popLSB(rookBB);
-
-        uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
-        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
-        attackBitboards[pieceIndex] |= rookAttackBitboards[index];
-    }
-}
-
-void Board::setQueenAttacks(bool white) {
-    int pieceIndex = white ? WQUEEN : BQUEEN;
-    uint64_t blockers = getBlockers();
-    attackBitboards[pieceIndex] = 0ULL;
-
-    uint64_t queenBB = pieceBitboards[pieceIndex];
-    while (queenBB) {
-        int source = popLSB(queenBB);
-
-        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
-        int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
-
-        uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
-        int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
-
-        attackBitboards[pieceIndex] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
-    }
-}
-
 void Board::setKingAttacks(bool white) {
     int pieceIndex = white ? WKING : BKING;
     attackBitboards[pieceIndex] = 0ULL;
@@ -267,4 +223,84 @@ void Board::setKingAttacks(bool white) {
     while (kingBB) {
         attackBitboards[pieceIndex] |= kingAttackBitboards[popLSB(kingBB)];
     }
+}
+
+void Board::setSliderAttacks() {
+    uint64_t blockers = getBlockers();
+
+    // Bishops
+    attackBitboards[WBISHOP] = 0ULL;
+    uint64_t wBishopBB = pieceBitboards[WBISHOP];
+    while (wBishopBB) {
+        int source = popLSB(wBishopBB);
+
+        uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
+        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
+        attackBitboards[WBISHOP] |= bishopAttackBitboards[index];
+    }
+
+    attackBitboards[BBISHOP] = 0ULL;
+    uint64_t bBishopBB = pieceBitboards[BBISHOP];
+    while (bBishopBB) {
+        int source = popLSB(bBishopBB);
+
+        uint64_t occupancy = bishopAttackMagicMasks[source] & blockers;
+        int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
+        attackBitboards[BBISHOP] |= bishopAttackBitboards[index];
+    }
+
+    // Rooks
+    attackBitboards[WROOK] = 0ULL;
+    uint64_t wRookBB = pieceBitboards[WROOK];
+    while (wRookBB) {
+        int source = popLSB(wRookBB);
+
+        uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
+        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
+        attackBitboards[WROOK] |= rookAttackBitboards[index];
+    }
+
+    attackBitboards[BROOK] = 0ULL;
+    uint64_t bRookBB = pieceBitboards[BROOK];
+    while (bRookBB) {
+        int source = popLSB(bRookBB);
+
+        uint64_t occupancy = rookAttackMagicMasks[source] & blockers;
+        int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
+        attackBitboards[BROOK] |= rookAttackBitboards[index];
+    }
+
+    // Queens
+    attackBitboards[WQUEEN] = 0ULL;
+    uint64_t wQueenBB = pieceBitboards[WQUEEN];
+    while (wQueenBB) {
+        int source = popLSB(wQueenBB);
+
+        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
+        int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
+
+        uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
+        int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
+
+        attackBitboards[WQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
+    }
+
+    attackBitboards[BQUEEN] = 0ULL;
+    uint64_t bQueenBB = pieceBitboards[BQUEEN];
+    while (bQueenBB) {
+        int source = popLSB(bQueenBB);
+
+        uint64_t bishopOccupancy = bishopAttackMagicMasks[source] & blockers;
+        int bishopIndex = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * bishopOccupancy) >> 55);
+
+        uint64_t rookOccupancy = rookAttackMagicMasks[source] & blockers;
+        int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
+
+        attackBitboards[BQUEEN] |= bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex];
+    }
+}
+
+bool isNonSliding(int piece) {
+    int pieceNoColour = piece % 6;
+    return pieceNoColour == 0 || pieceNoColour == 2 || pieceNoColour == 5;
 }
