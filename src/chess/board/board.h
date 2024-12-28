@@ -52,6 +52,8 @@ class Board {
     uint64_t getWhiteAttacks() const;
     uint64_t getBlackAttacks() const;
 
+    bool kingInCheck() const;
+
     // Set methods
     void setStartingPosition();
     void swapTurn();

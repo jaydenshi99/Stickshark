@@ -29,8 +29,5 @@ class MoveGen {
     MoveGen();
 
     void generatePseudoMoves(const Board& b);
-
-
-
     void clearMoves();
 };

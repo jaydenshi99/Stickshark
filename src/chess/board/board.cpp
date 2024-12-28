@@ -44,6 +44,10 @@ uint64_t Board::getBlackAttacks() const {
     return gamestate.attackBitboards[BPAWN] | gamestate.attackBitboards[BBISHOP] | gamestate.attackBitboards[BKNIGHT] | gamestate.attackBitboards[BROOK] | gamestate.attackBitboards[BQUEEN] | gamestate.attackBitboards[BKING];
 }
 
+bool Board::kingInCheck() const {
+    return pieceBitboards[turn ? BKING : WKING] & (turn ? getWhiteAttacks() : getBlackAttacks());
+}
+
 void Board::setStartingPosition() {
     // White pieces
     pieceBitboards[WPAWN]   = 0x000000000000FF00;
