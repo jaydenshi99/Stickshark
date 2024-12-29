@@ -48,56 +48,56 @@ bool Board::kingInCheck() const {
     return pieceBitboards[turn ? BKING : WKING] & (turn ? getWhiteAttacks() : getBlackAttacks());
 }
 
-void Board::setStartingPosition() {
-    // White pieces
-    pieceBitboards[WPAWN]   = 0x000000000000FF00;
-    pieceBitboards[WBISHOP] = 0x0000000000000024;
-    pieceBitboards[WKNIGHT] = 0x0000000000000042;
-    pieceBitboards[WROOK]   = 0x0000000000000081;
-    pieceBitboards[WQUEEN]  = 0x0000000000000010;
-    pieceBitboards[WKING]   = 0x000000000000008;
-
-    // Black pieces
-    pieceBitboards[BPAWN]   = 0x00FF000000000000;
-    pieceBitboards[BBISHOP] = 0x2400000000000000;
-    pieceBitboards[BKNIGHT] = 0x4200000000000000;
-    pieceBitboards[BROOK]   = 0x8100000000000000;
-    pieceBitboards[BQUEEN]  = 0x1000000000000000;
-    pieceBitboards[BKING]   = 0x0800000000000000;
-
-    int startingSquares[64] = {
-        3, 2, 1, 5, 4, 1, 2, 3,
-        0, 0, 0, 0, 0, 0, 0, 0, 
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1,
-        6, 6, 6, 6, 6, 6, 6, 6,
-        9, 8, 7, 11, 10, 7, 8, 9
-    };
-
-    for (int i = 0; i < 64; ++i) {
-        squares[i] = startingSquares[i];
+void Board::setFEN(string FEN) {
+    for (int i = 0; i < NUM_PIECES; i++) {
+        pieceBitboards[i] = 0ULL;
     }
 
-    turn = true;
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        squares[i] = EMPTY;
+    }
 
-    // Update blockers
+    int index = 0;
+    int square = 63;
+    while (FEN[index] != ' ') {
+        char c = FEN[index++];
+
+        if (c == '/') continue;
+
+        int pieceIndex = charToPieceIndex(c);
+        if (pieceIndex != -1) {
+            squares[square] = pieceIndex;
+            pieceBitboards[pieceIndex] |= 1ULL << square;
+            square -= 1;
+        } else {
+            square -= c - '0';
+        }
+    }
+
+    index++;
+
+    turn = FEN[index] == 'w';
+
+    // Set blockers
     setBlockers();
 
-    Gamestate startingState = Gamestate(EMPTY);
+    // Set new gamestate
+    Gamestate gState = Gamestate(EMPTY);
 
     // Set attack bitboards
     for (int i = 0; i < 6; i++) {
         if (isNonSliding[i]) {
-            (this->*setAttackMethods[i])(startingState, true);
-            (this->*setAttackMethods[i])(startingState, false);
+            (this->*setAttackMethods[i])(gState, true);
+            (this->*setAttackMethods[i])(gState, false);
         }
     }
+    setSliderAttacks(gState);
 
-    setSliderAttacks(startingState);
+    history.push(gState);
+}
 
-    history.push(startingState);
+void Board::setStartingPosition() {
+    setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 void Board::swapTurn() {
@@ -300,4 +300,22 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
 
     gamestate.attackBitboards[BQUEEN] = calculateQueenAttacks(pieceBitboards[BQUEEN],
     bishopAttackMagicMasks, bishopMagics, rookAttackMagicMasks, rookMagics);
+}
+
+int charToPieceIndex (char c) {
+    switch (c) {
+        case 'P': return WPAWN;
+        case 'B': return WBISHOP;
+        case 'N': return WKNIGHT;
+        case 'R': return WROOK;
+        case 'Q': return WQUEEN;
+        case 'K': return WKING;
+        case 'p': return BPAWN;
+        case 'b': return BBISHOP;
+        case 'n': return BKNIGHT;
+        case 'r': return BROOK;
+        case 'q': return BQUEEN;
+        case 'k': return BKING;
+        default: return -1; // Invalid character
+    }
 }

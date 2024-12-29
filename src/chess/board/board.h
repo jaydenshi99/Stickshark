@@ -55,6 +55,7 @@ class Board {
     bool kingInCheck() const;
 
     // Set methods
+    void setFEN(std::string FEN);
     void setStartingPosition();
     void swapTurn();
 
@@ -74,3 +75,5 @@ class Board {
     // Display methods
     void displayBoard() const;
 };
+
+int charToPieceIndex (char c);
