@@ -78,11 +78,15 @@ void displayPossibleMoves() {
     cout << "Total Moves: " << moveGen.moves.size() << "\n\n";
 }
 
-void perft(int depth) {
-    cout << "Performance testing move generation " << depth << " moves deep..." << endl;
-    Board board;
+void perft(int depth, string FEN) {
+    cout << "Performance testing move generation for board: " << endl;
 
-    board.setStartingPosition();
+    Board board;
+    board.setFEN(FEN);
+
+    board.displayBoard();
+    
+    cout << "Searching to depth " << depth << "..." << endl;
 
     auto start = chrono::high_resolution_clock::now();
 

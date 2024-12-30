@@ -12,5 +12,5 @@ void displayBitboard(uint64_t bb);
 void displayPossibleMoves();
 void simulateRandomMoves();
 
-void perft(int depth);
+void perft(int depth, std::string FEN);
 long perftRecursive(Board& b, int depth);
