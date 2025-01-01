@@ -8,8 +8,6 @@
 #include "../../utility.h"
 #include "bitTables.h"
 
-#define MAX_MOVES 250 // Arbitrary
-
 class MoveGen {
     private:
     // Storing data that is used accross all functions

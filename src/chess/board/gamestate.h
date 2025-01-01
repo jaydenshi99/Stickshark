@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#define NUM_PIECES 12
+#include "../../constants.h"
 
 class Gamestate {
     public:
