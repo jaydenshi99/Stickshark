@@ -1,7 +1,11 @@
-#include "../include/main.h"
+#include "main.h"
 
 using namespace std;
 
 int main () {
-    cout << "testing" << endl;
+    computeAllTables();
+
+    perft(6, STARTING_FEN);
+    
+    return 0;
 }

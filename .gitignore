@@ -1,1 +1,13 @@
-ss
+# Ignore build artifacts
+obj/
+bin/
+
+# Ignore editor and OS-specific files
+*.o
+*.out
+*.exe
+.DS_Store
+*.swp
+
+# Ignore Makefile intermediate files
+Makefile~

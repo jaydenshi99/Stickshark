@@ -1,20 +1,38 @@
-# Compiler and flags
-CXX = g++
-CXXFLAGS = -Wall -Iinclude -g -std=c++20
+# Compiler and Flags
+CXX := g++
+CXXFLAGS := -std=c++20 -Wall -Wextra -O2
 
-# Source files and output
-SRC = $(wildcard src/*.cpp)
-OBJ = $(SRC:.cpp=.o)
-TARGET = ss
+# Directories
+SRCDIR := src
+INCDIR := include
+OBJDIR := obj
+BINDIR := bin
 
-# Build target
-$(TARGET): $(OBJ)
+# Target executable
+TARGET := $(BINDIR)/main
+
+# Find all source files recursively
+SOURCES := $(shell find $(SRCDIR) -name "*.cpp")
+OBJECTS := $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES))
+
+# Create necessary directories
+$(shell mkdir -p $(OBJDIR) $(BINDIR))
+
+# Default target
+all: $(TARGET)
+
+# Link all object files into the final executable
+$(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Rule to create object files
-src/%.o: src/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+# Compile every source file into an object file
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
-# Clean rule to remove generated files
+# Clean up build artifacts
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -rf $(OBJDIR) $(BINDIR)
+
+# Always recompile every file
+.PHONY: all clean
