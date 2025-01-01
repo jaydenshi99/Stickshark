@@ -22,6 +22,7 @@
 #define ROOK_ATTACK_TABLE_SIZE 262144
 
 extern const bool isNonSliding[12];
+extern const bool isPromotion[8];
 
 extern const uint64_t fileBitboards[NUM_FILES];
 extern const uint64_t rankBitboards[NUM_RANKS];

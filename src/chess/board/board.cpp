@@ -134,6 +134,7 @@ void Board::displayBoard() const {
 void Board::makeMove(const Move& move) {
     uint64_t sourceSquare = move.getSource();
     uint64_t targetSquare = move.getTarget();
+    int moveFlag = move.getFlag();
 
     uint64_t sourceSquareMask = 1ULL << sourceSquare;
     uint64_t targetSquareMask = 1ULL << targetSquare;
@@ -152,14 +153,12 @@ void Board::makeMove(const Move& move) {
     gState.attackBitboards[BKNIGHT] = oldGamestate.attackBitboards[BKNIGHT];
     gState.attackBitboards[WKING] = oldGamestate.attackBitboards[WKING];
     gState.attackBitboards[BKING] = oldGamestate.attackBitboards[BKING];
-    
 
     // Update Squares
     squares[sourceSquare] = EMPTY;
-    squares[targetSquare] = movedPiece;
 
     // Update Bitboards
-    pieceBitboards[movedPiece] ^= sourceSquareMask | targetSquareMask;
+    pieceBitboards[movedPiece] ^= sourceSquareMask;
     blockers ^= sourceSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
@@ -167,8 +166,18 @@ void Board::makeMove(const Move& move) {
         blockers ^= targetSquareMask;
     }
 
-    // Toggle turn
-    swapTurn();
+    // Flag specific cases
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+        squares[targetSquare] = movedPiece;
+        pieceBitboards[movedPiece] ^= targetSquareMask;
+    } else if (isPromotion[moveFlag]) {
+        int promotedPiece = moveFlag - 2 + (turn ? 0 : 6);
+
+        squares[targetSquare] = promotedPiece;
+        pieceBitboards[promotedPiece] ^= targetSquareMask;
+
+        if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, capturedPiece);
+    }
 
     // Update attack of moved piece
     if (isNonSliding[movedPiece]) updatePieceAttacks(gState, movedPiece);
@@ -179,11 +188,15 @@ void Board::makeMove(const Move& move) {
 
     // Push Gamestate
     history.push(gState);
+
+    // Toggle turn
+    swapTurn();
 }
 
 void Board::unmakeMove(const Move& move) {
     uint64_t oldSquare = move.getSource();
     uint64_t currSquare = move.getTarget();
+    int moveFlag = move.getFlag();
 
     uint64_t oldSquareMask = 1ULL << oldSquare;
     uint64_t currSquareMask = 1ULL << currSquare;
@@ -196,16 +209,25 @@ void Board::unmakeMove(const Move& move) {
     int capturedPiece = gState.capturedPiece;
 
     // Update Squares
+    squares[oldSquare] = movedPiece;
     squares[currSquare] = capturedPiece;
-    squares[oldSquare] = movedPiece;  
 
     // Update piece bitboards and blockers
-    pieceBitboards[movedPiece] ^= oldSquareMask | currSquareMask;
+    pieceBitboards[movedPiece] ^= oldSquareMask;
     blockers ^= oldSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
     } else {
         blockers ^= currSquareMask;
+    }
+
+    // Flag specific cases
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+        pieceBitboards[movedPiece] ^= currSquareMask;
+    } else if (isPromotion[moveFlag]) {
+        int promotedPiece = moveFlag - 2 + (turn ? 0 : 6);
+
+        pieceBitboards[promotedPiece] ^= currSquareMask;
     }
 
     // Toggle turn

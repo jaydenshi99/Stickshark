@@ -7,6 +7,10 @@ const bool isNonSliding[12] = {
     true, false, true, false, false, true
 };
 
+const bool isPromotion[8] {
+    false, false, false, true, true, true, true, false
+};
+
 const uint64_t fileBitboards[NUM_FILES] = {
     0x8080808080808080,
     0x4040404040404040,

@@ -24,9 +24,14 @@ void MoveGen::generatePawnMoves(const Board& b) {
     uint64_t enemy = b.turn ? b.getBlackPositions() : b.getWhitePositions();
     uint64_t empty = ~b.blockers;
 
+    // Not including pawns which promote on push
     uint64_t singlePushes = b.turn 
-        ? (pawnBitboard << 8) & empty
-        : (pawnBitboard >> 8) & empty;
+        ? (pawnBitboard << 8) & empty & notRankBitboards[7]
+        : (pawnBitboard >> 8) & empty & notRankBitboards[0];
+
+    uint64_t promotions = b.turn 
+        ? (pawnBitboard << 8) & empty & rankBitboards[7]
+        : (pawnBitboard >> 8) & empty & rankBitboards[0];
 
     uint64_t doublePushes = b.turn 
         ? (singlePushes << 8) & empty & doublePushRank
@@ -39,11 +44,20 @@ void MoveGen::generatePawnMoves(const Board& b) {
     uint64_t rightDiagonalAttacks = b.turn
         ? (pawnBitboard << 7) & enemy & notFileBitboards[0]
         : (pawnBitboard >> 9) & enemy & notFileBitboards[0];
+
     
     int singlePushOffset = b.turn ? -8 : 8;
     while (singlePushes) {
         int target = popLSB(singlePushes);
         moves.emplace_back(Move(target + singlePushOffset, target, NONE));
+    }
+
+    while (promotions) {
+        int target = popLSB(promotions);
+        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEBISHOP));
+        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEKNIGHT));
+        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
+        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEROOK));
     }
 
     int doublePushOffset = b.turn ? -16 : 16;
@@ -63,6 +77,8 @@ void MoveGen::generatePawnMoves(const Board& b) {
         int target = popLSB(rightDiagonalAttacks);
         moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, NONE));
     }
+
+    
 }
 
 void MoveGen::generateKnightMoves(const Board& b) {
