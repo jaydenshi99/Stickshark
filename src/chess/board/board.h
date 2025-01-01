@@ -8,6 +8,7 @@
 #include "move.h"
 #include "gamestate.h"
 #include "../moveGeneration/bitTables.h"
+#include "../../constants.h"
 
 #define EMPTY   -1
 #define WPAWN   0

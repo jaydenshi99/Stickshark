@@ -97,7 +97,7 @@ void Board::setFEN(string FEN) {
 }
 
 void Board::setStartingPosition() {
-    setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    setFEN(STARTING_FEN);
 }
 
 void Board::swapTurn() {
