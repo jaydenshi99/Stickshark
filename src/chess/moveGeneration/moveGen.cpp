@@ -56,8 +56,8 @@ void MoveGen::generatePawnMoves(const Board& b) {
         int target = popLSB(promotions);
         moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEBISHOP));
         moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEKNIGHT));
-        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
         moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEROOK));
+        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
     }
 
     int doublePushOffset = b.turn ? -16 : 16;

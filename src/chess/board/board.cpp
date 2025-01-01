@@ -176,7 +176,7 @@ void Board::makeMove(const Move& move) {
         squares[targetSquare] = promotedPiece;
         pieceBitboards[promotedPiece] ^= targetSquareMask;
 
-        if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, capturedPiece);
+        if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
     }
 
     // Update attack of moved piece
@@ -205,7 +205,7 @@ void Board::unmakeMove(const Move& move) {
     Gamestate gState = history.top();
     history.pop();
 
-    int movedPiece = squares[currSquare];
+    int movedPiece = isPromotion[moveFlag] ? (turn ? BPAWN : WPAWN) : squares[currSquare];
     int capturedPiece = gState.capturedPiece;
 
     // Update Squares
@@ -225,7 +225,7 @@ void Board::unmakeMove(const Move& move) {
     if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
         pieceBitboards[movedPiece] ^= currSquareMask;
     } else if (isPromotion[moveFlag]) {
-        int promotedPiece = moveFlag - 2 + (turn ? 0 : 6);
+        int promotedPiece = moveFlag - 2 + (turn ? 6 : 0);
 
         pieceBitboards[promotedPiece] ^= currSquareMask;
     }

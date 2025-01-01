@@ -60,15 +60,15 @@ void simulateRandomMoves() {
     }
 }
 
-void displayPossibleMoves() {
+void displayPossibleMoves(string FEN) {
     Board board;
     MoveGen moveGen;
 
-    board.setStartingPosition();
+    board.setFEN(FEN);
     board.displayBoard();
 
     moveGen.generatePseudoMoves(board);
-
+    cout << moveGen.moves.size() << endl;
     for (Move move : moveGen.moves) {
         board.makeMove(move);
         board.displayBoard();

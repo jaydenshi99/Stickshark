@@ -5,7 +5,7 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    perft(6, STARTING_FEN);
+    displayPossibleMoves("8/4P3/8/8/8/8/8/8 w - - 0 1");
     
     return 0;
 }

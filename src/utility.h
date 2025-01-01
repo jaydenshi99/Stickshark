@@ -9,7 +9,7 @@
 
 void displayBitboard(uint64_t bb);
 
-void displayPossibleMoves();
+void displayPossibleMoves(std::string FEN);
 void simulateRandomMoves();
 
 void perft(int depth, std::string FEN);
