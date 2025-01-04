@@ -5,7 +5,11 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    perft(6, STARTING_FEN);
+    Board board = Board();
+    board.setFEN(STARTING_FEN);
+
+    Engine engine = Engine(board);
+    engine.findBestMove(3);
     
     return 0;
 }

@@ -1,11 +1,18 @@
 #pragma once
 
-#include "../board/board.h"
+#include <climits>
+
+#include "../chess/board/board.h"
+#include "../chess/moveGeneration/moveGen.h"
 
 class Engine {
     private:
+    MoveGen mg;
+
     Move bestMove;
-    int moveEval;
+    int boardEval;
+
+    int searchDepth;
 
     public:
     Board board;
@@ -14,6 +21,8 @@ class Engine {
     Engine(Board b);
 
     // Set methods
-    void calculateBestMove(int depth); // 
-    int negamax(int depth);    // Sets bestMove to the best move and sets moveEval to the eva
+    void setBoard(Board b);
+
+    void findBestMove(int depth);   // Calls negaMax to find the best move and debugs.
+    int negaMax(int depth);    // Sets bestMove to the best move and sets moveEval to the eva
 };
