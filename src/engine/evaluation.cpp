@@ -8,5 +8,5 @@ int evaluateBoard(const Board& board) {
         eval += popcount(board.pieceBitboards[i]) * materialEvaluations[i];
     }
 
-    return board.turn ? eval : -eval;
+    return eval;
 }

@@ -19,3 +19,6 @@
 #define NUM_PIECES 12
 
 #define MAX_MOVES 250 // Arbitrary
+
+#define MAX_EVAL 999999999
+#define MIN_EVAL -999999999

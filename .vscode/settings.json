@@ -65,6 +65,9 @@
         "concepts": "cpp",
         "algorithm": "cpp",
         "unordered_set": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "fstream": "cpp",
+        "numeric": "cpp",
+        "random": "cpp"
     }
 }

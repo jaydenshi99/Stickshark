@@ -20,17 +20,16 @@ void Engine::findBestMove(int depth) {
 
     cout << "Calculating best move for board: " << endl;
     board.displayBoard();
-
     
     auto start = chrono::high_resolution_clock::now();
 
     // Search
-    negaMax(searchDepth);
+    negaMax(searchDepth, MIN_EVAL, MAX_EVAL, board.turn ? 1 : -1);
 
     auto end = chrono::high_resolution_clock::now();
     
-    cout << "Best move: " << endl;
-    cout << "Evaluation: " << boardEval << endl;
+    cout << "Best move: " << bestMove << endl;
+    cout << "Evaluation: " << boardEval << endl << endl;
 
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
@@ -50,14 +49,13 @@ void Engine::findBestMove(int depth) {
     cout << endl;
 }
 
-int Engine::negaMax(int depth) {
-    // At 0 depth return 0 for now in future replace this with the evaluation function
+int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     if (depth == 0) {
         leafNodesEvaluated++;
-        return 0;
+        return evaluateBoard(board) * turn; // 
     }
 
-    int searchBestEval = numeric_limits<int>::min();
+    int searchBestEval = MIN_EVAL;
     Move searchBestMove = Move();   // Set to default move
 
     // Generate posible moves
@@ -70,12 +68,19 @@ int Engine::negaMax(int depth) {
         // Continue with valid positions
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
-            int eval = -negaMax(depth - 1);
+            int eval = -negaMax(depth - 1, -beta, -alpha, -turn);
 
             // Update best evals and best moves
             if (eval > searchBestEval) {
                 searchBestEval = eval;
                 searchBestMove = move;
+            }
+
+            // Alpha-beta pruning
+            alpha = max(alpha, searchBestEval);
+            if (alpha >= beta) {
+                board.unmakeMove(move);
+                break;
             }
         }
         

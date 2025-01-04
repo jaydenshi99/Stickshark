@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <cstdint>
+#include <string>
 
 #define STARTMASK  0x03F0
 #define TARGETMASK 0x003F
@@ -31,4 +32,9 @@ class Move {
     uint16_t getSource() const;
     uint16_t getTarget() const;
     uint16_t getFlag() const;
+
+    // Friend declaration for operator<<
+    friend std::ostream& operator<<(std::ostream& os, const Move& move);
 };
+
+std::string squareToNotation(int square);
