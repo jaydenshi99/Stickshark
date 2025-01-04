@@ -26,12 +26,12 @@ ostream& operator<<(std::ostream& os, const Move& move) {
     if (move.getSource() == 0 && move.getTarget() == 0) {
         os << "Invalid Move";
     } else {
-        os << squareToNotation(move.getSource()) << "-" << squareToNotation(move.getTarget());
+        os << moveToNotation(move.getSource()) << "-" << moveToNotation(move.getTarget());
     }
     return os;
 }
 
-string squareToNotation(int square) {
+string moveToNotation(int square) {
     char file = 'h' - (square % 8);
     char rank = '1' + (square / 8);
     return string(1, file) + rank;

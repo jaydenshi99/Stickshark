@@ -10,7 +10,6 @@
 
 class Engine {
     private:
-    Move bestMove;
     int boardEval;
 
     int searchDepth;
@@ -19,6 +18,7 @@ class Engine {
 
     public:
     Board board;
+    Move bestMove;
 
     // Constructor
     Engine(Board b);

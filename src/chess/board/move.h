@@ -37,4 +37,4 @@ class Move {
     friend std::ostream& operator<<(std::ostream& os, const Move& move);
 };
 
-std::string squareToNotation(int square);
+std::string moveToNotation(int square);

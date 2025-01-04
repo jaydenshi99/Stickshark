@@ -18,8 +18,7 @@ void Engine::findBestMove(int depth) {
     leafNodesEvaluated = 0;
     searchDepth = depth;
 
-    cout << "Calculating best move for board: " << endl;
-    board.displayBoard();
+    cout << "Calculating best move... " << endl;
     
     auto start = chrono::high_resolution_clock::now();
 

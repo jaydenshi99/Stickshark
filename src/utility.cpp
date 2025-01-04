@@ -125,3 +125,52 @@ long perftRecursive(Board& b, int depth) {
 
     return totalMoves;
 }
+
+void playAI() {
+    Board board = Board();
+    board.setStartingPosition();
+
+    char playerColour;
+    cout << "Player is white or black? (w/b)";
+    cin >> playerColour;
+
+    if (playerColour != 'w' && playerColour != 'b') {
+        cout << "Invalid input" << endl;
+        return;
+    }
+
+    bool playerTurn = playerColour == 'w';
+
+    int moveNum = 1;
+    cout << endl << moveNum << "." << endl;
+    board.displayBoard();
+
+    // Get terminating position after implementing checkmates n shi
+    while (true) {
+        if (playerTurn) {
+            string playerMove; 
+            cout << "Move: ";
+            cin >> playerMove;
+            cout << endl;
+
+            board.makeMove(notationToMove(playerMove));
+        } else {
+            Engine engine = Engine(board);
+            engine.findBestMove(7);
+            board.makeMove(engine.bestMove);
+        }
+
+        moveNum++;
+        cout << moveNum << "." << endl << endl;
+        board.displayBoard();
+
+        playerTurn = !playerTurn;
+    }
+}
+
+// Only covers normal moves no special moves
+Move notationToMove(string move) {
+    int sourceSquare = 'h' - move[0] + (move[1] - '1') * 8;
+    int targetSquare = 'h' - move[3] + (move[4] - '1') * 8;
+    return Move(sourceSquare, targetSquare, NONE);
+}
