@@ -8,12 +8,12 @@
 
 class Engine {
     private:
-    MoveGen mg;
-
     Move bestMove;
     int boardEval;
 
     int searchDepth;
+
+    int leafNodesEvaluated;
 
     public:
     Board board;

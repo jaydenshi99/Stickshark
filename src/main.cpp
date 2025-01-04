@@ -6,12 +6,12 @@ int main () {
     computeAllTables();
 
     Board board = Board();
-    board.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-
-    cout << evaluateBoard(board) << endl;
+    board.setFEN(STARTING_FEN);
 
     Engine engine = Engine(board);
     engine.findBestMove(5);
+
+    perft(5, STARTING_FEN);
     
     return 0;
 }
