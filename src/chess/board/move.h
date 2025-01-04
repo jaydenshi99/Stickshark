@@ -23,7 +23,8 @@ class Move {
     uint16_t moveValue;
 
     public:
-    // Constructor
+    // Constructors
+    Move();
     Move(int s, int t, int f);
 
     // Get methods

@@ -2,6 +2,10 @@
 
 using namespace std;
 
+Move::Move() {
+    moveValue = 0;
+}
+
 Move::Move(int s, int t, int f) {
     moveValue = (f << 12) | (s << 6) | t;
 }
