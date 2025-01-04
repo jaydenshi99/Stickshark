@@ -9,9 +9,7 @@ int main () {
     board.setFEN(STARTING_FEN);
 
     Engine engine = Engine(board);
-    engine.findBestMove(5);
-
-    perft(5, STARTING_FEN);
+    engine.findBestMove(6);
     
     return 0;
 }
