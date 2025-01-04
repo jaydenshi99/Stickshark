@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "../board/board.h"
-#include "../bit.h"
+#include "../../bit.h"
 #include "../../utility.h"
 #include "bitTables.h"
 

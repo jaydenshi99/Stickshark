@@ -28,7 +28,7 @@ void Engine::findBestMove(int depth) {
 
 int Engine::negaMax(int depth) {
     // At 0 depth return 0 for now in future replace this with the evaluation function
-    if (depth == 0) return 0;
+    if (depth == 0) return evaluateBoard(board);
 
     int searchBestEval = numeric_limits<int>::min();
     Move searchBestMove = Move();   // Set to default move

@@ -4,6 +4,7 @@
 
 #include "../chess/board/board.h"
 #include "../chess/moveGeneration/moveGen.h"
+#include "evaluation.h"
 
 class Engine {
     private:
