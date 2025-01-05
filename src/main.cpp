@@ -5,13 +5,10 @@ using namespace std;
 int main () {
     computeAllTables();
 
-
     Board board = Board();
     board.setStartingPosition();
 
-    Engine engine = Engine(board);
-    engine.findBestMove(8);
+    playAI();
 
-    
     return 0;
 }
