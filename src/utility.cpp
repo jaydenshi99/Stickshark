@@ -161,7 +161,7 @@ void playAI() {
         }
 
         moveNum++;
-        cout << moveNum << "." << endl << endl;
+        cout << moveNum << "." << endl;
         board.displayBoard();
 
         playerTurn = !playerTurn;
