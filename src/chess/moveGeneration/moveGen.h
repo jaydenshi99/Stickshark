@@ -9,6 +9,8 @@
 #include "bitTables.h"
 #include "../../engine/evalConstants.h"
 
+#define ATTACK_PENALTY -30
+
 class MoveGen {
     private:
     // Storing data that is used accross all functions

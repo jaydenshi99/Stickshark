@@ -112,23 +112,30 @@ void Board::displayBoard() const {
     };
 
     // Print the board (a1 is bottom-left, h8 is top-right)
-    std::cout << "  +------------------------+" << std::endl;
+    cout << "  +------------------------+" << endl;
     for (int rank = 7; rank >= 0; --rank) { // Start from rank 8 to rank 1
-        std::cout << rank + 1 << " | ";
+        cout << rank + 1 << " | ";
         for (int file = 7; file >= 0; --file) { // Iterate from a to h
             int pieceType = squares[rank * 8 + file];
             if (pieceType == EMPTY) {
-                std::cout << ". ";
+                cout << ". ";
             } else {
-                std::cout << pieceSymbols[pieceType] << " ";
+                cout << pieceSymbols[pieceType] << " ";
             }
 
         }
-        std::cout << "|" << std::endl;
+        cout << "|" << endl;
     }
-    std::cout << "  +------------------------+" << std::endl;
-    std::cout << "    a b c d e f g h" << std::endl; // Files a to h
-    cout << endl;
+    cout << "  +------------------------+" << endl;
+    cout << "    a b c d e f g h" << endl << endl; // Files a to h
+
+    if (turn) {
+        cout << "White to move...";
+    } else {
+        cout << "Black to move...";
+    }
+
+    cout << "\n\n";
 }
 
 void Board::makeMove(const Move& move) {
