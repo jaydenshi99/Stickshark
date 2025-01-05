@@ -28,7 +28,7 @@ void Engine::findBestMove(int depth) {
     auto end = chrono::high_resolution_clock::now();
     
     cout << "Best move: " << bestMove << endl;
-    cout << "Evaluation: " << boardEval << endl << endl;
+    cout << "Evaluation: " << (board.turn ? boardEval : -boardEval) << endl << endl;
 
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 

@@ -112,7 +112,7 @@ void Board::displayBoard() const {
     };
 
     // Print the board (a1 is bottom-left, h8 is top-right)
-    cout << "  +------------------------+" << endl;
+    cout << "  +-----------------+" << endl;
     for (int rank = 7; rank >= 0; --rank) { // Start from rank 8 to rank 1
         cout << rank + 1 << " | ";
         for (int file = 7; file >= 0; --file) { // Iterate from a to h
@@ -126,7 +126,7 @@ void Board::displayBoard() const {
         }
         cout << "|" << endl;
     }
-    cout << "  +------------------------+" << endl;
+    cout << "  +-----------------+" << endl;
     cout << "    a b c d e f g h" << endl << endl; // Files a to h
 
     if (turn) {

@@ -131,7 +131,7 @@ void playAI() {
     board.setStartingPosition();
 
     char playerColour;
-    cout << "Player is white or black? (w/b)";
+    cout << "Player is white or black? (w/b) ";
     cin >> playerColour;
 
     if (playerColour != 'w' && playerColour != 'b') {
