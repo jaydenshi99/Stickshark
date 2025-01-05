@@ -4,10 +4,7 @@ using namespace std;
 
 Engine::Engine(Board b) {
     board = b;
-    bestMove = Move(0, 0, 0);
-    boardEval = 0;
-    searchDepth = 0;
-    leafNodesEvaluated = 0;
+    bestMove = Move();
 }
 
 void Engine::setBoard(Board b) {
