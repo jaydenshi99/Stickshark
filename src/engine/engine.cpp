@@ -60,6 +60,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     // Generate posible moves
     MoveGen mg;
     mg.generatePseudoMoves(board);
+    mg.orderMoves(board);
 
     for (Move move : mg.moves) {
         board.makeMove(move);

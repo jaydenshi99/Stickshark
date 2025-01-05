@@ -7,6 +7,7 @@
 #include "../../bit.h"
 #include "../../utility.h"
 #include "bitTables.h"
+#include "../../engine/evalConstants.h"
 
 class MoveGen {
     private:
@@ -27,5 +28,7 @@ class MoveGen {
     MoveGen();
 
     void generatePseudoMoves(const Board& b);
+    void orderMoves(const Board& b);
+
     void clearMoves();
 };

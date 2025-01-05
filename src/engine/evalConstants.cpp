@@ -5,3 +5,9 @@ const int materialEvaluations[NUM_PIECES] = {
     100, 330, 320, 500, 900, 20000, 
     -100, -330, -320, -500, -900, -20000
 };
+
+// Absolute value version of material evaluations
+const int moveScoreMaterialEvaluations[NUM_PIECES] = {
+    100, 330, 320, 500, 900, 20000, 
+    100, 330, 320, 500, 900, 20000
+};

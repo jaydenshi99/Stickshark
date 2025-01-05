@@ -24,6 +24,8 @@ class Move {
     uint16_t moveValue;
 
     public:
+    int moveScore;
+
     // Constructors
     Move();
     Move(int s, int t, int f);

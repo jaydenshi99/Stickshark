@@ -5,7 +5,11 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    playAI();
+    Board board = Board();
+    board.setStartingPosition();
+
+    Engine engine = Engine(board);
+    engine.findBestMove(6);
     
     return 0;
 }

@@ -159,6 +159,25 @@ void MoveGen::generateKingMoves(const Board& b) {
     }
 }
 
+void MoveGen::orderMoves(const Board& b) {
+    // Assign score to each move
+    for (Move move : moves) {
+        int attackedPiece = b.squares[move.getTarget()];
+
+        // If attacked calcluate move score using MVV - LVA heuristic otherwise keep move score as 0
+        // Higher score, better move is and thus should be searched earlier
+        if (attackedPiece != NONE) {
+            int movedPiece = b.squares[move.getSource()];
+            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece];
+        }
+    }
+
+    // Sort the moves in order of descending moveScore
+    sort(moves.begin(), moves.end(), [](const Move &a, const Move &b) {
+        return a.moveScore > b.moveScore; 
+    });
+}
+
 void MoveGen::clearMoves() {
     moves.clear();
 }
