@@ -43,6 +43,8 @@ extern uint64_t rookAttackMagicMasks[NUM_SQUARES];
 extern uint64_t bishopMagics[NUM_SQUARES];
 extern uint64_t rookMagics[NUM_SQUARES];
 
+extern uint64_t zobristBitstrings[769]; // 64 * 12 + 1 for pieces on squares and turn
+
 
 void computeAllTables();
 
@@ -66,3 +68,6 @@ std::vector<uint64_t> generateAllOccupancies(uint64_t mask);
 
 void loadMagics();
 void saveMagics();
+
+// Zobrist
+void computeZobristBitstrings();

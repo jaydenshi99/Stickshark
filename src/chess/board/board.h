@@ -21,6 +21,8 @@ class Board {
 
     bool turn; // true - white | false - black
 
+    uint64_t zobristHash;
+
     // Gamestate History
     std::stack<Gamestate> history;
 
@@ -56,6 +58,8 @@ class Board {
     void setKnightAttacks(Gamestate& gamestate, bool white);
     void setKingAttacks(Gamestate& gamestate, bool white);
     void setSliderAttacks(Gamestate& gamestate);
+
+    void setZobristHash();
 
     // Display methods
     void displayBoard() const;

@@ -48,6 +48,8 @@ uint64_t rookAttackMagicMasks[NUM_SQUARES];
 uint64_t bishopMagics[NUM_SQUARES];
 uint64_t rookMagics[NUM_SQUARES];
 
+uint64_t zobristBitstrings[769];
+
 
 void computeAllTables() {
     auto start = chrono::high_resolution_clock::now();
@@ -63,6 +65,9 @@ void computeAllTables() {
 
     computeKingAttacks();
     cout << "King attacks computed" << endl;
+
+    computeZobristBitstrings();
+    cout << "Zobrist bitstrings computed" << endl;
 
     auto end = chrono::high_resolution_clock::now();
 
@@ -395,4 +400,10 @@ void saveMagics() {
     }
 
     outFile.close();
+}
+
+void computeZobristBitstrings() {
+    for (int i = 0; i < 769; i++) {
+        zobristBitstrings[i] = random_uint64();
+    }
 }
