@@ -11,19 +11,38 @@ void Engine::setBoard(Board b) {
     board = b;
 }
 
-void Engine::findBestMove(int depth) {
-    leafNodesEvaluated = 0;
-    searchDepth = depth;
+void Engine::findBestMove(int t) {
+    searchDepth = 0;
+    timeLimit = t;
 
     cout << "Calculating best move... " << endl;
     
     auto start = chrono::high_resolution_clock::now();
 
     // Search
-    negaMax(searchDepth, MIN_EVAL, MAX_EVAL, board.turn ? 1 : -1);
+    startTime = chrono::high_resolution_clock::now();
+
+    int d = 0;
+    int turn = board.turn ? 1 : -1;
+
+    while (d <= MAX_DEPTH) {
+        leafNodesEvaluated = 0;
+        searchFinished = false;
+        d++;
+
+        searchDepth = d;
+
+        negaMax(d, MIN_EVAL, MAX_EVAL, turn);
+
+        if (!searchFinished) {
+            searchDepth--;
+            break;
+        }
+    }
 
     auto end = chrono::high_resolution_clock::now();
-    
+
+    // Debug
     cout << "Best move: " << bestMove << endl;
     cout << "Evaluation: " << (board.turn ? boardEval : -boardEval) << endl << endl;
 
@@ -38,7 +57,7 @@ void Engine::findBestMove(int depth) {
     cout << fixed << setprecision(0);
     cout << "Nodes / Second: " << nodesPerSecond << endl;
 
-    double branchingFactor = pow(static_cast<double>(leafNodesEvaluated), 1.0 / depth);
+    double branchingFactor = pow(static_cast<double>(leafNodesEvaluated), 1.0 / searchDepth);
     cout << fixed << setprecision(2);
     cout << "Branching factor: " << branchingFactor << endl;
 
@@ -84,10 +103,15 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         board.unmakeMove(move);
     }
 
+    if (isTimeUp()) {
+        return -1; // Garbage value
+    }
+
     // Update class if correct depth
     if (depth == searchDepth) {
         bestMove = searchBestMove;
         boardEval = searchBestEval;
+        searchFinished = true;
     }
 
     return searchBestEval;

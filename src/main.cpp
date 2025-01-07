@@ -5,9 +5,9 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    // playAI();
+    playAI();
 
-    perft(6, STARTING_FEN);
+    // perft(6, STARTING_FEN);
 
     return 0;
 }
