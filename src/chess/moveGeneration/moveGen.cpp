@@ -159,16 +159,21 @@ void MoveGen::generateKingMoves(const Board& b) {
     }
 }
 
-void MoveGen::orderMoves(const Board& b) {
+void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
     // Assign score to each move
     for (Move& move : moves) {
         int attackedPiece = b.squares[move.getTarget()];
 
+        // Big bonus if the move is the best move from pervious depths. Guaruntees that the move will be searched first.
+        if (move.moveValue == bestMoveValue) {
+            move.moveScore = 100000;
+        }
+
         // If attacked calcluate move score using MVV - LVA heuristic otherwise keep move score as 0
         // Higher score, better move is and thus should be searched earlier
-        if (attackedPiece != EMPTY) {
+        else if (attackedPiece != EMPTY) {
             int movedPiece = b.squares[move.getSource()];
-            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_PENALTY;
+            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
         }
     }
 
@@ -177,6 +182,7 @@ void MoveGen::orderMoves(const Board& b) {
         return a.moveScore > b.moveScore; 
     });
 
+    // b.displayBoard();
     // for (Move move : moves) {
     //     cout << move << " | " << move.moveScore << endl;
     // }

@@ -10,7 +10,7 @@ int main () {
     board.displayBoard();
 
     Engine engine = Engine(board);
-    engine.findBestMove(500);
+    engine.findBestMove(700);
 
 
     // perft(6, STARTING_FEN);

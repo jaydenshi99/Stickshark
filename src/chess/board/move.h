@@ -19,11 +19,8 @@
 #define PAWNTWOFORWARD 7
 
 class Move {
-    private:
-    // Data
-    uint16_t moveValue;
-
     public:
+    uint16_t moveValue;
     int moveScore;
 
     // Constructors

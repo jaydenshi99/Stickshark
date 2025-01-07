@@ -12,6 +12,8 @@ void Engine::setBoard(Board b) {
 }
 
 void Engine::findBestMove(int t) {
+    leafNodesEvaluated = 0;
+    tableAccesses = 0;
     timeLimit = t;
 
     int turn = board.turn ? 1 : -1;
@@ -23,17 +25,13 @@ void Engine::findBestMove(int t) {
     // Search
     startTime = chrono::high_resolution_clock::now();
 
-    int d = 8;
-    int totalNodesEvaluated = 0;
+    int d = 1;
 
     while (d <= MAX_DEPTH) {
-        leafNodesEvaluated = 0;
         searchFinished = false;
 
         searchDepth = d;
         negaMax(d, MIN_EVAL, MAX_EVAL, turn);
-
-        totalNodesEvaluated += leafNodesEvaluated;
 
         if (searchFinished) {
             d += 1;
@@ -53,16 +51,18 @@ void Engine::findBestMove(int t) {
 
     cout << "Time taken: " << duration.count() << " ms" << endl;
     cout << "Depth searched: " << searchDepth << endl;
-    cout << "Total nodes evaluated: " << totalNodesEvaluated << endl;
+    cout << "Total nodes evaluated: " << leafNodesEvaluated << endl;
 
-    double nodesPerSecond = totalNodesEvaluated / (static_cast<double>(duration.count()) / 1000);
+    double nodesPerSecond = leafNodesEvaluated / (static_cast<double>(duration.count()) / 1000);
 
     cout << fixed << setprecision(0);
     cout << "Nodes / Second: " << nodesPerSecond << endl;
 
-    double branchingFactor = pow(static_cast<double>(totalNodesEvaluated), 1.0 / searchDepth);
+    double branchingFactor = pow(static_cast<double>(leafNodesEvaluated), 1.0 / searchDepth);
     cout << fixed << setprecision(2);
     cout << "Branching factor: " << branchingFactor << endl;
+
+    cout << "Table Accesses: " << tableAccesses << endl;
 
     cout << endl;
 }
@@ -79,7 +79,13 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     // Generate posible moves
     MoveGen mg;
     mg.generatePseudoMoves(board);
-    mg.orderMoves(board);
+
+    uint16_t bestMoveValue = 0;
+    if (retrieveBestMove(board.zobristHash, bestMoveValue)) {
+        tableAccesses++;
+    }
+
+    mg.orderMoves(board, bestMoveValue);
 
     for (Move move : mg.moves) {
         if (isTimeUp()) {
@@ -110,6 +116,8 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         board.unmakeMove(move);
     }
 
+    storeBestMove(board.zobristHash, bestMove.moveValue);
+
     // Update class if correct depth
     if (depth == searchDepth) {
         bestMove = searchBestMove;
@@ -118,4 +126,22 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     }
 
     return searchBestEval;
+}
+
+void Engine::storeBestMove(uint64_t zobristKey, uint16_t moveValue) {
+    if (bestMoveTable.size() >= BEST_MOVE_TABLE_MAX_SIZE) {
+        bestMoveTable.erase(bestMoveTable.begin()); // Evict the first inserted entry
+    }
+
+    bestMoveTable[zobristKey] = moveValue;
+}
+
+bool Engine::retrieveBestMove(uint64_t zobristKey, uint16_t& moveValue) const {
+    auto it = bestMoveTable.find(zobristKey); 
+
+    if (it != bestMoveTable.end()) {
+        moveValue = it->second; // Retrieve the associated moveValue
+        return true;            // Indicate success
+    }
+    return false;               // Key not found
 }
