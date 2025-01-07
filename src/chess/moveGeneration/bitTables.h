@@ -43,6 +43,7 @@ extern uint64_t rookAttackMagicMasks[NUM_SQUARES];
 extern uint64_t bishopMagics[NUM_SQUARES];
 extern uint64_t rookMagics[NUM_SQUARES];
 
+// 0 - 63: WPAWN, 64 - 127: WBISHOP ...
 extern uint64_t zobristBitstrings[769]; // 64 * 12 + 1 for pieces on squares and turn
 
 

@@ -94,6 +94,8 @@ void Board::setFEN(string FEN) {
     setSliderAttacks(gState);
 
     history.push(gState);
+
+    setZobristHash();
 }
 
 void Board::setStartingPosition() {
@@ -329,6 +331,22 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
 
     gamestate.attackBitboards[BQUEEN] = calculateQueenAttacks(pieceBitboards[BQUEEN],
     bishopAttackMagicMasks, bishopMagics, rookAttackMagicMasks, rookMagics);
+}
+
+void Board::setZobristHash() {
+    // 0 - 767: piece positions
+    for (int square = 0; square < NUM_SQUARES; square++) {
+        if (squares[square] == EMPTY) {
+            continue;
+        }
+
+        zobristHash ^= zobristBitstrings[squares[square] * 64 + square];
+    }
+
+    // 768: turn
+    if (turn) {
+        zobristHash ^= zobristBitstrings[768];
+    }
 }
 
 int charToPieceIndex (char c) {
