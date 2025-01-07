@@ -169,8 +169,6 @@ void MoveGen::orderMoves(const Board& b) {
         if (attackedPiece != EMPTY) {
             int movedPiece = b.squares[move.getSource()];
             move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_PENALTY;
-
-            // cout << move << ": " << movedPiece << " " << attackedPiece << " " << move.moveScore << endl;
         }
     }
 

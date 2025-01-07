@@ -15,6 +15,8 @@ void Engine::findBestMove(int t) {
     searchDepth = 0;
     timeLimit = t;
 
+    int turn = board.turn ? 1 : -1;
+
     cout << "Calculating best move... " << endl;
     
     auto start = chrono::high_resolution_clock::now();
@@ -22,23 +24,28 @@ void Engine::findBestMove(int t) {
     // Search
     startTime = chrono::high_resolution_clock::now();
 
-    int d = 0;
-    int turn = board.turn ? 1 : -1;
+    // int d = 0;
+    // int LNE = 0;
 
-    while (d <= MAX_DEPTH) {
-        leafNodesEvaluated = 0;
-        searchFinished = false;
-        d++;
+    // while (d <= MAX_DEPTH) {
+    //     leafNodesEvaluated = 0;
+    //     searchFinished = false;
+    //     d++;
 
-        searchDepth = d;
+    //     searchDepth = d;
 
-        negaMax(d, MIN_EVAL, MAX_EVAL, turn);
+    //     negaMax(d, MIN_EVAL, MAX_EVAL, turn);
 
-        if (!searchFinished) {
-            searchDepth--;
-            break;
-        }
-    }
+    //     if (!searchFinished) {
+    //         searchDepth--;
+    //         break;
+    //     }
+
+    //     LNE = leafNodesEvaluated;
+    // }
+
+    searchDepth = 8;
+    negaMax(searchDepth, MIN_EVAL, MAX_EVAL, turn);
 
     auto end = chrono::high_resolution_clock::now();
 
@@ -67,7 +74,7 @@ void Engine::findBestMove(int t) {
 int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     if (depth == 0) {
         leafNodesEvaluated++;
-        return evaluateBoard(board) * turn; // 
+        return evaluateBoard(board) * turn; 
     }
 
     int searchBestEval = MIN_EVAL;
@@ -103,15 +110,14 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         board.unmakeMove(move);
     }
 
-    if (isTimeUp()) {
-        return -1; // Garbage value
-    }
+    // if (isTimeUp()) {
+    //     return -1; // Garbage value
+    // }
 
     // Update class if correct depth
     if (depth == searchDepth) {
         bestMove = searchBestMove;
         boardEval = searchBestEval;
-        searchFinished = true;
     }
 
     return searchBestEval;

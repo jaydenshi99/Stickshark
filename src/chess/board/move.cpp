@@ -3,10 +3,12 @@
 using namespace std;
 
 Move::Move() {
-
+    moveScore = 0;
+    moveValue = 0;
 }
 
 Move::Move(int s, int t, int f) {
+    moveScore = 0;
     moveValue = (f << 12) | (s << 6) | t;
 }
 

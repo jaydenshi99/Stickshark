@@ -156,7 +156,7 @@ void playAI() {
             board.makeMove(notationToMove(playerMove));
         } else {
             Engine engine = Engine(board);
-            engine.findBestMove(500);
+            engine.findBestMove(10000);
             board.makeMove(engine.bestMove);
         }
 

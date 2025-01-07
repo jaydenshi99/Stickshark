@@ -9,7 +9,7 @@
 #include "bitTables.h"
 #include "../../engine/evalConstants.h"
 
-#define ATTACK_PENALTY -30
+#define ATTACK_PENALTY 300
 
 class MoveGen {
     private:
