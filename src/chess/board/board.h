@@ -21,10 +21,10 @@ class Board {
 
     bool turn; // true - white | false - black
 
-    uint64_t zobristHash;
-
     // Gamestate History
     std::stack<Gamestate> history;
+
+    uint64_t zobristHash;
 
     // Array of set attack methods
     void (Board::*setAttackMethods[6])(Gamestate& gamestate, bool white);

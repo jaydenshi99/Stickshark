@@ -104,6 +104,7 @@ void Board::setStartingPosition() {
 
 void Board::swapTurn() {
     turn = !turn;
+    zobristHash ^= zobristBitstrings[768];
 }
 
 void Board::displayBoard() const {
@@ -168,9 +169,12 @@ void Board::makeMove(const Move& move) {
 
     // Update Bitboards
     pieceBitboards[movedPiece] ^= sourceSquareMask;
+    zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + sourceSquare];
+
     blockers ^= sourceSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
+        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + targetSquare];
     } else {
         blockers ^= targetSquareMask;
     }
@@ -178,12 +182,15 @@ void Board::makeMove(const Move& move) {
     // Flag specific cases
     if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
         squares[targetSquare] = movedPiece;
+
         pieceBitboards[movedPiece] ^= targetSquareMask;
+        zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + targetSquare];
     } else if (isPromotion[moveFlag]) {
         int promotedPiece = moveFlag - 2 + (turn ? 0 : 6);
 
         squares[targetSquare] = promotedPiece;
         pieceBitboards[promotedPiece] ^= targetSquareMask;
+        zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + targetSquare];
 
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
     }
@@ -223,9 +230,12 @@ void Board::unmakeMove(const Move& move) {
 
     // Update piece bitboards and blockers
     pieceBitboards[movedPiece] ^= oldSquareMask;
+    zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + oldSquare];
+
     blockers ^= oldSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
+        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + currSquare];
     } else {
         blockers ^= currSquareMask;
     }
@@ -233,10 +243,12 @@ void Board::unmakeMove(const Move& move) {
     // Flag specific cases
     if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
         pieceBitboards[movedPiece] ^= currSquareMask;
+        zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + currSquare];
     } else if (isPromotion[moveFlag]) {
         int promotedPiece = moveFlag - 2 + (turn ? 6 : 0);
 
         pieceBitboards[promotedPiece] ^= currSquareMask;
+        zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + currSquare];
     }
 
     // Toggle turn
@@ -340,7 +352,7 @@ void Board::setZobristHash() {
             continue;
         }
 
-        zobristHash ^= zobristBitstrings[squares[square] * 64 + square];
+        zobristHash ^= zobristBitstrings[squares[square] * NUM_SQUARES + square];
     }
 
     // 768: turn

@@ -166,6 +166,8 @@ void playAI() {
 
         playerTurn = !playerTurn;
     }
+
+
 }
 
 // Only covers normal moves no special moves
