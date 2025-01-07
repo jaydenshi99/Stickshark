@@ -19,6 +19,8 @@ class Engine {
     std::chrono::time_point<std::chrono::steady_clock> startTime;
     int timeLimit;
 
+    bool searchFinished;
+
     public:
     Board board;
     Move bestMove;
@@ -33,9 +35,9 @@ class Engine {
     int negaMax(int depth, int alpha, int beta, int turn);    // Sets bestMove to the best move and sets moveEval to the eva
 
     // Helper
-    // inline bool isTimeUp() {
-    //     auto currentTime = std::chrono::steady_clock::now();
-    //     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
-    //     return elapsedTime >= timeLimit;
-    // }
+    inline bool isTimeUp() {
+        auto currentTime = std::chrono::steady_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+        return elapsedTime >= timeLimit;
+    }
 };

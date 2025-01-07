@@ -12,7 +12,6 @@ void Engine::setBoard(Board b) {
 }
 
 void Engine::findBestMove(int t) {
-    searchDepth = 0;
     timeLimit = t;
 
     int turn = board.turn ? 1 : -1;
@@ -24,28 +23,25 @@ void Engine::findBestMove(int t) {
     // Search
     startTime = chrono::high_resolution_clock::now();
 
-    // int d = 0;
-    // int LNE = 0;
+    int d = 8;
+    int totalNodesEvaluated = 0;
 
-    // while (d <= MAX_DEPTH) {
-    //     leafNodesEvaluated = 0;
-    //     searchFinished = false;
-    //     d++;
+    while (d <= MAX_DEPTH) {
+        leafNodesEvaluated = 0;
+        searchFinished = false;
 
-    //     searchDepth = d;
+        searchDepth = d;
+        negaMax(d, MIN_EVAL, MAX_EVAL, turn);
 
-    //     negaMax(d, MIN_EVAL, MAX_EVAL, turn);
+        totalNodesEvaluated += leafNodesEvaluated;
 
-    //     if (!searchFinished) {
-    //         searchDepth--;
-    //         break;
-    //     }
-
-    //     LNE = leafNodesEvaluated;
-    // }
-
-    searchDepth = 8;
-    negaMax(searchDepth, MIN_EVAL, MAX_EVAL, turn);
+        if (searchFinished) {
+            d += 1;
+        } else {
+            searchDepth--;
+            break;
+        }
+    }
 
     auto end = chrono::high_resolution_clock::now();
 
@@ -57,14 +53,14 @@ void Engine::findBestMove(int t) {
 
     cout << "Time taken: " << duration.count() << " ms" << endl;
     cout << "Depth searched: " << searchDepth << endl;
-    cout << "Nodes evaluated: " << leafNodesEvaluated << endl;
+    cout << "Total nodes evaluated: " << totalNodesEvaluated << endl;
 
-    double nodesPerSecond = leafNodesEvaluated / (static_cast<double>(duration.count()) / 1000);
+    double nodesPerSecond = totalNodesEvaluated / (static_cast<double>(duration.count()) / 1000);
 
     cout << fixed << setprecision(0);
     cout << "Nodes / Second: " << nodesPerSecond << endl;
 
-    double branchingFactor = pow(static_cast<double>(leafNodesEvaluated), 1.0 / searchDepth);
+    double branchingFactor = pow(static_cast<double>(totalNodesEvaluated), 1.0 / searchDepth);
     cout << fixed << setprecision(2);
     cout << "Branching factor: " << branchingFactor << endl;
 
@@ -86,6 +82,10 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     mg.orderMoves(board);
 
     for (Move move : mg.moves) {
+        if (isTimeUp()) {
+            return -1; // Exit immediately with garbage value
+        }
+        
         board.makeMove(move);
 
         // Continue with valid positions
@@ -110,14 +110,11 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         board.unmakeMove(move);
     }
 
-    // if (isTimeUp()) {
-    //     return -1; // Garbage value
-    // }
-
     // Update class if correct depth
     if (depth == searchDepth) {
         bestMove = searchBestMove;
         boardEval = searchBestEval;
+        searchFinished = true;
     }
 
     return searchBestEval;

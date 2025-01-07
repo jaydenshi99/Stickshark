@@ -176,6 +176,10 @@ void MoveGen::orderMoves(const Board& b) {
     sort(moves.begin(), moves.end(), [](const Move &a, const Move &b) {
         return a.moveScore > b.moveScore; 
     });
+
+    // for (Move move : moves) {
+    //     cout << move << " | " << move.moveScore << endl;
+    // }
 }
 
 void MoveGen::clearMoves() {

@@ -7,14 +7,11 @@ int main () {
 
     Board board = Board();
     board.setFEN(STARTING_FEN);
-
     board.displayBoard();
 
     Engine engine = Engine(board);
-    engine.findBestMove(10000);
+    engine.findBestMove(500);
 
-    board.makeMove(engine.bestMove);
-    board.displayBoard();
 
     // perft(6, STARTING_FEN);
 
