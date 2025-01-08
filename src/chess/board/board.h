@@ -24,7 +24,11 @@ class Board {
     // Gamestate History
     std::stack<Gamestate> history;
 
+    // Zobrist Hash
     uint64_t zobristHash;
+
+    // Evaluation 
+    int pieceSquareEval; // Positive is better for white
 
     // Array of set attack methods
     void (Board::*setAttackMethods[6])(Gamestate& gamestate, bool white);

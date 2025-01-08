@@ -17,6 +17,7 @@
 #define BKING   11
 
 #define NUM_PIECES 12
+#define NUM_SQUARES 64
 
 #define MAX_MOVES 250 // Arbitrary
 
