@@ -17,6 +17,6 @@ void perft(int depth, std::string FEN);
 long perftRecursive(Board& b, int depth);
 
 void playEngine(std::string startingFEN);
-void engineVSEngine(std::string startingFEN);
+void engineVSEngine(std::string startingFEN, int time);
 
 Move notationToMove(std::string move);

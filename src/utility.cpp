@@ -167,7 +167,7 @@ void playEngine(string startingFEN) {
     }
 }
 
-void engineVSEngine(string startingFEN) {
+void engineVSEngine(string startingFEN, int time) {
     Board board = Board();
     board.setFEN(startingFEN);
 
@@ -177,7 +177,7 @@ void engineVSEngine(string startingFEN) {
         cout << moveNum++ << "." << endl;
         engine.board.displayBoard();
 
-        engine.findBestMove(1500);
+        engine.findBestMove(time);
         engine.board.makeMove(engine.bestMove);
     }
 }
