@@ -4,4 +4,4 @@
 #include "evalConstants.h"
 #include "../bit.h"
 
-int evaluateBoard(const Board& board);
+int staticEvaluation(const Board& board);

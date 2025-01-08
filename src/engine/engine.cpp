@@ -72,7 +72,7 @@ void Engine::findBestMove(int t) {
 int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     if (depth == 0) {
         leafNodesEvaluated++;
-        return evaluateBoard(board) * turn; 
+        return staticEvaluation(board) * turn; 
     }
 
     int searchBestEval = MIN_EVAL;
