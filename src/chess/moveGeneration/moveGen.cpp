@@ -208,7 +208,7 @@ void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
 
     // b.displayBoard();
     // for (Move move : moves) {
-    //     cout << move << " | " << move.moveScore << endl;
+    //     cout << move << " | " << move.moveScore << " | " << bestMoveValue << endl;
     // }
 }
 

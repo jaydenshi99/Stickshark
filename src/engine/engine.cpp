@@ -91,7 +91,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
 
     for (Move move : mg.moves) {
         if (isTimeUp()) {
-            return -1; // Exit immediately with garbage value
+            return -1; // Exit immediately with error value
         }
         
         board.makeMove(move);
@@ -118,7 +118,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         board.unmakeMove(move);
     }
 
-    storeBestMove(board.zobristHash, bestMove.moveValue);
+    storeBestMove(board.zobristHash, searchBestMove.moveValue);
 
     // Update class if correct depth
     if (depth == searchDepth) {

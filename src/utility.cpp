@@ -128,6 +128,7 @@ long perftRecursive(Board& b, int depth) {
 void playEngine(string startingFEN) {
     Board board = Board();
     board.setFEN(startingFEN);
+    Engine engine = Engine(board);
 
     char playerColour;
     cout << "Player is white or black? (w/b) ";
@@ -142,7 +143,7 @@ void playEngine(string startingFEN) {
 
     int moveNum = 1;
     cout << endl << moveNum << "." << endl;
-    board.displayBoard();
+    engine.board.displayBoard();
 
     // Get terminating position after implementing checkmates n shi
     while (true) {
@@ -152,16 +153,15 @@ void playEngine(string startingFEN) {
             cin >> playerMove;
             cout << endl;
 
-            board.makeMove(notationToMove(playerMove));
+            engine.board.makeMove(notationToMove(playerMove));
         } else {
-            Engine engine = Engine(board);
             engine.findBestMove(1500);
-            board.makeMove(engine.bestMove);
+            engine.board.makeMove(engine.bestMove);
         }
 
         moveNum++;
         cout << moveNum << "." << endl;
-        board.displayBoard();
+        engine.board.displayBoard();
 
         playerTurn = !playerTurn;
     }
@@ -177,7 +177,7 @@ void engineVSEngine(string startingFEN) {
         cout << moveNum++ << "." << endl;
         engine.board.displayBoard();
 
-        engine.findBestMove(50);
+        engine.findBestMove(1500);
         engine.board.makeMove(engine.bestMove);
     }
 }
