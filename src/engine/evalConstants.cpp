@@ -6,7 +6,7 @@ const int materialEvaluations[NUM_PIECES] = {
     -100, -330, -320, -500, -900, -20000
 };
 
-// Absolute value version of material evaluations. King weighted heavily to predict king safety
+// Absolute value version of material evaluations.
 const int moveScoreMaterialEvaluations[NUM_PIECES] = {
     100, 330, 320, 500, 900, 900, 
     100, 330, 320, 500, 900, 900
@@ -114,23 +114,25 @@ const int pieceSquareTables[NUM_PIECES][NUM_SQUARES] = {
     },
     // BROOK (negative mirror of WROOK)
     {
-         0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,
         -5, -10, -10, -10, -10, -10, -10,  -5,
-         5,   0,   0,   0,   0,   0,   0,   5,
-         5,   0,   0,   0,   0,   0,   0,   5,
-         5,   0,   0,   0,   0,   0,   0,   5,
-         5,   0,   0,   0,   0,   0,   0,   5,
-         0,   0,   0,  -5,  -5,   0,   0,   0
+        5,   0,   0,   0,   0,   0,   0,   5,
+        5,   0,   0,   0,   0,   0,   0,   5,
+        5,   0,   0,   0,   0,   0,   0,   5,
+        5,   0,   0,   0,   0,   0,   0,   5,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,  -5,  -5,   0,   0,   0
     },
     // BQUEEN (negative mirror of WQUEEN)
     {
-        20,  10,  10,   5,   5,  10,  10,  20,
-        10,   0,  -5,   0,   0,   0,   0,  10,
-        10,  -5,  -5,  -5,  -5,  -5,   0,  10,
-         0,   0,  -5,  -5,  -5,  -5,   0,   5,
-         5,   0,  -5,  -5,  -5,  -5,   0,   5,
-        10,   0,   0,   0,   0,   0,   0,  10,
-        10,  10,  10,   5,   5,  10,  10,  20
+        0,   0,   0,   0,   0,   0,   0,   0,
+        -5, -10, -10, -10, -10, -10, -10,  -5,
+        5,   0,   0,   0,   0,   0,   0,   5,
+        5,   0,   0,   0,   0,   0,   0,   5,
+        5,   0,   0,   0,   0,   0,   0,   5,
+        5,   0,   0,   0,   0,   0,   0,   5,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,  -5,  -5,   0,   0,   0
     },
     // BKING (negative mirror of WKING)
     {

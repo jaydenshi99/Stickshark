@@ -9,6 +9,7 @@
 #include "gamestate.h"
 #include "../moveGeneration/bitTables.h"
 #include "../../constants.h"
+#include "../../engine/evalConstants.h"
 
 class Board {
     public:
@@ -64,6 +65,8 @@ class Board {
     void setSliderAttacks(Gamestate& gamestate);
 
     void setZobristHash();
+
+    void setPieceSquareEvaluation();
 
     // Display methods
     void displayBoard() const;
