@@ -125,7 +125,7 @@ long perftRecursive(Board& b, int depth) {
     return totalMoves;
 }
 
-void playEngine(string startingFEN) {
+void playEngine(string startingFEN, int time) {
     Board board = Board();
     board.setFEN(startingFEN);
     Engine engine = Engine(board);
@@ -155,7 +155,7 @@ void playEngine(string startingFEN) {
 
             engine.board.makeMove(notationToMove(playerMove));
         } else {
-            engine.findBestMove(1500);
+            engine.findBestMove(time);
             engine.board.makeMove(engine.bestMove);
         }
 

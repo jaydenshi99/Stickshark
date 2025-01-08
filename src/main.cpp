@@ -5,7 +5,7 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    engineVSEngine(STARTING_FEN, 100);
+    playEngine(STARTING_FEN, 1000);
 
     return 0;
 }
