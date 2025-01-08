@@ -45,10 +45,12 @@ void Engine::findBestMove(int t) {
 
     // Debug
     cout << "Best move: " << bestMove << endl;
-    cout << "Evaluation: " << (board.turn ? boardEval : -boardEval) << endl << endl;
+    cout << fixed << setprecision(2);
+    cout << "Evaluation: " << (board.turn ? (float) boardEval / 100 : (float) -boardEval / 100) << endl << endl;
 
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
+    cout << fixed << setprecision(0);
     cout << "Time taken: " << duration.count() << " ms" << endl;
     cout << "Depth searched: " << searchDepth << endl;
     cout << "Total nodes evaluated: " << leafNodesEvaluated << endl;

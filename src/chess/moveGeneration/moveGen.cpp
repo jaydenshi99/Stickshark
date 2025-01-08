@@ -38,12 +38,20 @@ void MoveGen::generatePawnMoves(const Board& b) {
         : (singlePushes >> 8) & empty & doublePushRank;
 
     uint64_t leftDiagonalAttacks = b.turn
-        ? (pawnBitboard << 9) & enemy & notFileBitboards[7]
-        : (pawnBitboard >> 7) & enemy & notFileBitboards[7];
+        ? (pawnBitboard << 9) & enemy & notFileBitboards[7] & notRankBitboards[7]
+        : (pawnBitboard >> 7) & enemy & notFileBitboards[7] & notRankBitboards[0];
 
     uint64_t rightDiagonalAttacks = b.turn
-        ? (pawnBitboard << 7) & enemy & notFileBitboards[0]
-        : (pawnBitboard >> 9) & enemy & notFileBitboards[0];
+        ? (pawnBitboard << 7) & enemy & notFileBitboards[0] & notRankBitboards[7]
+        : (pawnBitboard >> 9) & enemy & notFileBitboards[0] & notRankBitboards[0];
+
+    uint64_t leftDiagonalAttackPromotions = b.turn
+        ? (pawnBitboard << 9) & enemy & notFileBitboards[7] & rankBitboards[7]
+        : (pawnBitboard >> 7) & enemy & notFileBitboards[7] & rankBitboards[0];
+
+    uint64_t rightDiagonalAttackPromotions = b.turn
+        ? (pawnBitboard << 7) & enemy & notFileBitboards[0] & rankBitboards[7]
+        : (pawnBitboard >> 9) & enemy & notFileBitboards[0] & rankBitboards[0];
 
     
     int singlePushOffset = b.turn ? -8 : 8;
@@ -72,10 +80,26 @@ void MoveGen::generatePawnMoves(const Board& b) {
         moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, NONE));
     }
 
+    while (leftDiagonalAttackPromotions) {
+        int target = popLSB(leftDiagonalAttackPromotions);
+        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEBISHOP));
+        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEKNIGHT));
+        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEROOK));
+        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEQUEEN));
+    }
+
     int rightDiagonalAttackOffset = b.turn ? -7 : 9;
     while (rightDiagonalAttacks) {
         int target = popLSB(rightDiagonalAttacks);
         moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, NONE));
+    }
+
+    while (rightDiagonalAttackPromotions) {
+        int target = popLSB(rightDiagonalAttackPromotions);
+        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEBISHOP));
+        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEKNIGHT));
+        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEROOK));
+        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEQUEEN));
     }
 
     

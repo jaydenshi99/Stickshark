@@ -68,7 +68,6 @@ void displayPossibleMoves(string FEN) {
     board.displayBoard();
 
     moveGen.generatePseudoMoves(board);
-    cout << moveGen.moves.size() << endl;
     for (Move move : moveGen.moves) {
         board.makeMove(move);
         board.displayBoard();
@@ -126,9 +125,9 @@ long perftRecursive(Board& b, int depth) {
     return totalMoves;
 }
 
-void playAI() {
+void playEngine(string startingFEN) {
     Board board = Board();
-    board.setStartingPosition();
+    board.setFEN(startingFEN);
 
     char playerColour;
     cout << "Player is white or black? (w/b) ";
@@ -156,7 +155,7 @@ void playAI() {
             board.makeMove(notationToMove(playerMove));
         } else {
             Engine engine = Engine(board);
-            engine.findBestMove(10000);
+            engine.findBestMove(1500);
             board.makeMove(engine.bestMove);
         }
 
@@ -166,8 +165,21 @@ void playAI() {
 
         playerTurn = !playerTurn;
     }
+}
 
+void engineVSEngine(string startingFEN) {
+    Board board = Board();
+    board.setFEN(startingFEN);
 
+    int moveNum = 1;
+    Engine engine = Engine(board);
+    while (true) {
+        cout << moveNum++ << "." << endl;
+        engine.board.displayBoard();
+
+        engine.findBestMove(50);
+        engine.board.makeMove(engine.bestMove);
+    }
 }
 
 // Only covers normal moves no special moves

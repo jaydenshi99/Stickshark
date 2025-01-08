@@ -16,5 +16,7 @@ void simulateRandomMoves();
 void perft(int depth, std::string FEN);
 long perftRecursive(Board& b, int depth);
 
-void playAI();
+void playEngine(std::string startingFEN);
+void engineVSEngine(std::string startingFEN);
+
 Move notationToMove(std::string move);
