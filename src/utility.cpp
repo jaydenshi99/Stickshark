@@ -149,7 +149,9 @@ void playEngine(string startingFEN, int time) {
     while (true) {
         if (playerTurn) {
             string playerMove; 
+            if (moveNum <= 2) cout << "Please input move in format 'squareFrom-squareTo', eg. e2-e4" << endl;
             cout << "Move: ";
+
             cin >> playerMove;
             cout << endl;
 

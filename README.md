@@ -2,6 +2,10 @@
 
 Stickshark is a C++ chess engine designed for high efficiency, featuring advanced move generation through bit manipulation and selects best moves utilising negamax with alpha-beta pruning and other techniques. Its modular design and use of bitboards are optimised for performance.
 
+Project Logs: https://www.notion.so/stickshark-42a22c01dacb4826a874dbc6d1b53562?pvs=4
+
+Note: Castling and enpassant not yet supported
+
 ## Features
 - **Efficient Move Generation**: Uses bitboards for fast chessboard representation.
 - **Alpha-Beta Pruning**: Optimised decision-making.

@@ -142,8 +142,6 @@ void Board::displayBoard() const {
         cout << "Black to move...";
     }
 
-    cout << pieceSquareEval << endl;
-
     cout << "\n\n";
 }
 
