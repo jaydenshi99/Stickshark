@@ -12,6 +12,9 @@ Board::Board() : pieceBitboards{0ULL} {
         squares[i] = EMPTY;
     }
 
+    // Set pieceSquareEval
+    pieceSquareEval = 0;
+
     // Set gamestate
     Gamestate gState = Gamestate(EMPTY);
     history.push(gState);
@@ -94,6 +97,9 @@ void Board::setFEN(string FEN) {
     setSliderAttacks(gState);
 
     history.push(gState);
+
+    setZobristHash();
+    setPieceSquareEvaluation();
 }
 
 void Board::setStartingPosition() {
@@ -102,6 +108,7 @@ void Board::setStartingPosition() {
 
 void Board::swapTurn() {
     turn = !turn;
+    zobristHash ^= zobristBitstrings[768];
 }
 
 void Board::displayBoard() const {
@@ -112,23 +119,30 @@ void Board::displayBoard() const {
     };
 
     // Print the board (a1 is bottom-left, h8 is top-right)
-    std::cout << "  +------------------------+" << std::endl;
+    cout << "  +-----------------+" << endl;
     for (int rank = 7; rank >= 0; --rank) { // Start from rank 8 to rank 1
-        std::cout << rank + 1 << " | ";
+        cout << rank + 1 << " | ";
         for (int file = 7; file >= 0; --file) { // Iterate from a to h
             int pieceType = squares[rank * 8 + file];
             if (pieceType == EMPTY) {
-                std::cout << ". ";
+                cout << ". ";
             } else {
-                std::cout << pieceSymbols[pieceType] << " ";
+                cout << pieceSymbols[pieceType] << " ";
             }
 
         }
-        std::cout << "|" << std::endl;
+        cout << "|" << endl;
     }
-    std::cout << "  +------------------------+" << std::endl;
-    std::cout << "    a b c d e f g h" << std::endl; // Files a to h
-    cout << endl;
+    cout << "  +-----------------+" << endl;
+    cout << "    a b c d e f g h" << endl << endl; // Files a to h
+
+    if (turn) {
+        cout << "White to move...";
+    } else {
+        cout << "Black to move...";
+    }
+
+    cout << "\n\n";
 }
 
 void Board::makeMove(const Move& move) {
@@ -154,28 +168,41 @@ void Board::makeMove(const Move& move) {
     gState.attackBitboards[WKING] = oldGamestate.attackBitboards[WKING];
     gState.attackBitboards[BKING] = oldGamestate.attackBitboards[BKING];
 
-    // Update Squares
-    squares[sourceSquare] = EMPTY;
 
-    // Update Bitboards
+    // Empty moved piece
+    squares[sourceSquare] = EMPTY;
     pieceBitboards[movedPiece] ^= sourceSquareMask;
+    zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + sourceSquare];
+    pieceSquareEval -= pieceSquareTables[movedPiece][sourceSquare];
     blockers ^= sourceSquareMask;
+
+    // Remove captured piece
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] ^= targetSquareMask;
+        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + targetSquare];
+        pieceSquareEval -= pieceSquareTables[capturedPiece][targetSquare];
     } else {
+        // If no captured piece, then add the new blocker on the empty square
         blockers ^= targetSquareMask;
     }
 
     // Flag specific cases
     if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+        // Add moved piece to new square
         squares[targetSquare] = movedPiece;
         pieceBitboards[movedPiece] ^= targetSquareMask;
+        zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + targetSquare];
+        pieceSquareEval += pieceSquareTables[movedPiece][targetSquare];
     } else if (isPromotion[moveFlag]) {
+        // Add promoted piece to new square
         int promotedPiece = moveFlag - 2 + (turn ? 0 : 6);
 
         squares[targetSquare] = promotedPiece;
         pieceBitboards[promotedPiece] ^= targetSquareMask;
+        zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + targetSquare];
+        pieceSquareEval += pieceSquareTables[promotedPiece][targetSquare];
 
+        // Update piece attacks of promoted piece
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
     }
 
@@ -208,26 +235,38 @@ void Board::unmakeMove(const Move& move) {
     int movedPiece = isPromotion[moveFlag] ? (turn ? BPAWN : WPAWN) : squares[currSquare];
     int capturedPiece = gState.capturedPiece;
 
-    // Update Squares
+    // Bring back moved piece to old square
     squares[oldSquare] = movedPiece;
-    squares[currSquare] = capturedPiece;
-
-    // Update piece bitboards and blockers
     pieceBitboards[movedPiece] ^= oldSquareMask;
+    zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + oldSquare];
+    pieceSquareEval += pieceSquareTables[movedPiece][oldSquare];
+
+    // Bring back captured piece
+    squares[currSquare] = capturedPiece;
     blockers ^= oldSquareMask;
     if (capturedPiece != EMPTY) {
         pieceBitboards[capturedPiece] |= currSquareMask; 
+        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + currSquare];
+        pieceSquareEval += pieceSquareTables[capturedPiece][currSquare];
     } else {
+        // If no piece was captured then remove the blocker
         blockers ^= currSquareMask;
     }
 
+
     // Flag specific cases
     if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+        // Remove moved piece from square that it was moved to
         pieceBitboards[movedPiece] ^= currSquareMask;
+        zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + currSquare];
+        pieceSquareEval -= pieceSquareTables[movedPiece][currSquare];
     } else if (isPromotion[moveFlag]) {
+        // Remove promoted piece from square that it was promoted
         int promotedPiece = moveFlag - 2 + (turn ? 6 : 0);
 
         pieceBitboards[promotedPiece] ^= currSquareMask;
+        zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + currSquare];
+        pieceSquareEval -= pieceSquareTables[promotedPiece][currSquare];
     }
 
     // Toggle turn
@@ -322,6 +361,31 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
 
     gamestate.attackBitboards[BQUEEN] = calculateQueenAttacks(pieceBitboards[BQUEEN],
     bishopAttackMagicMasks, bishopMagics, rookAttackMagicMasks, rookMagics);
+}
+
+void Board::setZobristHash() {
+    // 0 - 767: piece positions
+    for (int square = 0; square < NUM_SQUARES; square++) {
+        if (squares[square] == EMPTY) {
+            continue;
+        }
+
+        zobristHash ^= zobristBitstrings[squares[square] * NUM_SQUARES + square];
+    }
+
+    // 768: turn
+    if (turn) {
+        zobristHash ^= zobristBitstrings[768];
+    }
+}
+
+void Board::setPieceSquareEvaluation() {
+    pieceSquareEval = 0;
+    for (int i = 0; i < 64; i++) {
+        if (squares[i] != EMPTY) {
+            pieceSquareEval += pieceSquareTables[squares[i]][i];
+        }
+    }
 }
 
 int charToPieceIndex (char c) {

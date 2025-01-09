@@ -5,7 +5,7 @@ using namespace std;
 int main () {
     computeAllTables();
 
-    perft(6, STARTING_FEN);
-    
+    playEngine(STARTING_FEN, 1000);
+
     return 0;
 }

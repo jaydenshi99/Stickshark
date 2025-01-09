@@ -68,7 +68,6 @@ void displayPossibleMoves(string FEN) {
     board.displayBoard();
 
     moveGen.generatePseudoMoves(board);
-    cout << moveGen.moves.size() << endl;
     for (Move move : moveGen.moves) {
         board.makeMove(move);
         board.displayBoard();
@@ -124,4 +123,70 @@ long perftRecursive(Board& b, int depth) {
     }
 
     return totalMoves;
+}
+
+void playEngine(string startingFEN, int time) {
+    Board board = Board();
+    board.setFEN(startingFEN);
+    Engine engine = Engine(board);
+
+    char playerColour;
+    cout << "Player is white or black? (w/b) ";
+    cin >> playerColour;
+
+    if (playerColour != 'w' && playerColour != 'b') {
+        cout << "Invalid input" << endl;
+        return;
+    }
+
+    bool playerTurn = playerColour == 'w';
+
+    int moveNum = 1;
+    cout << endl << moveNum << "." << endl;
+    engine.board.displayBoard();
+
+    // Get terminating position after implementing checkmates n shi
+    while (true) {
+        if (playerTurn) {
+            string playerMove; 
+            if (moveNum <= 2) cout << "Please input move in format 'squareFrom-squareTo', eg. e2-e4" << endl;
+            cout << "Move: ";
+
+            cin >> playerMove;
+            cout << endl;
+
+            engine.board.makeMove(notationToMove(playerMove));
+        } else {
+            engine.findBestMove(time);
+            engine.board.makeMove(engine.bestMove);
+        }
+
+        moveNum++;
+        cout << moveNum << "." << endl;
+        engine.board.displayBoard();
+
+        playerTurn = !playerTurn;
+    }
+}
+
+void engineVSEngine(string startingFEN, int time) {
+    Board board = Board();
+    board.setFEN(startingFEN);
+
+    int moveNum = 1;
+    Engine engine = Engine(board);
+    while (true) {
+        cout << moveNum++ << "." << endl;
+        engine.board.displayBoard();
+
+        engine.findBestMove(time);
+        engine.board.makeMove(engine.bestMove);
+    }
+}
+
+// Only covers normal moves no special moves
+Move notationToMove(string move) {
+    int sourceSquare = 'h' - move[0] + (move[1] - '1') * 8;
+    int targetSquare = 'h' - move[3] + (move[4] - '1') * 8;
+    return Move(sourceSquare, targetSquare, NONE);
 }

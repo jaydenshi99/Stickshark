@@ -4,9 +4,12 @@
 #include <cstdint>
 
 #include "../board/board.h"
-#include "../bit.h"
+#include "../../bit.h"
 #include "../../utility.h"
 #include "bitTables.h"
+#include "../../engine/evalConstants.h"
+
+#define ATTACK_MODIFIER 1000
 
 class MoveGen {
     private:
@@ -27,5 +30,7 @@ class MoveGen {
     MoveGen();
 
     void generatePseudoMoves(const Board& b);
+    void orderMoves(const Board& b, uint16_t bestMoveValue);
+
     void clearMoves();
 };

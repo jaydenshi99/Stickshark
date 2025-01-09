@@ -17,5 +17,13 @@
 #define BKING   11
 
 #define NUM_PIECES 12
+#define NUM_SQUARES 64
 
 #define MAX_MOVES 250 // Arbitrary
+
+#define MAX_EVAL 999999999
+#define MIN_EVAL -999999999
+
+#define MAX_DEPTH 30
+
+#define BEST_MOVE_TABLE_MAX_SIZE 2000000000

@@ -9,6 +9,7 @@
 #include "gamestate.h"
 #include "../moveGeneration/bitTables.h"
 #include "../../constants.h"
+#include "../../engine/evalConstants.h"
 
 class Board {
     public:
@@ -23,6 +24,12 @@ class Board {
 
     // Gamestate History
     std::stack<Gamestate> history;
+
+    // Zobrist Hash
+    uint64_t zobristHash;
+
+    // Evaluation 
+    int pieceSquareEval; // Positive is better for white
 
     // Array of set attack methods
     void (Board::*setAttackMethods[6])(Gamestate& gamestate, bool white);
@@ -56,6 +63,10 @@ class Board {
     void setKnightAttacks(Gamestate& gamestate, bool white);
     void setKingAttacks(Gamestate& gamestate, bool white);
     void setSliderAttacks(Gamestate& gamestate);
+
+    void setZobristHash();
+
+    void setPieceSquareEvaluation();
 
     // Display methods
     void displayBoard() const;
