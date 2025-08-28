@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦈 Stickshark Chess Board</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr auto 300px;
+            gap: 30px;
+            max-width: 1400px;
+            width: 100%;
+            align-items: start;
+        }
+
+        .board-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chess-board-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 70px);
+            grid-template-rows: repeat(8, 70px);
+            border: 4px solid #8B4513;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .square {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            line-height: 1;
+            user-select: none;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .square.light {
+            background-color: #f0d9b5;
+        }
+
+        .square.dark {
+            background-color: #b58863;
+        }
+
+        .square:hover {
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .piece {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Coordinates */
+        .coordinates {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 600;
+            font-size: 14px;
+            color: #5a5a5a;
+        }
+
+        .files {
+            position: absolute;
+            bottom: -25px;
+            left: 4px;
+            width: 560px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 35px;
+        }
+
+        .ranks {
+            position: absolute;
+            top: 4px;
+            left: -25px;
+            height: 560px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 35px 0;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            min-height: 400px;
+        }
+
+        .info-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .status-value {
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .turn-white {
+            background: #f7fafc;
+            color: #2d3748;
+            border: 2px solid #cbd5e0;
+        }
+
+        .turn-black {
+            background: #2d3748;
+            color: white;
+            border: 2px solid #4a5568;
+        }
+
+        .connection-status {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            margin: 15px 0;
+        }
+
+        .connected {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .disconnected {
+            background: #fed7d7;
+            color: #822727;
+            border: 1px solid #fc8181;
+        }
+
+        .loading {
+            background: #bee3f8;
+            color: #2a69ac;
+            border: 1px solid #90cdf4;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        /* Move History */
+        .move-history {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .move-history h4 {
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .move-item {
+            padding: 5px 10px;
+            margin: 3px 0;
+            background: white;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            border-left: 3px solid #4299e1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .chess-board {
+                grid-template-columns: repeat(8, 60px);
+                grid-template-rows: repeat(8, 60px);
+            }
+            
+            .square {
+                width: 60px;
+                height: 60px;
+                font-size: 40px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .chess-board {
+                grid-template-columns: repeat(8, 45px);
+                grid-template-rows: repeat(8, 45px);
+            }
+            
+            .square {
+                width: 45px;
+                height: 45px;
+                font-size: 30px;
+            }
+            
+            .files {
+                width: 360px;
+                padding: 0 22px;
+            }
+            
+            .ranks {
+                height: 360px;
+                padding: 22px 0;
+            }
+        }
+
+        /* Animations */
+        .piece-enter {
+            animation: pieceEnter 0.3s ease-out;
+        }
+
+        @keyframes pieceEnter {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .board-update {
+            animation: boardUpdate 0.2s ease-out;
+        }
+
+        @keyframes boardUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Chess Board Section -->
+        <div class="board-section">
+            <h1 class="title">🦈 Stickshark Chess Board</h1>
+            
+            <div class="chess-board-container">
+                <div id="chess-board" class="chess-board">
+                    <!-- Board squares will be generated by JavaScript -->
+                </div>
+                
+                <div class="coordinates">
+                    <div class="files">
+                        <span>a</span><span>b</span><span>c</span><span>d</span>
+                        <span>e</span><span>f</span><span>g</span><span>h</span>
+                    </div>
+                    <div class="ranks">
+                        <span>8</span><span>7</span><span>6</span><span>5</span>
+                        <span>4</span><span>3</span><span>2</span><span>1</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="manualRefresh()">🔄 Refresh</button>
+                <button class="btn btn-secondary" onclick="toggleAutoRefresh()" id="autoBtn">
+                    ⏸️ Auto: ON
+                </button>
+                <button class="btn btn-secondary" onclick="openJsonViewer()">📄 View JSON</button>
+            </div>
+        </div>
+
+        <!-- Game Info Panel -->
+        <div class="info-panel">
+            <h2 class="info-title">Game Information</h2>
+            
+            <div id="connectionStatus" class="connection-status loading">
+                🔄 Connecting...
+            </div>
+
+            <div class="status-item">
+                <span class="status-label">Current Turn:</span>
+                <span id="currentTurn" class="status-value turn-white">White</span>
+            </div>
+
+            <div class="status-item">
+                <span class="status-label">Last Update:</span>
+                <span id="lastUpdate" class="status-value">Never</span>
+            </div>
+
+            <div class="status-item">
+                <span class="status-label">Fetch Count:</span>
+                <span id="fetchCount" class="status-value">0</span>
+            </div>
+
+            <div class="status-item">
+                <span class="status-label">Auto-Refresh:</span>
+                <span id="autoStatus" class="status-value">ON</span>
+            </div>
+
+            <div class="move-history">
+                <h4>📝 Recent Activity</h4>
+                <div id="moveHistory">
+                    <div class="move-item">Waiting for game data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chess piece Unicode symbols
+        const pieceSymbols = {
+            white: ['♙', '♗', '♘', '♖', '♕', '♔'], // 0-5: pawn, bishop, knight, rook, queen, king
+            black: ['♟', '♝', '♞', '♜', '♛', '♚']  // 0-5: pawn, bishop, knight, rook, queen, king
+        };
+
+        // Game state
+        let currentBoard = null;
+        let lastTimestamp = 0;
+        let fetchCount = 0;
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = true;
+        let moveHistory = [];
+
+        // Auto-refresh settings
+        const REFRESH_INTERVAL = 1000; // 1 second
+
+        // Initialize the chess board grid
+        function initializeBoard() {
+            const board = document.getElementById('chess-board');
+            board.innerHTML = '';
+
+            // Create 64 squares (8x8)
+            for (let rank = 7; rank >= 0; rank--) { // Start from rank 8 (index 7) to rank 1 (index 0)
+                for (let file = 0; file < 8; file++) {
+                    const square = document.createElement('div');
+                    square.className = `square ${(rank + file) % 2 === 0 ? 'dark' : 'light'}`;
+                    square.dataset.rank = rank;
+                    square.dataset.file = file;
+                    square.id = `square-${rank}-${file}`;
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        // Render pieces on the board
+        function renderBoard(boardData) {
+            if (!boardData || !boardData.board) return;
+
+            const board = boardData.board;
+            
+            // Clear all pieces first
+            document.querySelectorAll('.square').forEach(square => {
+                square.innerHTML = '';
+                square.classList.remove('piece-enter');
+            });
+
+            // Place pieces according to the board data
+            // board[0] = rank 8, board[7] = rank 1
+            for (let boardRank = 0; boardRank < 8; boardRank++) {
+                for (let boardFile = 0; boardFile < 8; boardFile++) {
+                    const piece = board[boardRank][boardFile];
+                    if (piece) {
+                        const displayRank = 7 - boardRank; // Convert board index to display rank
+                        const square = document.getElementById(`square-${displayRank}-${boardFile}`);
+                        
+                        if (square) {
+                            const pieceElement = document.createElement('span');
+                            pieceElement.className = 'piece piece-enter';
+                            pieceElement.textContent = pieceSymbols[piece.color][piece.type];
+                            square.appendChild(pieceElement);
+                        }
+                    }
+                }
+            }
+
+            // Add board update animation
+            document.getElementById('chess-board').classList.add('board-update');
+            setTimeout(() => {
+                document.getElementById('chess-board').classList.remove('board-update');
+            }, 200);
+        }
+
+        // Update game information
+        function updateGameInfo(data) {
+            // Update turn indicator
+            const turnElement = document.getElementById('currentTurn');
+            const turn = data.turn || 'unknown';
+            turnElement.textContent = turn.charAt(0).toUpperCase() + turn.slice(1);
+            turnElement.className = `status-value ${turn === 'white' ? 'turn-white' : 'turn-black'}`;
+
+            // Update last update time
+            const timestamp = data.timestamp || 0;
+            const updateTime = timestamp ? new Date(timestamp * 1000).toLocaleTimeString() : 'Never';
+            document.getElementById('lastUpdate').textContent = updateTime;
+
+            // Update fetch count
+            document.getElementById('fetchCount').textContent = fetchCount;
+
+            // Update move history
+            const action = data.action;
+            if (action && action !== 'fileupdate' && action !== 'getboard') {
+                const moveText = data.move ? `${action}: ${data.move}` : action;
+                addToMoveHistory(moveText);
+            }
+        }
+
+        // Add move to history
+        function addToMoveHistory(move) {
+            moveHistory.unshift({
+                move: move,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            // Keep only last 10 moves
+            if (moveHistory.length > 10) {
+                moveHistory = moveHistory.slice(0, 10);
+            }
+
+            // Update display
+            const historyContainer = document.getElementById('moveHistory');
+            historyContainer.innerHTML = moveHistory.length > 0 
+                ? moveHistory.map(item => 
+                    `<div class="move-item">${item.time} - ${item.move}</div>`
+                  ).join('')
+                : '<div class="move-item">No moves yet...</div>';
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status, message) {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.className = `connection-status ${status}`;
+            
+            const icons = {
+                connected: '✅',
+                disconnected: '❌', 
+                loading: '🔄'
+            };
+            
+            statusElement.textContent = `${icons[status]} ${message}`;
+        }
+
+        // Fetch board state from JSON file
+        async function fetchBoardState() {
+            fetchCount++;
+            
+            try {
+                updateConnectionStatus('loading', 'Fetching board state...');
+                
+                const response = await fetch(`board_state.json?t=${Date.now()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                const currentTimestamp = data.timestamp || 0;
+                
+                // Check if this is new data
+                if (currentTimestamp > lastTimestamp) {
+                    lastTimestamp = currentTimestamp;
+                    currentBoard = data;
+                    
+                    renderBoard(data);
+                    updateGameInfo(data);
+                    updateConnectionStatus('connected', 'Board updated successfully');
+                } else {
+                    updateConnectionStatus('connected', 'No new moves detected');
+                }
+                
+            } catch (error) {
+                updateConnectionStatus('disconnected', `Error: ${error.message}`);
+                console.error('Fetch error:', error);
+            }
+        }
+
+        // Manual refresh
+        function manualRefresh() {
+            fetchBoardState();
+        }
+
+        // Toggle auto-refresh
+        function toggleAutoRefresh() {
+            const button = document.getElementById('autoBtn');
+            const statusElement = document.getElementById('autoStatus');
+            
+            if (isAutoRefreshEnabled) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                isAutoRefreshEnabled = false;
+                button.textContent = '▶️ Auto: OFF';
+                statusElement.textContent = 'OFF';
+            } else {
+                startAutoRefresh();
+                isAutoRefreshEnabled = true;
+                button.textContent = '⏸️ Auto: ON';
+                statusElement.textContent = 'ON';
+            }
+        }
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(fetchBoardState, REFRESH_INTERVAL);
+        }
+
+        // Open JSON viewer in new tab
+        function openJsonViewer() {
+            window.open('chess_viewer.html', '_blank');
+        }
+
+        // Initialize everything when page loads
+        window.addEventListener('load', () => {
+            initializeBoard();
+            fetchBoardState(); // Immediate first fetch
+            startAutoRefresh(); // Start interval
+            addToMoveHistory('Board viewer initialized');
+        });
+
+        // Pause auto-refresh when page is not visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isAutoRefreshEnabled) {
+                clearInterval(autoRefreshInterval);
+            } else if (!document.hidden && isAutoRefreshEnabled) {
+                startAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>

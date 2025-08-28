@@ -9,7 +9,6 @@
 
 class WebInterface {
 private:
-    Board board;
     Engine* engine;
     
 public:

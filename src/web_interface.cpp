@@ -7,9 +7,9 @@
 using namespace std;
 
 WebInterface::WebInterface() {
-    board = Board();
-    board.setFEN(STARTING_FEN);
-    engine = new Engine(board);
+    Board initialBoard;
+    initialBoard.setFEN(STARTING_FEN);
+    engine = new Engine(initialBoard);
 }
 
 WebInterface::~WebInterface() {
@@ -48,8 +48,7 @@ string WebInterface::processCommand(const string& input) {
 }
 
 string WebInterface::handleNewGame() {
-    board.setFEN(STARTING_FEN);
-    engine->setBoard(board);
+    engine->board.setFEN(STARTING_FEN);
     
     // Write state to file for HTML visualizer
     writeStateToFile();
@@ -59,7 +58,7 @@ string WebInterface::handleNewGame() {
     response << "\"status\": \"success\",";
     response << "\"action\": \"newgame\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
     response << "}";
     
     return response.str();
@@ -74,9 +73,8 @@ string WebInterface::handleMove(const string& moveStr) {
     // Convert to Move object using existing utility
     Move move = notationToMove(moveStr);
     
-    // Apply the move
-    board.makeMove(move);
-    engine->setBoard(board);
+    // Apply the move to engine's board
+    engine->board.makeMove(move);
     
     // Write state to file for HTML visualizer
     writeStateToFile();
@@ -87,7 +85,7 @@ string WebInterface::handleMove(const string& moveStr) {
     response << "\"action\": \"move\",";
     response << "\"move\": \"" << moveStr << "\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
     response << "}";
     
     return response.str();
@@ -99,10 +97,10 @@ string WebInterface::handleEngineMove(int timeMs) {
     stringstream devnull;
     cout.rdbuf(devnull.rdbuf());
     
-    // Get engine move
+    // Get engine move (engine operates on its own board)
     engine->findBestMove(timeMs);
     Move bestMove = engine->bestMove;
-    board.makeMove(bestMove);
+    engine->board.makeMove(bestMove);
     
     // Restore cout
     cout.rdbuf(orig);
@@ -125,7 +123,7 @@ string WebInterface::handleEngineMove(int timeMs) {
     response << "\"action\": \"enginemove\",";
     response << "\"move\": \"" << moveNotation << "\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
     response << "}";
     
     return response.str();
@@ -140,7 +138,7 @@ string WebInterface::handleGetBoard() {
     response << "\"status\": \"success\",";
     response << "\"action\": \"getboard\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
     response << "}";
     
     return response.str();
@@ -159,7 +157,7 @@ string WebInterface::boardToJson() const {
             if (file > 0) json << ",";
             
             int square = rank * 8 + file;
-            int piece = board.squares[square];
+            int piece = engine->board.squares[square];
             
             if (piece == EMPTY) {
                 json << "null";
@@ -195,7 +193,7 @@ void WebInterface::writeStateToFile(const string& filename) const {
         state << "\"status\": \"success\",";
         state << "\"action\": \"fileupdate\",";
         state << "\"board\": " << boardToJson() << ",";
-        state << "\"turn\": \"" << (board.turn ? "white" : "black") << "\",";
+        state << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
         state << "\"timestamp\": " << time(nullptr);
         state << "}";
         
