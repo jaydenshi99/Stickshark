@@ -11,3 +11,7 @@ bin/
 
 # Ignore Makefile intermediate files
 Makefile~
+
+# Generated web state files
+board_state.json
+board_state.js
