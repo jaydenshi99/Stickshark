@@ -28,4 +28,5 @@ public:
     // Utility functions
     std::string boardToJson() const;
     std::string errorResponse(const std::string& message) const;
+    void writeStateToFile(const std::string& filename = "board_state.json") const;
 };

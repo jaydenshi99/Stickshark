@@ -1,6 +1,8 @@
 #include "web_interface.h"
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <ctime>
 
 using namespace std;
 
@@ -49,6 +51,9 @@ string WebInterface::handleNewGame() {
     board.setFEN(STARTING_FEN);
     engine->setBoard(board);
     
+    // Write state to file for HTML visualizer
+    writeStateToFile();
+    
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
@@ -72,6 +77,9 @@ string WebInterface::handleMove(const string& moveStr) {
     // Apply the move
     board.makeMove(move);
     engine->setBoard(board);
+    
+    // Write state to file for HTML visualizer
+    writeStateToFile();
     
     stringstream response;
     response << "{";
@@ -99,6 +107,9 @@ string WebInterface::handleEngineMove(int timeMs) {
     // Restore cout
     cout.rdbuf(orig);
     
+    // Write state to file for HTML visualizer
+    writeStateToFile();
+    
     // Convert move to notation
     char fromFile = 'a' + (bestMove.getSource() % 8);
     char fromRank = '1' + (bestMove.getSource() / 8);
@@ -121,6 +132,9 @@ string WebInterface::handleEngineMove(int timeMs) {
 }
 
 string WebInterface::handleGetBoard() {
+    // Write state to file for HTML visualizer
+    writeStateToFile();
+    
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
@@ -171,4 +185,21 @@ string WebInterface::errorResponse(const string& message) const {
     response << "}";
     
     return response.str();
+}
+
+void WebInterface::writeStateToFile(const string& filename) const {
+    ofstream file(filename);
+    if (file.is_open()) {
+        stringstream state;
+        state << "{";
+        state << "\"status\": \"success\",";
+        state << "\"action\": \"fileupdate\",";
+        state << "\"board\": " << boardToJson() << ",";
+        state << "\"turn\": \"" << (board.turn ? "white" : "black") << "\",";
+        state << "\"timestamp\": " << time(nullptr);
+        state << "}";
+        
+        file << state.str() << endl;
+        file.close();
+    }
 }
