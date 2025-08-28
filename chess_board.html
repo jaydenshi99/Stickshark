@@ -478,7 +478,8 @@
             // board[0] = rank 8, board[7] = rank 1
             for (let boardRank = 0; boardRank < 8; boardRank++) {
                 for (let boardFile = 0; boardFile < 8; boardFile++) {
-                    const piece = board[boardRank][boardFile];
+                    // Engine's file indexing is mirrored horizontally; flip files for display
+                    const piece = board[boardRank][7 - boardFile];
                     if (piece) {
                         const displayRank = 7 - boardRank; // Convert board index to display rank
                         const square = document.getElementById(`square-${displayRank}-${boardFile}`);
