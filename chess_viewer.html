@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Board State Viewer</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .status {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .json-display {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.4;
+            min-height: 400px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦈 Stickshark Chess Board State Viewer</h1>
+        
+        <div class="controls">
+            <button id="refreshBtn" onclick="fetchBoardState()">Manual Refresh</button>
+            <button id="toggleAutoBtn" onclick="toggleAutoRefresh()">Auto-Refresh: ON</button>
+            <button onclick="clearDisplay()">Clear</button>
+        </div>
+        
+        <div id="status" class="status">
+            Status: Waiting for first fetch...
+        </div>
+        
+        <div id="jsonDisplay" class="json-display">
+            Click "Manual Refresh" or wait for auto-refresh to start...
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = true;
+        let lastTimestamp = 0;
+        let fetchCount = 0;
+
+        // Auto-refresh every 1000ms (1 second)
+        const REFRESH_INTERVAL = 1000;
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status';
+            
+            if (type === 'error') {
+                statusDiv.className += ' error';
+            } else if (type === 'success') {
+                statusDiv.className += ' success';
+            }
+        }
+
+        function formatJSON(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+
+        async function fetchBoardState() {
+            fetchCount++;
+            
+            try {
+                updateStatus(`Fetching... (attempt #${fetchCount})`);
+                
+                // Add cache-busting parameter to prevent browser caching
+                const response = await fetch(`board_state.json?t=${Date.now()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Check if this is new data
+                const currentTimestamp = data.timestamp || 0;
+                const isNewData = currentTimestamp > lastTimestamp;
+                
+                if (isNewData) {
+                    lastTimestamp = currentTimestamp;
+                    
+                    // Display the formatted JSON
+                    document.getElementById('jsonDisplay').textContent = formatJSON(data);
+                    
+                    updateStatus(
+                        `✅ Updated! Fetch #${fetchCount} - Turn: ${data.turn || 'unknown'} - Time: ${new Date(currentTimestamp * 1000).toLocaleTimeString()}`,
+                        'success'
+                    );
+                } else {
+                    updateStatus(
+                        `⏹️ No changes. Fetch #${fetchCount} - Last update: ${new Date(lastTimestamp * 1000).toLocaleTimeString()}`
+                    );
+                }
+                
+            } catch (error) {
+                updateStatus(`❌ Error: ${error.message}`, 'error');
+                console.error('Fetch error:', error);
+            }
+        }
+
+        function toggleAutoRefresh() {
+            const button = document.getElementById('toggleAutoBtn');
+            
+            if (isAutoRefreshEnabled) {
+                // Stop auto-refresh
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                isAutoRefreshEnabled = false;
+                button.textContent = 'Auto-Refresh: OFF';
+                updateStatus('Auto-refresh stopped');
+            } else {
+                // Start auto-refresh
+                startAutoRefresh();
+                isAutoRefreshEnabled = true;
+                button.textContent = 'Auto-Refresh: ON';
+                updateStatus('Auto-refresh started');
+            }
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            autoRefreshInterval = setInterval(fetchBoardState, REFRESH_INTERVAL);
+        }
+
+        function clearDisplay() {
+            document.getElementById('jsonDisplay').textContent = 'Display cleared. Click refresh to reload.';
+            updateStatus('Display cleared');
+        }
+
+        // Initialize auto-refresh when page loads
+        window.addEventListener('load', () => {
+            updateStatus('Page loaded. Starting auto-refresh...');
+            fetchBoardState(); // Immediate first fetch
+            startAutoRefresh(); // Then start the interval
+        });
+
+        // Optional: Stop auto-refresh when page is not visible (saves resources)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isAutoRefreshEnabled) {
+                clearInterval(autoRefreshInterval);
+                updateStatus('Auto-refresh paused (page not visible)');
+            } else if (!document.hidden && isAutoRefreshEnabled) {
+                startAutoRefresh();
+                updateStatus('Auto-refresh resumed');
+            }
+        });
+    </script>
+</body>
+</html>
