@@ -600,7 +600,7 @@
             try {
                 updateConnectionStatus('loading', 'Fetching board state...');
                 
-                const response = await fetch(`board_state.json?t=${Date.now()}`);
+                const response = await fetch(`data/board_state.json?t=${Date.now()}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);

@@ -13,4 +13,4 @@ bin/
 Makefile~
 
 # Generated web state files
-board_state.json
+data/board_state.json
