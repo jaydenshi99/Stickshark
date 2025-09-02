@@ -402,6 +402,8 @@
                     ⏸️ Auto: ON
                 </button>
                 <button class="btn btn-secondary" onclick="openJsonViewer()">📄 View JSON</button>
+                <button class="btn btn-primary" onclick="triggerEngineMove()">🤖 Engine Move</button>
+                <button class="btn btn-secondary" onclick="triggerNewGame()">♟️ Reset Board</button>
             </div>
         </div>
 
@@ -662,6 +664,35 @@
         // Open JSON viewer in new tab
         function openJsonViewer() {
             window.open('json_viewer.html', '_blank');
+        }
+
+        // Trigger engine move via local HTTP API
+        async function triggerEngineMove() {
+            try {
+                updateConnectionStatus('loading', 'Requesting engine move...');
+                const res = await fetch('http://localhost:8080/enginemove', { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                await res.json();
+                // After engine moves, refresh board state
+                await fetchBoardState();
+            } catch (e) {
+                updateConnectionStatus('disconnected', `Engine move failed: ${e.message}`);
+                console.error(e);
+            }
+        }
+
+        // Reset to starting position via local HTTP API
+        async function triggerNewGame() {
+            try {
+                updateConnectionStatus('loading', 'Resetting board...');
+                const res = await fetch('http://localhost:8080/newgame', { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                await res.json();
+                await fetchBoardState();
+            } catch (e) {
+                updateConnectionStatus('disconnected', `Reset failed: ${e.message}`);
+                console.error(e);
+            }
         }
 
         // Initialize everything when page loads
