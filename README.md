@@ -70,7 +70,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 
 3. **Start the chess engine in web mode** (in another terminal):
    ```bash
-   ./bin/web_main
+   ./bin/main --web
    ```
 
 4. **Open your web browser** and navigate to:
