@@ -51,7 +51,7 @@ string WebInterface::handleNewGame() {
     engine->board.setFEN(STARTING_FEN);
     
     // Write state to file for HTML visualizer
-    writeStateToFile();
+    writeStateToFile("data/board_state.json");
     
     stringstream response;
     response << "{";
@@ -77,7 +77,7 @@ string WebInterface::handleMove(const string& moveStr) {
     engine->board.makeMove(move);
     
     // Write state to file for HTML visualizer
-    writeStateToFile();
+    writeStateToFile("data/board_state.json");
     
     stringstream response;
     response << "{";
@@ -106,7 +106,7 @@ string WebInterface::handleEngineMove(int timeMs) {
     cout.rdbuf(orig);
     
     // Write state to file for HTML visualizer
-    writeStateToFile();
+    writeStateToFile("data/board_state.json");
     
     // Convert move to notation
     char fromFile = 'a' + (bestMove.getSource() % 8);
@@ -131,7 +131,7 @@ string WebInterface::handleEngineMove(int timeMs) {
 
 string WebInterface::handleGetBoard() {
     // Write state to file for HTML visualizer
-    writeStateToFile();
+    writeStateToFile("data/board_state.json");
     
     stringstream response;
     response << "{";
