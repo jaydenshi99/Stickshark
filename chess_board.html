@@ -13,12 +13,13 @@
 
         body {
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            color: #e2e8f0;
         }
 
         .container {
@@ -31,10 +32,10 @@
         }
 
         .board-section {
-            background: white;
+            background: #2d3748;
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -43,7 +44,7 @@
         .title {
             font-size: 2rem;
             font-weight: 700;
-            color: #2d3748;
+            color: #e2e8f0;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -60,7 +61,7 @@
             border: 4px solid #8B4513;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         }
 
         .square {
@@ -87,12 +88,26 @@
         .square:hover {
             transform: scale(1.05);
             z-index: 10;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
 
         .piece {
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2));
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .piece img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;
         }
 
         /* Coordinates */
@@ -105,7 +120,7 @@
             pointer-events: none;
             font-weight: 600;
             font-size: 14px;
-            color: #5a5a5a;
+            color: #cbd5e0;
         }
 
         .files {
@@ -147,17 +162,17 @@
 
         /* Info Panel */
         .info-panel {
-            background: white;
+            background: #2d3748;
             border-radius: 20px;
             padding: 25px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             min-height: 400px;
         }
 
         .info-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #2d3748;
+            color: #e2e8f0;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -167,7 +182,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #4a5568;
         }
 
         .status-item:last-child {
@@ -176,7 +191,7 @@
 
         .status-label {
             font-weight: 600;
-            color: #4a5568;
+            color: #cbd5e0;
         }
 
         .status-value {
@@ -187,15 +202,15 @@
         }
 
         .turn-white {
-            background: #f7fafc;
-            color: #2d3748;
-            border: 2px solid #cbd5e0;
+            background: #4a5568;
+            color: #e2e8f0;
+            border: 2px solid #718096;
         }
 
         .turn-black {
-            background: #2d3748;
-            color: white;
-            border: 2px solid #4a5568;
+            background: #1a202c;
+            color: #e2e8f0;
+            border: 2px solid #2d3748;
         }
 
         .connection-status {
@@ -207,21 +222,21 @@
         }
 
         .connected {
-            background: #c6f6d5;
-            color: #22543d;
-            border: 1px solid #9ae6b4;
+            background: #22543d;
+            color: #c6f6d5;
+            border: 1px solid #38a169;
         }
 
         .disconnected {
-            background: #fed7d7;
-            color: #822727;
-            border: 1px solid #fc8181;
+            background: #822727;
+            color: #fed7d7;
+            border: 1px solid #e53e3e;
         }
 
         .loading {
-            background: #bee3f8;
-            color: #2a69ac;
-            border: 1px solid #90cdf4;
+            background: #2a69ac;
+            color: #bee3f8;
+            border: 1px solid #3182ce;
         }
 
         /* Controls */
@@ -254,12 +269,12 @@
         }
 
         .btn-secondary {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: #4a5568;
+            color: #e2e8f0;
         }
 
         .btn-secondary:hover {
-            background: #cbd5e0;
+            background: #2d3748;
             transform: translateY(-1px);
         }
 
@@ -268,24 +283,25 @@
             margin-top: 20px;
             max-height: 200px;
             overflow-y: auto;
-            background: #f7fafc;
+            background: #1a202c;
             border-radius: 8px;
             padding: 15px;
         }
 
         .move-history h4 {
             margin-bottom: 10px;
-            color: #2d3748;
+            color: #e2e8f0;
         }
 
         .move-item {
             padding: 5px 10px;
             margin: 3px 0;
-            background: white;
+            background: #2d3748;
             border-radius: 5px;
             font-family: 'Monaco', 'Courier New', monospace;
             font-size: 0.85rem;
             border-left: 3px solid #4299e1;
+            color: #e2e8f0;
         }
 
         /* Responsive Design */
@@ -427,11 +443,22 @@
     </div>
 
     <script>
-        // Chess piece Unicode symbols
+        // Chess piece Unicode symbols (fallback)
         const pieceSymbols = {
             white: ['♙', '♗', '♘', '♖', '♕', '♔'], // 0-5: pawn, bishop, knight, rook, queen, king
             black: ['♟', '♝', '♞', '♜', '♛', '♚']  // 0-5: pawn, bishop, knight, rook, queen, king
         };
+
+        // Map type index to names and abbreviations
+        const typeNames = ['pawn','bishop','knight','rook','queen','king']; // 0..5
+        const typeAbbr  = ['P','B','N','R','Q','K'];
+
+        // Build sprite filename like wK.svg or bQ.svg under assets/pieces/merida/
+        function pieceImageSrc(piece) {
+            const short = piece.color === 'white' ? 'w' : 'b';
+            const abbr = typeAbbr[piece.type];
+            return `assets/pieces/merida/${short}${abbr}.svg`;
+        }
 
         // Game state
         let currentBoard = null;
@@ -485,10 +512,16 @@
                         const square = document.getElementById(`square-${displayRank}-${boardFile}`);
                         
                         if (square) {
-                            const pieceElement = document.createElement('span');
-                            pieceElement.className = 'piece piece-enter';
-                            pieceElement.textContent = pieceSymbols[piece.color][piece.type];
-                            square.appendChild(pieceElement);
+                            const wrapper = document.createElement('span');
+                            wrapper.className = 'piece piece-enter';
+
+                            const img = document.createElement('img');
+                            img.alt = `${piece.color} ${typeNames[piece.type]}`;
+                            img.src = pieceImageSrc(piece);
+                            img.onerror = () => { wrapper.textContent = pieceSymbols[piece.color][piece.type]; };
+
+                            wrapper.appendChild(img);
+                            square.appendChild(wrapper);
                         }
                     }
                 }
