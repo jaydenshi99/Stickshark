@@ -10,6 +10,7 @@ Note: Castling and enpassant not yet supported
 - **Efficient Move Generation**: Uses bitboards for fast chessboard representation.
 - **Alpha-Beta Pruning**: Optimised decision-making.
 - **Heuristics**: Implements MVV-LVA for move ordering.
+- **Web Interface**: Visual chess board accessible via web browser.
 
 ---
 
@@ -50,6 +51,31 @@ Before building the project, ensure the following dependencies are installed:
    ```
 
 ---
+
+## Web Interface
+
+Stickshark includes a web-based GUI for visual chess gameplay.
+
+### Launching the Web Interface
+
+1. **Build the web version** (if not already built):
+   ```bash
+   make web_main
+   ```
+
+2. **Start the HTTP server** (in one terminal):
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+3. **Start the chess engine in web mode** (in another terminal):
+   ```bash
+   ./bin/web_main
+   ```
+
+4. **Open your web browser** and navigate to:
+   - **Visual Board**: http://localhost:8000/chess_board.html
+   - **Raw JSON View**: http://localhost:8000/json_viewer.html
 
 ## Contact
 For questions or feedback, feel free to contact:
