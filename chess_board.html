@@ -467,25 +467,10 @@
                 <span id="currentTurn" class="status-value turn-white">White</span>
             </div>
 
-            <div class="status-item">
-                <span class="status-label">Last Update:</span>
-                <span id="lastUpdate" class="status-value">Never</span>
-            </div>
-
-            <div class="status-item">
-                <span class="status-label">Fetch Count:</span>
-                <span id="fetchCount" class="status-value">0</span>
-            </div>
-
-            <div class="status-item">
-                <span class="status-label">Auto-Refresh:</span>
-                <span id="autoStatus" class="status-value">OFF</span>
-            </div>
-
             <div class="move-history">
-                <h4>📝 Recent Activity</h4>
+                <h4>🖥️ Console</h4>
                 <div id="moveHistory">
-                    <div class="move-item">Waiting for game data...</div>
+                    <div class="move-item">System ready...</div>
                 </div>
             </div>
         </div>
@@ -524,7 +509,7 @@
         let fetchCount = 0;
         let autoRefreshInterval = null;
         let isAutoRefreshEnabled = false; // Disabled by default since we control when to fetch
-        let moveHistory = [];
+        let consoleMessages = [];
         let draggedPiece = null;
         let isProcessingMove = false; // Track if we're currently processing a move
 
@@ -623,41 +608,31 @@
             turnElement.textContent = turn.charAt(0).toUpperCase() + turn.slice(1);
             turnElement.className = `status-value ${turn === 'white' ? 'turn-white' : 'turn-black'}`;
 
-            // Update last update time
-            const timestamp = data.timestamp || 0;
-            const updateTime = timestamp ? new Date(timestamp * 1000).toLocaleTimeString() : 'Never';
-            document.getElementById('lastUpdate').textContent = updateTime;
-
-            // Update fetch count
-            document.getElementById('fetchCount').textContent = fetchCount;
-
-            // Update move history
-            const action = data.action;
-            if (action && action !== 'fileupdate' && action !== 'getboard') {
-                const moveText = data.move ? `${action}: ${data.move}` : action;
-                addToMoveHistory(moveText);
+            // Write engine message to console
+            if (data.message) {
+                addToConsole(data.message);
             }
         }
 
-        // Add move to history
-        function addToMoveHistory(move) {
-            moveHistory.unshift({
-                move: move,
+        // Add message to console
+        function addToConsole(message) {
+            consoleMessages.unshift({
+                message: message,
                 time: new Date().toLocaleTimeString()
             });
             
-            // Keep only last 10 moves
-            if (moveHistory.length > 10) {
-                moveHistory = moveHistory.slice(0, 10);
+            // Keep only last 50 messages
+            if (consoleMessages.length > 50) {
+                consoleMessages = consoleMessages.slice(0, 50);
             }
 
             // Update display
-            const historyContainer = document.getElementById('moveHistory');
-            historyContainer.innerHTML = moveHistory.length > 0 
-                ? moveHistory.map(item => 
-                    `<div class="move-item">${item.time} - ${item.move}</div>`
+            const consoleContainer = document.getElementById('moveHistory');
+            consoleContainer.innerHTML = consoleMessages.length > 0 
+                ? consoleMessages.map(item => 
+                    `<div class="move-item">${item.time} - ${item.message}</div>`
                   ).join('')
-                : '<div class="move-item">No moves yet...</div>';
+                : '<div class="move-item">Console empty...</div>';
         }
 
         // Update connection status
@@ -828,6 +803,9 @@
 
                 const result = await response.json();
                 
+                // Log the move to console
+                addToConsole(`move: ${moveNotation}`);
+                
                 // Always refresh board after any move attempt
                 await fetchBoardState();
                 updateConnectionStatus('connected', 'Move processed');
@@ -880,7 +858,13 @@
                 
                 const res = await fetch('http://localhost:8080/enginemove', { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                await res.json();
+                const result = await res.json();
+                
+                // Log the engine move to console
+                if (result.move) {
+                    addToConsole(`enginemove: ${result.move}`);
+                }
+                
                 // After engine moves, refresh board state
                 await fetchBoardState();
             } catch (e) {
@@ -901,7 +885,11 @@
                 updateConnectionStatus('loading', 'Resetting board...');
                 const res = await fetch('http://localhost:8080/newgame', { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                await res.json();
+                const result = await res.json();
+                
+                // Log the new game action to console
+                addToConsole('newgame');
+                
                 await fetchBoardState();
             } catch (e) {
                 updateConnectionStatus('disconnected', `Reset failed: ${e.message}`);
@@ -914,7 +902,7 @@
             initializeBoard();
             fetchBoardState(); // Immediate first fetch
             // Don't start auto-refresh by default
-            addToMoveHistory('Board viewer initialized');
+            addToConsole('Board viewer initialized');
         });
 
         // Pause auto-refresh when page is not visible
