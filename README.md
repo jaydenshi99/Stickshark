@@ -1,6 +1,6 @@
 # Stickshark
 
-Stickshark is a C++ chess engine designed for high efficiency, featuring advanced move generation through bit manipulation and selects best moves utilising negamax with alpha-beta pruning and other techniques. Its modular design and use of bitboards are optimised for performance.
+Stickshark is a C++ chess engine designed for high efficiency, featuring advanced move generation through bit manipulation and selects best moves utilising negamax with alpha-beta pruning and other techniques.
 
 Project Logs: https://www.notion.so/stickshark-42a22c01dacb4826a874dbc6d1b53562?pvs=4
 
@@ -10,7 +10,7 @@ Note: Castling and enpassant not yet supported
 - **Efficient Move Generation**: Uses bitboards for fast chessboard representation.
 - **Alpha-Beta Pruning**: Optimised decision-making.
 - **Heuristics**: Implements MVV-LVA for move ordering.
-- **Web Interface**: Visual chess board accessible via web browser.
+- **User Interface**: Visual chess board accessible via web browser.
 
 ---
 
@@ -45,11 +45,6 @@ Before building the project, ensure the following dependencies are installed:
    make
    ```
 
-3. Run the program:
-   ```bash
-   ./bin/main
-   ```
-
 ---
 
 ## Web Interface
@@ -63,7 +58,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
    make
    ```
 
-2. **Start the HTTP server** (in one terminal):
+2. **Start the HTTP server**:
    ```bash
    python3 -m http.server 8000
    ```
