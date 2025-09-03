@@ -12,7 +12,6 @@ Note: Castling and enpassant not yet supported
 - **Heuristics**: Implements MVV-LVA for move ordering.
 - **User Interface**: Visual chess board accessible via web browser.
 
----
 
 ## Prerequisites
 
@@ -30,7 +29,6 @@ Before building the project, ensure the following dependencies are installed:
 ### Additional Libraries
 - None required.
 
----
 
 ## Installation Steps
 
@@ -45,7 +43,6 @@ Before building the project, ensure the following dependencies are installed:
    make
    ```
 
----
 
 ## Web Interface
 
