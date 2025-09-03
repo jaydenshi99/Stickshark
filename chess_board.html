@@ -612,6 +612,11 @@
             if (data.message) {
                 addToConsole(data.message);
             }
+
+            // Write evaluation to console
+            if (data.eval) {
+                addToConsole(`evaluation: ${data.eval}`);
+            }
         }
 
         // Add message to console
@@ -804,7 +809,7 @@
                 const result = await response.json();
                 
                 // Log the move to console
-                addToConsole(`move: ${moveNotation}`);
+                addToConsole(`player move: ${moveNotation}`);
                 
                 // Always refresh board after any move attempt
                 await fetchBoardState();
@@ -862,7 +867,7 @@
                 
                 // Log the engine move to console
                 if (result.move) {
-                    addToConsole(`enginemove: ${result.move}`);
+                    addToConsole(`engine move: ${result.move}`);
                 }
                 
                 // After engine moves, refresh board state
@@ -888,7 +893,7 @@
                 const result = await res.json();
                 
                 // Log the new game action to console
-                addToConsole('newgame');
+                addToConsole('board reset');
                 
                 await fetchBoardState();
             } catch (e) {
@@ -902,7 +907,7 @@
             initializeBoard();
             fetchBoardState(); // Immediate first fetch
             // Don't start auto-refresh by default
-            addToConsole('Board viewer initialized');
+            addToConsole('board viewer initialised');
         });
 
         // Pause auto-refresh when page is not visible

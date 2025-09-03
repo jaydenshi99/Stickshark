@@ -50,16 +50,17 @@ string WebInterface::processCommand(const string& input) {
 string WebInterface::handleNewGame() {
     engine->board.setFEN(STARTING_FEN);
     
-    // Write state to file for HTML visualizer
-    writeStateToFile("data/board_state.json");
-    
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
     response << "\"action\": \"newgame\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
+    response << "\"timestamp\": " << time(nullptr);
     response << "}";
+    
+    // Write state to file for HTML visualizer
+    writeStateToFile("data/board_state.json", response);
     
     return response.str();
 }
@@ -76,17 +77,18 @@ string WebInterface::handleMove(const string& moveStr) {
     // Apply the move to engine's board
     engine->board.makeMove(move);
     
-    // Write state to file for HTML visualizer
-    writeStateToFile("data/board_state.json");
-    
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
     response << "\"action\": \"move\",";
     response << "\"move\": \"" << moveStr << "\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
+    response << "\"timestamp\": " << time(nullptr);
     response << "}";
+    
+    // Write state to file for HTML visualizer
+    writeStateToFile("data/board_state.json", response);
     
     return response.str();
 }
@@ -105,9 +107,6 @@ string WebInterface::handleEngineMove(int timeMs) {
     // Restore cout
     cout.rdbuf(orig);
     
-    // Write state to file for HTML visualizer
-    writeStateToFile("data/board_state.json");
-    
     // Convert move to notation
     char fromFile = 'a' + (bestMove.getSource() % 8);
     char fromRank = '1' + (bestMove.getSource() / 8);
@@ -123,23 +122,29 @@ string WebInterface::handleEngineMove(int timeMs) {
     response << "\"action\": \"enginemove\",";
     response << "\"move\": \"" << moveNotation << "\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
+    response << "\"eval\": \"" << engine->boardEval / 100.0 << "\",";
+    response << "\"timestamp\": " << time(nullptr);
     response << "}";
+    
+    // Write state to file for HTML visualizer
+    writeStateToFile("data/board_state.json", response);
     
     return response.str();
 }
 
 string WebInterface::handleGetBoard() {
-    // Write state to file for HTML visualizer
-    writeStateToFile("data/board_state.json");
-    
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
     response << "\"action\": \"getboard\",";
     response << "\"board\": " << boardToJson() << ",";
-    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\"";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
+    response << "\"timestamp\": " << time(nullptr);
     response << "}";
+    
+    // Write state to file for HTML visualizer
+    writeStateToFile("data/board_state.json", response);
     
     return response.str();
 }
@@ -179,24 +184,18 @@ string WebInterface::errorResponse(const string& message) const {
     stringstream response;
     response << "{";
     response << "\"status\": \"error\",";
-    response << "\"message\": \"" << message << "\"";
+    response << "\"message\": \"" << message << "\",";
+    response << "\"timestamp\": " << time(nullptr);
     response << "}";
+
+    writeStateToFile("data/board_state.json", response);
     
     return response.str();
 }
 
-void WebInterface::writeStateToFile(const string& filename) const {
+void WebInterface::writeStateToFile(const string& filename, const stringstream& state) const {
     ofstream file(filename);
     if (file.is_open()) {
-        stringstream state;
-        state << "{";
-        state << "\"status\": \"success\",";
-        state << "\"action\": \"fileupdate\",";
-        state << "\"board\": " << boardToJson() << ",";
-        state << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
-        state << "\"timestamp\": " << time(nullptr);
-        state << "}";
-        
         file << state.str() << endl;
         file.close();
     }
