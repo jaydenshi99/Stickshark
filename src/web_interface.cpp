@@ -115,6 +115,7 @@ string WebInterface::handleEngineMove(int timeMs) {
     
     string moveNotation = string(1, fromFile) + string(1, fromRank) + "-" + 
                          string(1, toFile) + string(1, toRank);
+
     
     stringstream response;
     response << "{";
@@ -123,7 +124,10 @@ string WebInterface::handleEngineMove(int timeMs) {
     response << "\"move\": \"" << moveNotation << "\",";
     response << "\"board\": " << boardToJson() << ",";
     response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
-    response << "\"eval\": \"" << engine->boardEval / 100.0 << "\",";
+
+    int turn = engine->board.turn ? -1 : 1;
+
+    response << "\"eval\": \"" << engine->boardEval * turn / 100.0 << "\",";
     response << "\"timestamp\": " << time(nullptr);
     response << "}";
     
