@@ -102,6 +102,10 @@ bool HttpServer::start(unsigned short port) {
             if (move.empty()) move = body;
             if (move.size() >= 5) json = web.handleMove(move);
             else { status = 400; json = web.errorResponse("Invalid move"); }
+        } else if (method == "OPTIONS") {
+            // Handle CORS preflight requests
+            status = 200;
+            json = ""; // No body needed for OPTIONS
         } else {
             status = 404;
             json = web.errorResponse("Not found");
@@ -111,6 +115,8 @@ bool HttpServer::start(unsigned short port) {
         string resp = "HTTP/1.1 " + string(status == 200 ? "200 OK" : (status == 400 ? "400 Bad Request" : "404 Not Found")) + "\r\n";
         resp += "Content-Type: application/json\r\n";
         resp += "Access-Control-Allow-Origin: *\r\n";
+        resp += "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n";
+        resp += "Access-Control-Allow-Headers: Content-Type\r\n";
         resp += "Content-Length: " + std::to_string(json.size()) + "\r\n";
         resp += "Connection: close\r\n\r\n";
         resp += json;

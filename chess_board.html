@@ -107,6 +107,12 @@
             justify-content: center;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
+            cursor: grab;
+            user-select: none;
+        }
+
+        .piece:active {
+            cursor: grabbing;
         }
 
         .piece img {
@@ -116,6 +122,22 @@
             user-select: none;
             -webkit-user-drag: none;
             pointer-events: none;
+        }
+
+        /* Drag and drop visual feedback */
+        .square.drag-over {
+            background-color: #4ade80 !important;
+            opacity: 0.8;
+        }
+
+        .square.invalid-drop {
+            background-color: #f87171 !important;
+            opacity: 0.8;
+        }
+
+        .square.valid-drop {
+            background-color: #4ade80 !important;
+            opacity: 0.6;
         }
 
         /* Coordinates */
@@ -498,9 +520,10 @@
         let autoRefreshInterval = null;
         let isAutoRefreshEnabled = true;
         let moveHistory = [];
+        let draggedPiece = null;
 
         // Auto-refresh settings
-        const REFRESH_INTERVAL = 1000; // 1 second
+        const REFRESH_INTERVAL = 1000; // one second
 
         // Initialize the chess board grid
         function initializeBoard() {
@@ -515,6 +538,13 @@
                     square.dataset.rank = rank;
                     square.dataset.file = file;
                     square.id = `square-${rank}-${file}`;
+                    
+                    // Add drag and drop event listeners
+                    square.addEventListener('dragover', handleDragOver);
+                    square.addEventListener('drop', handleDrop);
+                    square.addEventListener('dragenter', handleDragEnter);
+                    square.addEventListener('dragleave', handleDragLeave);
+                    
                     board.appendChild(square);
                 }
             }
@@ -550,6 +580,15 @@
                             img.alt = `${piece.color} ${typeNames[piece.type]}`;
                             img.src = pieceImageSrc(piece);
                             img.onerror = () => { wrapper.textContent = pieceSymbols[piece.color][piece.type]; };
+
+                            // Make piece draggable
+                            wrapper.draggable = true;
+                            wrapper.dataset.pieceColor = piece.color;
+                            wrapper.dataset.pieceType = piece.type;
+                            wrapper.dataset.square = `${String.fromCharCode(97 + boardFile)}${8 - boardRank}`;
+
+                            // Add drag start event listener
+                            wrapper.addEventListener('dragstart', handleDragStart);
 
                             wrapper.appendChild(img);
                             square.appendChild(wrapper);
@@ -693,6 +732,88 @@
         // Open JSON viewer in new tab
         function openJsonViewer() {
             window.open('json_viewer.html', '_blank');
+        }
+
+        // Drag and drop handlers
+        function handleDragStart(e) {
+            draggedPiece = {
+                color: e.target.dataset.pieceColor,
+                type: parseInt(e.target.dataset.pieceType),
+                square: e.target.dataset.square
+            };
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            const square = e.target.closest('.square');
+            if (square) {
+                square.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            const square = e.target.closest('.square');
+            if (square) {
+                square.classList.remove('drag-over');
+            }
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+            
+            // Clear drag visual feedback
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('drag-over', 'valid-drop', 'invalid-drop');
+            });
+
+            if (!draggedPiece) return;
+
+            const targetSquare = e.target.closest('.square');
+            if (!targetSquare) return;
+
+            const targetRank = parseInt(targetSquare.dataset.rank);
+            const targetFile = parseInt(targetSquare.dataset.file);
+            const targetSquareNotation = `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
+
+            // Check if dropping on the same square
+            if (draggedPiece.square === targetSquareNotation) {
+                draggedPiece = null;
+                return; // Don't send request for same square
+            }
+
+            // Create move notation
+            const moveNotation = `${draggedPiece.square}-${targetSquareNotation}`;
+            
+            try {
+                updateConnectionStatus('loading', 'Making move...');
+                
+                const response = await fetch('http://localhost:8080/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ move: moveNotation })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // Always refresh board after any move attempt
+                await fetchBoardState();
+                updateConnectionStatus('connected', 'Move processed');
+                
+            } catch (error) {
+                updateConnectionStatus('disconnected', `Move failed: ${error.message}`);
+            }
+
+            draggedPiece = null;
         }
 
         // Trigger engine move via local HTTP API
