@@ -115,6 +115,11 @@
             cursor: grabbing;
         }
 
+        .piece.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         .piece img {
             width: 80%;
             height: 80%;
@@ -576,14 +581,19 @@
                         if (square) {
                             const wrapper = document.createElement('span');
                             wrapper.className = 'piece piece-enter';
+                            
+                            // Add disabled class if processing move
+                            if (isProcessingMove) {
+                                wrapper.classList.add('disabled');
+                            }
 
                             const img = document.createElement('img');
                             img.alt = `${piece.color} ${typeNames[piece.type]}`;
                             img.src = pieceImageSrc(piece);
                             img.onerror = () => { wrapper.textContent = pieceSymbols[piece.color][piece.type]; };
 
-                            // Make piece draggable
-                            wrapper.draggable = true;
+                            // Make piece draggable (but disabled if processing)
+                            wrapper.draggable = !isProcessingMove;
                             wrapper.dataset.pieceColor = piece.color;
                             wrapper.dataset.pieceType = piece.type;
                             wrapper.dataset.square = `${String.fromCharCode(97 + boardFile)}${8 - boardRank}`;
@@ -740,6 +750,11 @@
 
         // Drag and drop handlers
         function handleDragStart(e) {
+            if (isProcessingMove) {
+                e.preventDefault(); // Prevent drag if processing move
+                return;
+            }
+            
             draggedPiece = {
                 color: e.target.dataset.pieceColor,
                 type: parseInt(e.target.dataset.pieceType),
@@ -798,6 +813,9 @@
                 updateConnectionStatus('loading', 'Making move...');
                 isProcessingMove = true; // Set flag to prevent "no new moves" messages
                 
+                // Update piece opacity to disable pieces immediately
+                updatePieceOpacity();
+                
                 const response = await fetch('http://localhost:8080/move', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -818,16 +836,47 @@
                 updateConnectionStatus('disconnected', `Move failed: ${error.message}`);
             } finally {
                 isProcessingMove = false; // Clear flag
+                // Re-enable pieces
+                updatePieceOpacity();
+                reenableDragAndDrop();
             }
 
             draggedPiece = null;
         }
 
+        // Re-enable drag and drop on all pieces
+        function reenableDragAndDrop() {
+            const pieces = document.querySelectorAll('.piece');
+            pieces.forEach(piece => {
+                piece.draggable = true;
+                piece.classList.remove('disabled');
+            });
+        }
+
+        // Update piece opacity based on processing state
+        function updatePieceOpacity() {
+            const pieces = document.querySelectorAll('.piece');
+            pieces.forEach(piece => {
+                if (isProcessingMove) {
+                    piece.classList.add('disabled');
+                } else {
+                    piece.classList.remove('disabled');
+                }
+            });
+        }
+
         // Trigger engine move via local HTTP API
         async function triggerEngineMove() {
+            if (isProcessingMove) {
+                return; // Don't allow multiple simultaneous moves
+            }
+            
             try {
                 updateConnectionStatus('loading', 'Requesting engine move...');
                 isProcessingMove = true; // Set flag to prevent "no new moves" messages
+                
+                // Update piece opacity to disable pieces immediately
+                updatePieceOpacity();
                 
                 const res = await fetch('http://localhost:8080/enginemove', { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -839,6 +888,10 @@
                 console.error(e);
             } finally {
                 isProcessingMove = false; // Clear flag
+                // Update piece opacity to enable pieces
+                updatePieceOpacity();
+                // Re-enable drag and drop
+                reenableDragAndDrop();
             }
         }
 
