@@ -474,7 +474,7 @@
 
             <div class="status-item">
                 <span class="status-label">Auto-Refresh:</span>
-                <span id="autoStatus" class="status-value">ON</span>
+                <span id="autoStatus" class="status-value">OFF</span>
             </div>
 
             <div class="move-history">
@@ -518,9 +518,10 @@
         let lastTimestamp = 0;
         let fetchCount = 0;
         let autoRefreshInterval = null;
-        let isAutoRefreshEnabled = true;
+        let isAutoRefreshEnabled = false; // Disabled by default since we control when to fetch
         let moveHistory = [];
         let draggedPiece = null;
+        let isProcessingMove = false; // Track if we're currently processing a move
 
         // Auto-refresh settings
         const REFRESH_INTERVAL = 1000; // one second
@@ -688,7 +689,10 @@
                     updateGameInfo(data);
                     updateConnectionStatus('connected', 'Board updated successfully');
                 } else {
-                    updateConnectionStatus('connected', 'No new moves detected');
+                    // Only show "no new moves" if we're not processing a move
+                    if (!isProcessingMove) {
+                        updateConnectionStatus('connected', 'No new moves detected');
+                    }
                 }
                 
             } catch (error) {
@@ -792,6 +796,7 @@
             
             try {
                 updateConnectionStatus('loading', 'Making move...');
+                isProcessingMove = true; // Set flag to prevent "no new moves" messages
                 
                 const response = await fetch('http://localhost:8080/move', {
                     method: 'POST',
@@ -811,6 +816,8 @@
                 
             } catch (error) {
                 updateConnectionStatus('disconnected', `Move failed: ${error.message}`);
+            } finally {
+                isProcessingMove = false; // Clear flag
             }
 
             draggedPiece = null;
@@ -820,6 +827,8 @@
         async function triggerEngineMove() {
             try {
                 updateConnectionStatus('loading', 'Requesting engine move...');
+                isProcessingMove = true; // Set flag to prevent "no new moves" messages
+                
                 const res = await fetch('http://localhost:8080/enginemove', { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 await res.json();
@@ -828,6 +837,8 @@
             } catch (e) {
                 updateConnectionStatus('disconnected', `Engine move failed: ${e.message}`);
                 console.error(e);
+            } finally {
+                isProcessingMove = false; // Clear flag
             }
         }
 
@@ -849,7 +860,7 @@
         window.addEventListener('load', () => {
             initializeBoard();
             fetchBoardState(); // Immediate first fetch
-            startAutoRefresh(); // Start interval
+            // Don't start auto-refresh by default
             addToMoveHistory('Board viewer initialized');
         });
 
