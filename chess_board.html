@@ -24,11 +24,19 @@
 
         .container {
             display: grid;
-            grid-template-columns: 1fr auto 300px;
-            gap: 30px;
-            max-width: 1400px;
+            grid-template-columns: 1fr 350px; /* narrower side column */
+            gap: 20px; /* smaller gap between columns */
+            max-width: 1150px; /* smaller max width */
             width: 100%;
             align-items: start;
+        }
+
+        /* Sidebar stacks info + controls tightly without being pushed by board height */
+        .sidebar {
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .board-section {
@@ -167,6 +175,7 @@
             padding: 25px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             min-height: 400px;
+            grid-column: 2; /* right column */
         }
 
         .info-title {
@@ -239,7 +248,7 @@
             border: 1px solid #3182ce;
         }
 
-        /* Controls */
+        /* Controls (shared button styles) */
         .controls {
             display: flex;
             gap: 10px;
@@ -276,6 +285,24 @@
         .btn-secondary:hover {
             background: #2d3748;
             transform: translateY(-1px);
+        }
+
+        /* Side Controls Panel */
+        .controls-panel {
+            background: #2d3748;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            margin-top: 16px;
+            grid-column: 2; /* place under info panel in right column */
+        }
+
+        .controls-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
         /* Move History */
@@ -396,18 +423,11 @@
                 </div>
             </div>
 
-            <div class="controls">
-                <button class="btn btn-primary" onclick="manualRefresh()">🔄 Refresh</button>
-                <button class="btn btn-secondary" onclick="toggleAutoRefresh()" id="autoBtn">
-                    ⏸️ Auto: ON
-                </button>
-                <button class="btn btn-secondary" onclick="openJsonViewer()">📄 View JSON</button>
-                <button class="btn btn-primary" onclick="triggerEngineMove()">🤖 Engine Move</button>
-                <button class="btn btn-secondary" onclick="triggerNewGame()">♟️ Reset Board</button>
-            </div>
+            
         </div>
 
-        <!-- Game Info Panel -->
+        <!-- Right column: Sidebar containing info + controls -->
+        <div class="sidebar">
         <div class="info-panel">
             <h2 class="info-title">Game Information</h2>
             
@@ -441,6 +461,15 @@
                     <div class="move-item">Waiting for game data...</div>
                 </div>
             </div>
+        </div>
+        <!-- Controls Panel (only engine + reset) -->
+        <div class="controls-panel">
+            <h2 class="controls-title">Controls</h2>
+            <div class="controls" style="justify-content: center; margin-top: 0;">
+                <button class="btn btn-primary" onclick="triggerEngineMove()">🤖 Engine Move</button>
+                <button class="btn btn-secondary" onclick="triggerNewGame()">♟️ Reset Board</button>
+            </div>
+        </div>
         </div>
     </div>
 
