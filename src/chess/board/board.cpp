@@ -29,27 +29,7 @@ void Board::setBlockers() {
     blockers = getWhitePositions() | getBlackPositions();
 }
 
-uint64_t Board::getWhitePositions() const {
-    return pieceBitboards[WPAWN] | pieceBitboards[WBISHOP] | pieceBitboards[WKNIGHT] | pieceBitboards[WROOK] | pieceBitboards[WQUEEN] | pieceBitboards[WKING];
-}
-
-uint64_t Board::getBlackPositions() const {
-    return pieceBitboards[BPAWN] | pieceBitboards[BBISHOP] | pieceBitboards[BKNIGHT] | pieceBitboards[BROOK] | pieceBitboards[BQUEEN] | pieceBitboards[BKING];
-}
-
-uint64_t Board::getWhiteAttacks() const {
-    const Gamestate& gamestate = history.top();
-    return gamestate.attackBitboards[WPAWN] | gamestate.attackBitboards[WBISHOP] | gamestate.attackBitboards[WKNIGHT] | gamestate.attackBitboards[WROOK] | gamestate.attackBitboards[WQUEEN] | gamestate.attackBitboards[WKING];
-}
-
-uint64_t Board::getBlackAttacks() const {
-    const Gamestate& gamestate = history.top();
-    return gamestate.attackBitboards[BPAWN] | gamestate.attackBitboards[BBISHOP] | gamestate.attackBitboards[BKNIGHT] | gamestate.attackBitboards[BROOK] | gamestate.attackBitboards[BQUEEN] | gamestate.attackBitboards[BKING];
-}
-
-bool Board::kingInCheck() const {
-    return pieceBitboards[turn ? BKING : WKING] & (turn ? getWhiteAttacks() : getBlackAttacks());
-}
+// moved inline to board.h for performance
 
 void Board::setFEN(string FEN) {
     for (int i = 0; i < NUM_PIECES; i++) {
