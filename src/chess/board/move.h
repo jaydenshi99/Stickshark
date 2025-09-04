@@ -29,9 +29,9 @@ class Move {
     Move(int s, int t, int f);
 
     // Get methods (inlined for hot-path performance)
-    inline uint16_t getSource() const { return (moveValue >> 6) & 0x3F; }
-    inline uint16_t getTarget() const { return moveValue & 0x3F; }
-    inline uint16_t getFlag()   const { return (moveValue >> 12) & 0xF; }
+    inline __attribute__((always_inline)) uint16_t getSource() const { return (moveValue >> 6) & 0x3F; }
+    inline __attribute__((always_inline)) uint16_t getTarget() const { return moveValue & 0x3F; }
+    inline __attribute__((always_inline)) uint16_t getFlag()   const { return (moveValue >> 12) & 0xF; }
 
     // Friend declaration for operator<<
     friend std::ostream& operator<<(std::ostream& os, const Move& move);
