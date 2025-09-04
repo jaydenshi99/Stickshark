@@ -206,7 +206,7 @@ void Board::makeMove(const Move& move) {
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
     }
 
-    // Update attack of moved piece
+    // Update attack of affected pieces if non-slidiing.
     if (isNonSliding[movedPiece]) updatePieceAttacks(gState, movedPiece);
     if (isNonSliding[capturedPiece]) updatePieceAttacks(gState, capturedPiece);
 
