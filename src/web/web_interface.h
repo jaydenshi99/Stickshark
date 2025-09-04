@@ -10,10 +10,14 @@
 class WebInterface {
 private:
     Engine* engine;
+    bool quiet = false; // suppress engine stdout when true
     
 public:
     WebInterface();
     ~WebInterface();
+    
+    // Control verbosity
+    inline void setQuiet(bool q) { quiet = q; }
     
     // Main entry point for web commands
     std::string processCommand(const std::string& input);

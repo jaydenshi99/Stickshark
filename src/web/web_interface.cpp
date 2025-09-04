@@ -94,18 +94,22 @@ string WebInterface::handleMove(const string& moveStr) {
 }
 
 string WebInterface::handleEngineMove(int timeMs) {
-    // Suppress engine debug output by redirecting cout temporarily
-    streambuf* orig = cout.rdbuf();
+    // Optionally suppress engine debug output when quiet
+    streambuf* orig = nullptr;
     stringstream devnull;
-    cout.rdbuf(devnull.rdbuf());
+    if (quiet) {
+        orig = cout.rdbuf();
+        cout.rdbuf(devnull.rdbuf());
+    }
     
     // Get engine move (engine operates on its own board)
     engine->findBestMove(timeMs);
     Move bestMove = engine->bestMove;
     engine->board.makeMove(bestMove);
-    
-    // Restore cout
-    cout.rdbuf(orig);
+
+    if (quiet && orig) {
+        cout.rdbuf(orig);
+    }
     
     // Convert move to notation
     char fromFile = 'a' + (bestMove.getSource() % 8);
@@ -116,7 +120,6 @@ string WebInterface::handleEngineMove(int timeMs) {
     string moveNotation = string(1, fromFile) + string(1, fromRank) + "-" + 
                          string(1, toFile) + string(1, toRank);
 
-    
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
