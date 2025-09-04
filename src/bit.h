@@ -4,13 +4,13 @@
 #include <cstdlib>
 #include <random>
 
-inline int popLSB(uint64_t& bb) {
+inline __attribute__((always_inline)) int popLSB(uint64_t& bb) {
     int lsb = __builtin_ctzll(bb);
     bb &= bb - 1; 
     return lsb;    
 }
 
-inline int popcount(uint64_t bb) {
+inline __attribute__((always_inline)) int popcount(uint64_t bb) {
     return __builtin_popcountll(bb);
 }
 

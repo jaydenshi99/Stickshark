@@ -16,7 +16,14 @@ WebInterface::~WebInterface() {
     delete engine;
 }
 
+void WebInterface::debug(const string& msg) const {
+    if (!quiet) {
+        cerr << "[WebInterface] " << msg << '\n';
+    }
+}
+
 string WebInterface::processCommand(const string& input) {
+    debug(string("processCommand: ") + input);
     // Simple command parsing - expects format: "COMMAND:data"
     size_t colonPos = input.find(':');
     
@@ -35,6 +42,7 @@ string WebInterface::processCommand(const string& input) {
         // Commands with data
         string command = input.substr(0, colonPos);
         string data = input.substr(colonPos + 1);
+        debug(string("command=") + command + ", data=" + data);
         
         if (command == "move") {
             return handleMove(data);
@@ -48,6 +56,7 @@ string WebInterface::processCommand(const string& input) {
 }
 
 string WebInterface::handleNewGame() {
+    debug("handleNewGame");
     engine->board.setFEN(STARTING_FEN);
     
     stringstream response;
@@ -66,6 +75,7 @@ string WebInterface::handleNewGame() {
 }
 
 string WebInterface::handleMove(const string& moveStr) {
+    debug(string("handleMove: ") + moveStr);
     // Parse move in format "e2-e4"
     if (moveStr.length() != 5 || moveStr[2] != '-') {
         return errorResponse("Invalid move format. Expected: e2-e4");
@@ -94,18 +104,23 @@ string WebInterface::handleMove(const string& moveStr) {
 }
 
 string WebInterface::handleEngineMove(int timeMs) {
-    // Suppress engine debug output by redirecting cout temporarily
-    streambuf* orig = cout.rdbuf();
+    debug(string("handleEngineMove: timeMs=") + to_string(timeMs));
+    // Optionally suppress engine debug output when quiet
+    streambuf* orig = nullptr;
     stringstream devnull;
-    cout.rdbuf(devnull.rdbuf());
+    if (quiet) {
+        orig = cout.rdbuf();
+        cout.rdbuf(devnull.rdbuf());
+    }
     
     // Get engine move (engine operates on its own board)
     engine->findBestMove(timeMs);
     Move bestMove = engine->bestMove;
     engine->board.makeMove(bestMove);
-    
-    // Restore cout
-    cout.rdbuf(orig);
+
+    if (quiet && orig) {
+        cout.rdbuf(orig);
+    }
     
     // Convert move to notation
     char fromFile = 'a' + (bestMove.getSource() % 8);
@@ -115,8 +130,8 @@ string WebInterface::handleEngineMove(int timeMs) {
     
     string moveNotation = string(1, fromFile) + string(1, fromRank) + "-" + 
                          string(1, toFile) + string(1, toRank);
+    debug(string("engine best move: ") + moveNotation);
 
-    
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
@@ -138,6 +153,7 @@ string WebInterface::handleEngineMove(int timeMs) {
 }
 
 string WebInterface::handleGetBoard() {
+    debug("handleGetBoard");
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
@@ -185,6 +201,7 @@ string WebInterface::boardToJson() const {
 }
 
 string WebInterface::errorResponse(const string& message) const {
+    debug(string("error: ") + message);
     stringstream response;
     response << "{";
     response << "\"status\": \"error\",";

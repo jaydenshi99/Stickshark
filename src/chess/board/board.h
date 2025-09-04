@@ -37,14 +37,30 @@ class Board {
     // Constructor
     Board();
 
-    // Get methods
-    uint64_t getWhitePositions() const;
-    uint64_t getBlackPositions() const;
-
-    uint64_t getWhiteAttacks() const;
-    uint64_t getBlackAttacks() const;
-
-    bool kingInCheck() const;
+    // Get methods (inlined for hot-path performance)
+    inline __attribute__((always_inline)) uint64_t getWhitePositions() const {
+        return pieceBitboards[WPAWN] | pieceBitboards[WBISHOP] | pieceBitboards[WKNIGHT] |
+               pieceBitboards[WROOK] | pieceBitboards[WQUEEN] | pieceBitboards[WKING];
+    }
+    inline __attribute__((always_inline)) uint64_t getBlackPositions() const {
+        return pieceBitboards[BPAWN] | pieceBitboards[BBISHOP] | pieceBitboards[BKNIGHT] |
+               pieceBitboards[BROOK] | pieceBitboards[BQUEEN] | pieceBitboards[BKING];
+    }
+    inline __attribute__((always_inline)) uint64_t getWhiteAttacks() const {
+        const Gamestate& gamestate = history.top();
+        return gamestate.attackBitboards[WPAWN] | gamestate.attackBitboards[WBISHOP] |
+               gamestate.attackBitboards[WKNIGHT] | gamestate.attackBitboards[WROOK] |
+               gamestate.attackBitboards[WQUEEN] | gamestate.attackBitboards[WKING];
+    }
+    inline __attribute__((always_inline)) uint64_t getBlackAttacks() const {
+        const Gamestate& gamestate = history.top();
+        return gamestate.attackBitboards[BPAWN] | gamestate.attackBitboards[BBISHOP] |
+               gamestate.attackBitboards[BKNIGHT] | gamestate.attackBitboards[BROOK] |
+               gamestate.attackBitboards[BQUEEN] | gamestate.attackBitboards[BKING];
+    }
+    inline __attribute__((always_inline)) bool kingInCheck() const {
+        return pieceBitboards[turn ? BKING : WKING] & (turn ? getWhiteAttacks() : getBlackAttacks());
+    }
 
     // Set methods
     void setFEN(std::string FEN);
