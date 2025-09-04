@@ -168,7 +168,6 @@ void Board::makeMove(const Move& move) {
     gState.attackBitboards[WKING] = oldGamestate.attackBitboards[WKING];
     gState.attackBitboards[BKING] = oldGamestate.attackBitboards[BKING];
 
-
     // Empty moved piece
     squares[sourceSquare] = EMPTY;
     pieceBitboards[movedPiece] ^= sourceSquareMask;
@@ -252,7 +251,6 @@ void Board::unmakeMove(const Move& move) {
         // If no piece was captured then remove the blocker
         blockers ^= currSquareMask;
     }
-
 
     // Flag specific cases
     if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {

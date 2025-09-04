@@ -44,7 +44,9 @@ int main (int argc, char* argv[]) {
         }
     } else {
         // Original chess game mode
-        playEngine(STARTING_FEN, 1000);
+        // playEngine(STARTING_FEN, 1000);
+
+        perft(6, STARTING_FEN);
     }
 
     return 0;
