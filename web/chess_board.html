@@ -476,7 +476,7 @@
         </div>
         <!-- Controls Panel (only engine + reset) -->
         <div class="controls-panel">
-            <h2 class="controls-title">Controls</h2>
+            <h2 class="controls-title">Board Controls</h2>
             <div class="controls" style="justify-content: center; margin-top: 0;">
                 <button class="btn btn-primary" onclick="triggerEngineMove()">🤖 Engine Move</button>
                 <button class="btn btn-secondary" onclick="triggerNewGame()">♟️ Reset Board</button>
@@ -661,7 +661,7 @@
             try {
                 updateConnectionStatus('loading', 'Fetching board state...');
                 
-                const response = await fetch(`data/board_state.json?t=${Date.now()}`);
+                const response = await fetch(`../data/board_state.json?t=${Date.now()}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);

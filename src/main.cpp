@@ -1,6 +1,6 @@
 #include "main.h"
-#include "web_interface.h"
-#include "http_server.h"
+#include "web/web_interface.h"
+#include "web/http_server.h"
 
 using namespace std;
 

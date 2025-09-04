@@ -62,12 +62,12 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 
 3. **Start the chess engine in web mode** (in another terminal):
    ```bash
-   ./bin/main --http
+   ./build/bin/main --http
    ```
 
 4. **Open your web browser** and navigate to:
-   - **Visual Board**: http://localhost:8000/chess_board.html
-   - **Raw JSON View**: http://localhost:8000/json_viewer.html
+   - **Visual Board**: http://localhost:8000/web/chess_board.html
+   - **Raw JSON View**: http://localhost:8000/web/json_viewer.html
 
 ## Contact
 For questions or feedback, feel free to contact:

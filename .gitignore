@@ -1,6 +1,5 @@
 # Ignore build artifacts
-obj/
-bin/
+build/
 
 # Ignore editor and OS-specific files
 *.o

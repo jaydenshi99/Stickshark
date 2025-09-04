@@ -4,9 +4,9 @@ CXXFLAGS := -std=c++20 -Wall -Wextra -O2
 
 # Directories
 SRCDIR := src
-INCDIR := include
-OBJDIR := obj
-BINDIR := bin
+BUILDDIR := build
+OBJDIR := $(BUILDDIR)/obj
+BINDIR := $(BUILDDIR)/bin
 
 # Target executable
 TARGET := $(BINDIR)/main
@@ -28,11 +28,11 @@ $(TARGET): $(OBJECTS)
 # Compile every source file into an object file
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c $< -o $@
 
 # Clean up build artifacts
 clean:
-	rm -rf $(OBJDIR) $(BINDIR)
+	rm -rf $(BUILDDIR)
 
 # Always recompile every file
 .PHONY: all clean
