@@ -791,11 +791,9 @@
             
             try {
                 updateConnectionStatus('loading', 'Making move...');
-                isProcessingMove = true; // Set flag to prevent "no new moves" messages
-                
-                // Update piece opacity to disable pieces immediately
+                isProcessingMove = true;
                 updatePieceOpacity();
-                
+
                 const response = await fetch('http://localhost:8080/move', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -807,24 +805,27 @@
                 }
 
                 const result = await response.json();
-                
                 // Log the move to console
                 addToConsole(`player move: ${moveNotation}`);
-                
-                // Always refresh board after any move attempt
-                await fetchBoardState();
-                updateConnectionStatus('connected', 'Move processed');
-                
+
+                // Render directly from server response to avoid race with file writes
+                if (result && result.board) {
+                    currentBoard = result;
+                    if (result.timestamp) lastTimestamp = result.timestamp;
+                    renderBoard(result);
+                    updateGameInfo(result);
+                    updateConnectionStatus('connected', 'Move processed');
+                } else {
+                    await fetchBoardState();
+                }
             } catch (error) {
                 updateConnectionStatus('disconnected', `Move failed: ${error.message}`);
             } finally {
-                isProcessingMove = false; // Clear flag
-                // Re-enable pieces
+                isProcessingMove = false;
                 updatePieceOpacity();
                 reenableDragAndDrop();
+                draggedPiece = null;
             }
-
-            draggedPiece = null;
         }
 
         // Re-enable drag and drop on all pieces
@@ -870,8 +871,16 @@
                     addToConsole(`engine move: ${result.move}`);
                 }
                 
-                // After engine moves, refresh board state
-                await fetchBoardState();
+                // Render directly from server response
+                if (result && result.board) {
+                    currentBoard = result;
+                    if (result.timestamp) lastTimestamp = result.timestamp;
+                    renderBoard(result);
+                    updateGameInfo(result);
+                    updateConnectionStatus('connected', 'Board updated');
+                } else {
+                    await fetchBoardState();
+                }
             } catch (e) {
                 updateConnectionStatus('disconnected', `Engine move failed: ${e.message}`);
                 console.error(e);
