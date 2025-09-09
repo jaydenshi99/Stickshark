@@ -650,6 +650,10 @@
             document.querySelectorAll('.square.highlight-from, .square.highlight-to')
                 .forEach(sq => { sq.classList.remove('highlight-from', 'highlight-to'); });
         }
+        function clearDropHighlights() {
+            document.querySelectorAll('.square.valid-drop, .square.invalid-drop, .square.drag-over')
+                .forEach(sq => { sq.classList.remove('valid-drop', 'invalid-drop', 'drag-over'); });
+        }
         // Player mapping: no horizontal flip
         function squareIdFromNotationPlayer(notation) {
             if (!notation || notation.length < 2) return null;
@@ -682,6 +686,20 @@
             const toEl = toId ? document.getElementById(toId) : null;
             if (fromEl) fromEl.classList.add('highlight-from');
             if (toEl) toEl.classList.add('highlight-to');
+        }
+
+        function getMovesFor(fromSquare) {
+            return (movesByFrom && movesByFrom[fromSquare]) ? movesByFrom[fromSquare] : [];
+        }
+
+        function highlightLegalTargets(fromSquare) {
+            clearDropHighlights();
+            const moves = getMovesFor(fromSquare);
+            for (const m of moves) {
+                const targetId = squareIdFromNotationPlayer(m.to);
+                const el = targetId ? document.getElementById(targetId) : null;
+                if (el) el.classList.add('valid-drop');
+            }
         }
 
         // Add message to console
@@ -806,6 +824,9 @@
                 square: e.target.dataset.square
             };
             e.dataTransfer.effectAllowed = 'move';
+
+            // Highlight legal targets for this piece
+            highlightLegalTargets(draggedPiece.square);
         }
 
         function handleDragOver(e) {
@@ -832,9 +853,7 @@
             e.preventDefault();
             
             // Clear drag visual feedback
-            document.querySelectorAll('.square').forEach(sq => {
-                sq.classList.remove('drag-over', 'valid-drop', 'invalid-drop');
-            });
+            clearDropHighlights();
 
             if (!draggedPiece) return;
 
@@ -851,8 +870,15 @@
                 return; // Don't send request for same square
             }
 
-            // Create move notation
-            const moveNotation = `${draggedPiece.square}-${targetSquareNotation}`;
+            // Validate against legal moves
+            const candidates = getMovesFor(draggedPiece.square);
+            const chosen = candidates.find(m => m.to === targetSquareNotation);
+            if (!chosen) {
+                // invalid drop: ignore without request
+                draggedPiece = null;
+                return;
+            }
+            const moveNotation = `${draggedPiece.square}-${chosen.to}`;
             
             try {
                 updateConnectionStatus('loading', 'Making move...');
@@ -862,7 +888,7 @@
                 const response = await fetch('http://localhost:8080/move', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ move: moveNotation })
+                    body: JSON.stringify({ id: chosen.id })
                 });
 
                 if (!response.ok) {
