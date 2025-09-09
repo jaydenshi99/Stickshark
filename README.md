@@ -4,7 +4,7 @@ Stickshark is a C++ chess engine designed for high efficiency, featuring advance
 
 Project Logs: https://www.notion.so/stickshark-42a22c01dacb4826a874dbc6d1b53562?pvs=4
 
-Note: Castling and enpassant not yet supported
+Note: Enpassant not yet supported
 
 ## Features
 - **Efficient Move Generation**: Uses bitboards for fast chessboard representation.
