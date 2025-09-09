@@ -85,27 +85,29 @@ bool HttpServer::start(unsigned short port) {
 
         if (method == "GET" && path == "/board") {
             json = web.handleGetBoard();
+        } else if (method == "GET" && path == "/legal") {
+            json = web.handleGetLegal();
         } else if (method == "POST" && path == "/newgame") {
             json = web.handleNewGame();
         } else if (method == "POST" && path == "/enginemove") {
             // Optional: parse timeMs from body later; default
             json = web.handleEngineMove(1000);
         } else if (method == "POST" && path == "/move") {
-            // Expect body like {"move":"e2-e4"} or raw e2-e4
-            string move;
-            size_t pos = body.find("\"move\"");
-            if (pos != string::npos) {
-                size_t q1 = body.find('"', body.find(':', pos) + 1);
-                size_t q2 = q1 == string::npos ? string::npos : body.find('"', q1 + 1);
-                if (q1 != string::npos && q2 != string::npos) move = body.substr(q1 + 1, q2 - q1 - 1);
+            // Accept either {id} or {from,to,flag} or legacy {move:"e2-e4"}
+            if (body.find("\"id\"") != string::npos ||
+                body.find("\"from\"") != string::npos ||
+                body.find("\"move\"") != string::npos) {
+                json = web.handleValidatedMove(body);
+            } else {
+                status = 400; json = web.errorResponse("Invalid move payload");
             }
-            if (move.empty()) move = body;
-            if (move.size() >= 5) json = web.handleMove(move);
-            else { status = 400; json = web.errorResponse("Invalid move"); }
         } else if (method == "OPTIONS") {
             // Handle CORS preflight requests
             status = 200;
             json = ""; // No body needed for OPTIONS
+        } else if (method == "GET" && (path == "/" || path == "/favicon.ico")) {
+            status = 200;
+            json = "{}";
         } else {
             status = 404;
             json = web.errorResponse("Not found");

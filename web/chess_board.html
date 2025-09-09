@@ -85,6 +85,26 @@
             transition: all 0.2s ease;
         }
 
+        /* Overlay helper */
+        .square::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: transparent;
+            pointer-events: none;
+            z-index: 0; /* keep overlay under piece */
+        }
+
+        /* Higher-priority overlay layer (between square overlay and piece) */
+        .square::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: transparent;
+            pointer-events: none;
+            z-index: 1; /* sits above ::after but below piece */
+        }
+
         .square.light {
             background-color: #f0d9b5;
         }
@@ -109,6 +129,8 @@
             filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
             cursor: grab;
             user-select: none;
+            position: relative; /* ensure above overlays */
+            z-index: 2;
         }
 
         .piece:active {
@@ -129,21 +151,35 @@
             pointer-events: none;
         }
 
-        /* Drag and drop visual feedback */
-        .square.drag-over {
-            background-color: #4ade80 !important;
-            opacity: 0.8;
+        /* Drag and drop visual feedback (highest precedence) */
+        .square.drag-over::before { background: rgba(0, 0, 0, 0.18); }
+
+        .square.invalid-drop::after { background: rgba(248, 113, 113, 0.35); }
+
+        .square.valid-drop::after {
+            background: rgba(48, 45, 35, 0.35);
+            width: 30%;
+            height: 30%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
         }
 
-        .square.invalid-drop {
-            background-color: #f87171 !important;
-            opacity: 0.8;
+        /* Capture indicator (piece on target): big hollow ring around piece */
+        .square.valid-capture::after {
+            background: transparent;
+            width: 90%;
+            height: 90%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 4px solid rgba(48, 45, 35, 0.35);
         }
 
-        .square.valid-drop {
-            background-color: #4ade80 !important;
-            opacity: 0.6;
-        }
+        /* Selected piece/square */
+        .square.selected::after { background: rgba(96, 165, 250, 0.35); }
 
         /* Coordinates */
         .coordinates {
@@ -432,12 +468,8 @@
             100% { transform: scale(1); }
         }
 
-        .highlight-from {
-            background-color: #e0c44c !important; /* amber background */
-        }
-        .highlight-to {
-            background-color: #e0c44c !important; /* emerald background */
-        }
+        .highlight-from::after { background: rgba(251, 191, 36, 0.35); }
+        .highlight-to::after { background: rgba(251, 191, 36, 0.35); }
     </style>
 </head>
 <body>
@@ -524,7 +556,9 @@
         let isAutoRefreshEnabled = false; // Disabled by default since we control when to fetch
         let consoleMessages = [];
         let draggedPiece = null;
+        let selectedFrom = null; // click-click selection
         let isProcessingMove = false; // Track if we're currently processing a move
+        let movesByFrom = {}; // Cached legal moves for current side
 
         // Auto-refresh settings
         const REFRESH_INTERVAL = 1000; // one second
@@ -548,6 +582,7 @@
                     square.addEventListener('drop', handleDrop);
                     square.addEventListener('dragenter', handleDragEnter);
                     square.addEventListener('dragleave', handleDragLeave);
+                    square.addEventListener('click', handleSquareClick);
                     
                     board.appendChild(square);
                 }
@@ -596,8 +631,9 @@
                             wrapper.dataset.pieceType = piece.type;
                             wrapper.dataset.square = `${String.fromCharCode(97 + boardFile)}${8 - boardRank}`;
 
-                            // Add drag start event listener
+                            // Add drag start and click listeners
                             wrapper.addEventListener('dragstart', handleDragStart);
+                            wrapper.addEventListener('click', handlePieceClick);
 
                             wrapper.appendChild(img);
                             square.appendChild(wrapper);
@@ -632,10 +668,30 @@
             }
         }
 
+        // Fetch legal moves (once per turn)
+        async function fetchLegalMoves() {
+            try {
+                const res = await fetch('http://localhost:8080/legal');
+                if (!res.ok) return;
+                const data = await res.json();
+                movesByFrom = data && data.movesByFrom ? data.movesByFrom : {};
+            } catch (_) {
+                // keep previous cache on error
+            }
+        }
+
         // Highlight helpers
         function clearHighlights() {
             document.querySelectorAll('.square.highlight-from, .square.highlight-to')
                 .forEach(sq => { sq.classList.remove('highlight-from', 'highlight-to'); });
+        }
+        function clearDropHighlights() {
+            document.querySelectorAll('.square.valid-drop, .square.valid-capture, .square.invalid-drop, .square.drag-over')
+                .forEach(sq => { sq.classList.remove('valid-drop', 'valid-capture', 'invalid-drop', 'drag-over'); });
+        }
+        function clearSelection() {
+            document.querySelectorAll('.square.selected')
+                .forEach(sq => { sq.classList.remove('selected'); });
         }
         // Player mapping: no horizontal flip
         function squareIdFromNotationPlayer(notation) {
@@ -669,6 +725,92 @@
             const toEl = toId ? document.getElementById(toId) : null;
             if (fromEl) fromEl.classList.add('highlight-from');
             if (toEl) toEl.classList.add('highlight-to');
+        }
+
+        function getMovesFor(fromSquare) {
+            return (movesByFrom && movesByFrom[fromSquare]) ? movesByFrom[fromSquare] : [];
+        }
+
+        function highlightLegalTargets(fromSquare) {
+            clearDropHighlights();
+            clearSelection();
+            const moves = getMovesFor(fromSquare);
+            for (const m of moves) {
+                const targetId = squareIdFromNotationPlayer(m.to);
+                const el = targetId ? document.getElementById(targetId) : null;
+                if (!el) continue;
+                if (el.querySelector('.piece')) {
+                    el.classList.add('valid-capture');
+                } else {
+                    el.classList.add('valid-drop');
+                }
+            }
+            const fromId = squareIdFromNotationPlayer(fromSquare);
+            const fromEl = fromId ? document.getElementById(fromId) : null;
+            if (fromEl) fromEl.classList.add('selected');
+        }
+
+        // Attempt to make a click-click move from the currently selected square
+        async function tryMakeMoveFromSelected(targetSquareNotation) {
+            if (!selectedFrom) return;
+            if (selectedFrom === targetSquareNotation) {
+                clearDropHighlights();
+                clearSelection();
+                selectedFrom = null;
+                return;
+            }
+
+            const candidates = getMovesFor(selectedFrom);
+            const chosen = candidates.find(m => m.to === targetSquareNotation);
+            if (!chosen) {
+                // not a legal target → clear selection
+                clearDropHighlights();
+                clearSelection();
+                selectedFrom = null;
+                return;
+            }
+
+            const moveNotation = `${selectedFrom}-${chosen.to}`;
+
+            try {
+                updateConnectionStatus('loading', 'Making move...');
+                isProcessingMove = true;
+                updatePieceOpacity();
+
+                const response = await fetch('http://localhost:8080/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: chosen.id })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const result = await response.json();
+                addToConsole(`player move: ${moveNotation}`);
+
+                if (result && result.board) {
+                    currentBoard = result;
+                    if (result.timestamp) lastTimestamp = result.timestamp;
+                    renderBoard(result);
+                    updateGameInfo(result);
+                    highlightMove(moveNotation, false);
+                    updateConnectionStatus('connected', 'Move processed');
+                    fetchLegalMoves();
+                } else {
+                    await fetchBoardState();
+                    highlightMove(moveNotation, false);
+                }
+            } catch (err) {
+                updateConnectionStatus('disconnected', `Move failed: ${err.message}`);
+            } finally {
+                isProcessingMove = false;
+                updatePieceOpacity();
+                reenableDragAndDrop();
+                draggedPiece = null;
+                selectedFrom = null;
+                clearDropHighlights();
+                clearSelection();
+            }
         }
 
         // Add message to console
@@ -730,6 +872,8 @@
                     renderBoard(data);
                     updateGameInfo(data);
                     updateConnectionStatus('connected', 'Board updated successfully');
+                    // Also refresh legal moves for current side
+                    fetchLegalMoves();
                 } else {
                     // Only show "no new moves" if we're not processing a move
                     if (!isProcessingMove) {
@@ -793,6 +937,30 @@
                 square: e.target.dataset.square
             };
             e.dataTransfer.effectAllowed = 'move';
+
+            // Highlight legal targets for this piece
+            highlightLegalTargets(draggedPiece.square);
+            selectedFrom = draggedPiece.square; // sync click/drag selection
+        }
+
+        // Click-to-preview legal moves for a piece
+        function handlePieceClick(e) {
+            e.stopPropagation();
+            if (isProcessingMove) return;
+            const square = e.currentTarget.dataset.square;
+            if (!square) return;
+            // If a piece is already selected and this clicked piece's square is a legal target,
+            // treat it as clicking the destination (captures supported). Otherwise, switch selection to this piece.
+            if (selectedFrom && square !== selectedFrom) {
+                const candidates = getMovesFor(selectedFrom);
+                const isLegalCapture = candidates.some(m => m.to === square);
+                if (isLegalCapture) {
+                    tryMakeMoveFromSelected(square);
+                    return;
+                }
+            }
+            highlightLegalTargets(square);
+            selectedFrom = square;
         }
 
         function handleDragOver(e) {
@@ -815,13 +983,24 @@
             }
         }
 
+        // Click target after selecting a piece
+        async function handleSquareClick(e) {
+            if (isProcessingMove) return;
+            if (!selectedFrom) return;
+
+            const square = e.currentTarget;
+            const targetRank = parseInt(square.dataset.rank);
+            const targetFile = parseInt(square.dataset.file);
+            const targetSquareNotation = `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
+            await tryMakeMoveFromSelected(targetSquareNotation);
+        }
+
         async function handleDrop(e) {
             e.preventDefault();
             
             // Clear drag visual feedback
-            document.querySelectorAll('.square').forEach(sq => {
-                sq.classList.remove('drag-over', 'valid-drop', 'invalid-drop');
-            });
+            clearDropHighlights();
+            clearSelection();
 
             if (!draggedPiece) return;
 
@@ -838,8 +1017,15 @@
                 return; // Don't send request for same square
             }
 
-            // Create move notation
-            const moveNotation = `${draggedPiece.square}-${targetSquareNotation}`;
+            // Validate against legal moves
+            const candidates = getMovesFor(draggedPiece.square);
+            const chosen = candidates.find(m => m.to === targetSquareNotation);
+            if (!chosen) {
+                // invalid drop: ignore without request
+                draggedPiece = null;
+                return;
+            }
+            const moveNotation = `${draggedPiece.square}-${chosen.to}`;
             
             try {
                 updateConnectionStatus('loading', 'Making move...');
@@ -849,7 +1035,7 @@
                 const response = await fetch('http://localhost:8080/move', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ move: moveNotation })
+                    body: JSON.stringify({ id: chosen.id })
                 });
 
                 if (!response.ok) {
@@ -868,6 +1054,7 @@
                     updateGameInfo(result);
                     highlightMove(moveNotation, false);
                     updateConnectionStatus('connected', 'Move processed');
+                    fetchLegalMoves();
                 } else {
                     await fetchBoardState();
                     highlightMove(moveNotation, false);
@@ -933,6 +1120,7 @@
                     updateGameInfo(result);
                     if (result.move) highlightMove(result.move, true);
                     updateConnectionStatus('connected', 'Board updated');
+                    fetchLegalMoves();
                 } else {
                     await fetchBoardState();
                     if (result.move) highlightMove(result.move, true);
@@ -960,8 +1148,21 @@
                 
                 // Log the new game action to console
                 addToConsole('board reset');
-                
-                await fetchBoardState();
+                // Render directly from server response to avoid needing a second refresh
+                if (result && result.board) {
+                    currentBoard = result;
+                    if (result.timestamp) lastTimestamp = result.timestamp;
+                    renderBoard(result);
+                    updateGameInfo(result);
+                    updateConnectionStatus('connected', 'Board reset');
+                } else {
+                    await fetchBoardState();
+                }
+                fetchLegalMoves();
+                // Clear any UI selection state
+                selectedFrom = null;
+                clearDropHighlights();
+                clearSelection();
             } catch (e) {
                 updateConnectionStatus('disconnected', `Reset failed: ${e.message}`);
                 console.error(e);
@@ -972,6 +1173,8 @@
         window.addEventListener('load', () => {
             initializeBoard();
             fetchBoardState(); // Immediate first fetch
+            // Fetch legal moves at startup so click-to-preview works immediately
+            fetchLegalMoves();
             // Don't start auto-refresh by default
             addToConsole('board viewer initialised');
         });
