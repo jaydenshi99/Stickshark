@@ -19,4 +19,4 @@ long perftRecursive(Board& b, int depth);
 void playEngine(std::string startingFEN, int time);
 void engineVSEngine(std::string startingFEN, int time);
 
-Move notationToMove(std::string move);
+Move notationToMove(std::string move, bool turn);
