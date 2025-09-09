@@ -181,6 +181,60 @@ void MoveGen::generateKingMoves(const Board& b) {
             moves.emplace_back(Move(source, target, NONE));
         }
     }
+
+    const uint64_t blockers = b.blockers;
+    const uint64_t attackedByOpp = b.turn ? b.getBlackAttacks() : b.getWhiteAttacks();
+
+    constexpr uint8_t W_K = 1u;
+    constexpr uint8_t W_Q = 2u;
+    constexpr uint8_t B_K = 4u;
+    constexpr uint8_t B_Q = 8u;
+
+    constexpr int E1 = WK_START_SQUARE;
+    constexpr int E8 = BK_START_SQUARE;
+    constexpr int H1 = WKR_START_SQUARE;
+    constexpr int A1 = WQR_START_SQUARE;
+    constexpr int H8 = BKR_START_SQUARE;
+    constexpr int A8 = BQR_START_SQUARE;
+
+    constexpr int F1 = 2, G1 = 1, D1 = 4, C1 = 5, B1 = 6;
+    constexpr int F8 = 58, G8 = 57, D8 = 60, C8 = 61, B8 = 62;
+
+    constexpr uint64_t W_K_EMPTY_MASK = 0x0000000000000006ULL;
+    constexpr uint64_t W_K_SAFE_MASK  = 0x000000000000000EULL;
+    constexpr uint64_t W_Q_EMPTY_MASK = 0x0000000000000070ULL;
+    constexpr uint64_t W_Q_SAFE_MASK  = 0x0000000000000038ULL;
+    constexpr uint64_t B_K_EMPTY_MASK = 0x0600000000000000ULL;
+    constexpr uint64_t B_K_SAFE_MASK  = 0x0E00000000000000ULL;
+    constexpr uint64_t B_Q_EMPTY_MASK = 0x7000000000000000ULL;
+    constexpr uint64_t B_Q_SAFE_MASK  = 0x3800000000000000ULL;
+
+    if (b.turn) {
+        // White to move
+        if ((b.history.top().castlingRights & W_K) &&
+            !(blockers & W_K_EMPTY_MASK) &&
+            !(attackedByOpp & W_K_SAFE_MASK)) {
+            moves.emplace_back(Move(E1, G1, CASTLING));
+        }
+
+        if ((b.history.top().castlingRights & W_Q) &&
+            !(blockers & W_Q_EMPTY_MASK) &&
+            !(attackedByOpp & W_Q_SAFE_MASK)) {
+            moves.emplace_back(Move(E1, C1, CASTLING));
+        }
+    } else {
+        // Black to move
+        if ((b.history.top().castlingRights & B_K) &&
+            !(blockers & B_K_EMPTY_MASK) &&
+            !(attackedByOpp & B_K_SAFE_MASK)) {
+            moves.emplace_back(Move(E8, G8, CASTLING));
+        }
+        if ((b.history.top().castlingRights & B_Q) &&
+            !(blockers & B_Q_EMPTY_MASK) &&
+            !(attackedByOpp & B_Q_SAFE_MASK)) {
+            moves.emplace_back(Move(E8, C8, CASTLING));
+        }
+    }
 }
 
 void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
