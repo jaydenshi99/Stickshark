@@ -1148,8 +1148,21 @@
                 
                 // Log the new game action to console
                 addToConsole('board reset');
-                await fetchBoardState();
+                // Render directly from server response to avoid needing a second refresh
+                if (result && result.board) {
+                    currentBoard = result;
+                    if (result.timestamp) lastTimestamp = result.timestamp;
+                    renderBoard(result);
+                    updateGameInfo(result);
+                    updateConnectionStatus('connected', 'Board reset');
+                } else {
+                    await fetchBoardState();
+                }
                 fetchLegalMoves();
+                // Clear any UI selection state
+                selectedFrom = null;
+                clearDropHighlights();
+                clearSelection();
             } catch (e) {
                 updateConnectionStatus('disconnected', `Reset failed: ${e.message}`);
                 console.error(e);
