@@ -31,14 +31,14 @@ void simulateRandomMoves() {
     moveGen.generatePseudoMoves(board);
 
     int move = 1;
-    while (moveGen.moves.size() != 0 && move <= 1) {
+    while (moveGen.pseudoMoves.size() != 0 && move <= 1) {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dist(0, moveGen.moves.size() - 1);
+        std::uniform_int_distribution<> dist(0, moveGen.pseudoMoves.size() - 1);
 
         int randIndex = dist(gen);
 
-        board.makeMove(moveGen.moves[randIndex]);
+        board.makeMove(moveGen.pseudoMoves[randIndex]);
 
         cout << move++ << ". ";
         if (board.turn) {
@@ -68,13 +68,13 @@ void displayPossibleMoves(string FEN) {
     board.displayBoard();
 
     moveGen.generatePseudoMoves(board);
-    for (Move move : moveGen.moves) {
+    for (Move move : moveGen.pseudoMoves) {
         board.makeMove(move);
         board.displayBoard();
         board.unmakeMove(move);
     }
 
-    cout << "Total Moves: " << moveGen.moves.size() << "\n\n";
+    cout << "Total Moves: " << moveGen.pseudoMoves.size() << "\n\n";
 }
 
 void perft(int depth, string FEN) {
@@ -114,7 +114,7 @@ long perftRecursive(Board& b, int depth) {
     mg.generatePseudoMoves(b);
 
     long totalMoves = 0;
-    for (Move m : mg.moves) {
+    for (Move m : mg.pseudoMoves) {
         b.makeMove(m);
         if (!b.kingInCheck()) {
             totalMoves += perftRecursive(b, depth - 1);
