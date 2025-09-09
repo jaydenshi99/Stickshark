@@ -103,6 +103,90 @@ string WebInterface::handleMove(const string& moveStr) {
     return response.str();
 }
 
+string WebInterface::handleValidatedMove(const string& body) {
+    debug(string("handleValidatedMove: ") + body);
+    // Parse JSON-ish body for id or from/to/flag; very lenient
+    // Try id first
+    string idStr;
+    size_t posId = body.find("\"id\"");
+    if (posId != string::npos) {
+        size_t c = body.find(':', posId);
+        size_t e = body.find_first_of(",}\n\r ", c + 1);
+        idStr = body.substr(c + 1, e == string::npos ? string::npos : e - (c + 1));
+        // trim
+        idStr.erase(0, idStr.find_first_not_of(" \t\n\r"));
+        if (!idStr.empty() && idStr.back() == ' ') idStr.pop_back();
+    }
+
+    MoveGen gen;
+    vector<MoveGen::LegalMoveDTO> dtos;
+    gen.getLegalMovesDTO(engine->board, dtos);
+
+    const Move* chosen = nullptr;
+    if (!idStr.empty()) {
+        // numeric id
+        uint16_t id = static_cast<uint16_t>(stoi(idStr));
+        for (const Move& m : gen.legalMoves) {
+            if (m.moveValue == id) { chosen = &m; break; }
+        }
+    } else {
+        // Fallback: parse from/to/flag
+        auto extractStr = [&](const char* key) -> string {
+            string k = string("\"") + key + "\"";
+            size_t p = body.find(k);
+            if (p == string::npos) return "";
+            size_t q1 = body.find('"', body.find(':', p) + 1);
+            size_t q2 = q1 == string::npos ? string::npos : body.find('"', q1 + 1);
+            if (q1 == string::npos || q2 == string::npos) return "";
+            return body.substr(q1 + 1, q2 - q1 - 1);
+        };
+        auto extractInt = [&](const char* key) -> int {
+            string k = string("\"") + key + "\"";
+            size_t p = body.find(k);
+            if (p == string::npos) return 0;
+            size_t c = body.find(':', p);
+            size_t e = body.find_first_of(",}\n\r ", c + 1);
+            string v = body.substr(c + 1, e == string::npos ? string::npos : e - (c + 1));
+            return stoi(v);
+        };
+        string from = extractStr("from");
+        string to = extractStr("to");
+        int flag = extractInt("flag");
+        for (const Move& m : gen.legalMoves) {
+            // Compare against DTOs for readable from/to
+            // Build on the fly to avoid another map
+            char ff = static_cast<char>('a' + (7 - (m.getSource() % 8)));
+            char fr = static_cast<char>('1' + (m.getSource() / 8));
+            char tf = static_cast<char>('a' + (7 - (m.getTarget() % 8)));
+            char tr = static_cast<char>('1' + (m.getTarget() / 8));
+            if (from.size() == 2 && to.size() == 2 &&
+                from[0] == ff && from[1] == fr &&
+                to[0] == tf && to[1] == tr &&
+                (flag == 0 || flag == (int)m.getFlag())) {
+                chosen = &m; break;
+            }
+        }
+    }
+
+    if (!chosen) {
+        return errorResponse("Illegal move");
+    }
+
+    engine->board.makeMove(*chosen);
+
+    stringstream response;
+    response << "{";
+    response << "\"status\": \"success\",";
+    response << "\"action\": \"move\",";
+    response << "\"board\": " << boardToJson() << ",";
+    response << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
+    response << "\"timestamp\": " << time(nullptr);
+    response << "}";
+
+    writeStateToFile("data/board_state.json", response);
+    return response.str();
+}
+
 string WebInterface::handleEngineMove(int timeMs) {
     debug(string("handleEngineMove: timeMs=") + to_string(timeMs));
     // Optionally suppress engine debug output when quiet

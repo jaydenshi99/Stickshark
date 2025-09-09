@@ -28,6 +28,7 @@ public:
     // Individual command handlers
     std::string handleNewGame();
     std::string handleMove(const std::string& moveStr);
+    std::string handleValidatedMove(const std::string& body);
     std::string handleEngineMove(int timeMs = 1000);
     std::string handleGetBoard();
     std::string handleGetLegal();
