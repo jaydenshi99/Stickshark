@@ -76,6 +76,20 @@ void Board::setFEN(string FEN) {
     }
     setSliderAttacks(gState);
 
+    index += 2;
+
+    // Set castling rights
+    uint8_t castlingRights = 0;
+    while (FEN[index] != ' ') {
+        char c = FEN[index++];
+        if (c == 'K') castlingRights |= 1;
+        if (c == 'Q') castlingRights |= 2;
+        if (c == 'k') castlingRights |= 4;
+        if (c == 'q') castlingRights |= 8;
+    }
+
+    gState.castlingRights = castlingRights;
+
     history.push(gState);
 
     setZobristHash();
@@ -183,6 +197,29 @@ void Board::makeMove(const Move& move) {
 
         // Update piece attacks of promoted piece
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
+    }
+
+    // Update castling rights
+    gState.castlingRights = oldGamestate.castlingRights;
+
+    // White castle rights
+    if (gState.castlingRights & WHITE_CASTLING_RIGHTS) { 
+        if (squares[WK_START_SQUARE] != WKING) {
+            gState.castlingRights &= ~1;
+            gState.castlingRights &= ~2;
+        }
+        if (squares[WKR_START_SQUARE] != WROOK) gState.castlingRights &= ~1;
+        if (squares[WQR_START_SQUARE] != WROOK) gState.castlingRights &= ~2;
+    }
+
+    // Black castle rights
+    if (gState.castlingRights & BLACK_CASTLING_RIGHTS) {
+        if (squares[BK_START_SQUARE] != BKING) {
+            gState.castlingRights &= ~4;
+            gState.castlingRights &= ~8;
+        }
+        if (squares[BKR_START_SQUARE] != BROOK) gState.castlingRights &= ~4;
+        if (squares[BQR_START_SQUARE] != BROOK) gState.castlingRights &= ~8;
     }
 
     // Update attack of affected pieces if non-slidiing.
