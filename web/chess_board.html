@@ -525,6 +525,7 @@
         let consoleMessages = [];
         let draggedPiece = null;
         let isProcessingMove = false; // Track if we're currently processing a move
+        let movesByFrom = {}; // Cached legal moves for current side
 
         // Auto-refresh settings
         const REFRESH_INTERVAL = 1000; // one second
@@ -629,6 +630,18 @@
             // Write evaluation to console
             if (data.eval) {
                 addToConsole(`evaluation: ${data.eval}`);
+            }
+        }
+
+        // Fetch legal moves (once per turn)
+        async function fetchLegalMoves() {
+            try {
+                const res = await fetch('http://localhost:8080/legal');
+                if (!res.ok) return;
+                const data = await res.json();
+                movesByFrom = data && data.movesByFrom ? data.movesByFrom : {};
+            } catch (_) {
+                // keep previous cache on error
             }
         }
 
@@ -868,6 +881,7 @@
                     updateGameInfo(result);
                     highlightMove(moveNotation, false);
                     updateConnectionStatus('connected', 'Move processed');
+                    fetchLegalMoves();
                 } else {
                     await fetchBoardState();
                     highlightMove(moveNotation, false);
@@ -933,6 +947,7 @@
                     updateGameInfo(result);
                     if (result.move) highlightMove(result.move, true);
                     updateConnectionStatus('connected', 'Board updated');
+                    fetchLegalMoves();
                 } else {
                     await fetchBoardState();
                     if (result.move) highlightMove(result.move, true);
@@ -960,8 +975,8 @@
                 
                 // Log the new game action to console
                 addToConsole('board reset');
-                
                 await fetchBoardState();
+                fetchLegalMoves();
             } catch (e) {
                 updateConnectionStatus('disconnected', `Reset failed: ${e.message}`);
                 console.error(e);
