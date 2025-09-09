@@ -425,6 +425,19 @@
             50% { transform: scale(1.02); }
             100% { transform: scale(1); }
         }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .highlight-from {
+            background-color: #e0c44c !important; /* amber background */
+        }
+        .highlight-to {
+            background-color: #e0c44c !important; /* emerald background */
+        }
     </style>
 </head>
 <body>
@@ -617,6 +630,45 @@
             if (data.eval) {
                 addToConsole(`evaluation: ${data.eval}`);
             }
+        }
+
+        // Highlight helpers
+        function clearHighlights() {
+            document.querySelectorAll('.square.highlight-from, .square.highlight-to')
+                .forEach(sq => { sq.classList.remove('highlight-from', 'highlight-to'); });
+        }
+        // Player mapping: no horizontal flip
+        function squareIdFromNotationPlayer(notation) {
+            if (!notation || notation.length < 2) return null;
+            const fileIdx = notation.charCodeAt(0) - 97; // a-h -> 0-7
+            const rank = parseInt(notation[1], 10); // 1-8
+            if (fileIdx < 0 || fileIdx > 7 || isNaN(rank)) return null;
+            const displayRank = rank - 1; // a1 -> rank 0
+            const displayFile = fileIdx; // no flip for player source
+            return `square-${displayRank}-${displayFile}`;
+        }
+        // Engine mapping: horizontal flip to match renderBoard
+        function squareIdFromNotationEngine(notation) {
+            if (!notation || notation.length < 2) return null;
+            const fileIdx = notation.charCodeAt(0) - 97; // a-h -> 0-7
+            const rank = parseInt(notation[1], 10); // 1-8
+            if (fileIdx < 0 || fileIdx > 7 || isNaN(rank)) return null;
+            const displayRank = rank - 1; // a1 -> rank 0
+            const displayFile = 7 - fileIdx; // flip for engine mapping
+            return `square-${displayRank}-${displayFile}`;
+        }
+        function highlightMove(moveNotation, isEngine = false) {
+            if (!moveNotation) return;
+            const parts = moveNotation.split('-');
+            if (parts.length !== 2) return;
+            clearHighlights();
+            const mapFn = isEngine ? squareIdFromNotationEngine : squareIdFromNotationPlayer;
+            const fromId = mapFn(parts[0]);
+            const toId = mapFn(parts[1]);
+            const fromEl = fromId ? document.getElementById(fromId) : null;
+            const toEl = toId ? document.getElementById(toId) : null;
+            if (fromEl) fromEl.classList.add('highlight-from');
+            if (toEl) toEl.classList.add('highlight-to');
         }
 
         // Add message to console
@@ -814,9 +866,11 @@
                     if (result.timestamp) lastTimestamp = result.timestamp;
                     renderBoard(result);
                     updateGameInfo(result);
+                    highlightMove(moveNotation, false);
                     updateConnectionStatus('connected', 'Move processed');
                 } else {
                     await fetchBoardState();
+                    highlightMove(moveNotation, false);
                 }
             } catch (error) {
                 updateConnectionStatus('disconnected', `Move failed: ${error.message}`);
@@ -877,9 +931,11 @@
                     if (result.timestamp) lastTimestamp = result.timestamp;
                     renderBoard(result);
                     updateGameInfo(result);
+                    if (result.move) highlightMove(result.move, true);
                     updateConnectionStatus('connected', 'Board updated');
                 } else {
                     await fetchBoardState();
+                    if (result.move) highlightMove(result.move, true);
                 }
             } catch (e) {
                 updateConnectionStatus('disconnected', `Engine move failed: ${e.message}`);
@@ -897,6 +953,7 @@
         async function triggerNewGame() {
             try {
                 updateConnectionStatus('loading', 'Resetting board...');
+                clearHighlights(); // Clear move highlights when resetting
                 const res = await fetch('http://localhost:8080/newgame', { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const result = await res.json();
