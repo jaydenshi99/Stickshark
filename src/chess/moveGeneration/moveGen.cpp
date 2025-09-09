@@ -192,13 +192,9 @@ void MoveGen::generateKingMoves(const Board& b) {
 
     constexpr int E1 = WK_START_SQUARE;
     constexpr int E8 = BK_START_SQUARE;
-    constexpr int H1 = WKR_START_SQUARE;
-    constexpr int A1 = WQR_START_SQUARE;
-    constexpr int H8 = BKR_START_SQUARE;
-    constexpr int A8 = BQR_START_SQUARE;
 
-    constexpr int F1 = 2, G1 = 1, D1 = 4, C1 = 5, B1 = 6;
-    constexpr int F8 = 58, G8 = 57, D8 = 60, C8 = 61, B8 = 62;
+    constexpr int G1 = 1, C1 = 5;
+    constexpr int G8 = 57, C8 = 61;
 
     constexpr uint64_t W_K_EMPTY_MASK = 0x0000000000000006ULL;
     constexpr uint64_t W_K_SAFE_MASK  = 0x000000000000000EULL;
