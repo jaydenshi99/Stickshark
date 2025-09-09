@@ -403,7 +403,7 @@ void saveMagics() {
 }
 
 void computeZobristBitstrings() {
-    for (int i = 0; i < 769; i++) {
+    for (int i = 0; i < 773; i++) {
         zobristBitstrings[i] = random_uint64();
     }
 }

@@ -199,27 +199,31 @@ void Board::makeMove(const Move& move) {
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
     }
 
-    // Update castling rights
-    gState.castlingRights = oldGamestate.castlingRights;
+    // Update castling rights (compute new mask, then apply Zobrist delta)
+    uint8_t oldRights = oldGamestate.castlingRights;
+    uint8_t rights = oldRights;
 
-    // White castle rights
-    if (gState.castlingRights & WHITE_CASTLING_RIGHTS) { 
-        if (squares[WK_START_SQUARE] != WKING) {
-            gState.castlingRights &= ~1;
-            gState.castlingRights &= ~2;
-        }
-        if (squares[WKR_START_SQUARE] != WROOK) gState.castlingRights &= ~1;
-        if (squares[WQR_START_SQUARE] != WROOK) gState.castlingRights &= ~2;
-    }
+    // White
+    if (squares[WK_START_SQUARE] != WKING) rights &= (uint8_t)~(1u | 2u);
+    if (squares[WKR_START_SQUARE] != WROOK) rights &= (uint8_t)~1u;
+    if (squares[WQR_START_SQUARE] != WROOK) rights &= (uint8_t)~2u;
 
-    // Black castle rights
-    if (gState.castlingRights & BLACK_CASTLING_RIGHTS) {
-        if (squares[BK_START_SQUARE] != BKING) {
-            gState.castlingRights &= ~4;
-            gState.castlingRights &= ~8;
+    // Black
+    if (squares[BK_START_SQUARE] != BKING) rights &= (uint8_t)~(4u | 8u);
+    if (squares[BKR_START_SQUARE] != BROOK) rights &= (uint8_t)~4u;
+    if (squares[BQR_START_SQUARE] != BROOK) rights &= (uint8_t)~8u;
+
+    uint8_t changed = oldRights ^ rights;
+    if (changed) {
+        static constexpr int zobristCastlingBase = 769;
+        for (int i = 0; i < 4; ++i) {
+            if (changed & (1u << i)) {
+                zobristHash ^= zobristBitstrings[zobristCastlingBase + i];
+            }
         }
-        if (squares[BKR_START_SQUARE] != BROOK) gState.castlingRights &= ~4;
-        if (squares[BQR_START_SQUARE] != BROOK) gState.castlingRights &= ~8;
+        gState.castlingRights = rights;
+    } else {
+        gState.castlingRights = oldRights;
     }
 
     // Update attack of affected pieces if non-slidiing.
@@ -282,6 +286,20 @@ void Board::unmakeMove(const Move& move) {
         pieceBitboards[promotedPiece] ^= currSquareMask;
         zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + currSquare];
         pieceSquareEval -= pieceSquareTables[promotedPiece][currSquare];
+    }
+
+    // Update castling right zobrists
+    uint8_t currRights = gState.castlingRights;
+    uint8_t oldRights = history.top().castlingRights;
+
+    uint8_t changed = oldRights ^ currRights;
+    if (changed) {
+        static constexpr int zobristCastlingBase = 769;
+        for (int i = 0; i < 4; ++i) {
+            if (changed & (1u << i)) {
+                zobristHash ^= zobristBitstrings[zobristCastlingBase + i];
+            }
+        }
     }
 
     // Toggle turn
@@ -391,6 +409,11 @@ void Board::setZobristHash() {
     // 768: turn
     if (turn) {
         zobristHash ^= zobristBitstrings[768];
+    }
+
+    // 769 - 772: castling rights
+    for (int i = 0; i < 4; i++) {
+        zobristHash ^= zobristBitstrings[769 + i] * (history.top().castlingRights & (1 << i));
     }
 }
 
