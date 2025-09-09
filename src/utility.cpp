@@ -155,7 +155,7 @@ void playEngine(string startingFEN, int time) {
             cin >> playerMove;
             cout << endl;
 
-            engine.board.makeMove(notationToMove(playerMove));
+            engine.board.makeMove(notationToMove(playerMove, engine.board.turn));
         } else {
             engine.findBestMove(time);
             engine.board.makeMove(engine.bestMove);
@@ -185,7 +185,21 @@ void engineVSEngine(string startingFEN, int time) {
 }
 
 // Only covers normal moves no special moves
-Move notationToMove(string move) {
+Move notationToMove(string move, bool turn) {
+    // Castling
+    if (move == "O-O") {
+        // king side
+        const int kingFrom = turn ? WK_START_SQUARE : BK_START_SQUARE;
+        const int kingTo   = turn ? 1 : 57;
+        return Move(kingFrom, kingTo, CASTLING);
+    } else if (move == "O-O-O") {
+        // queen side
+        const int kingFrom = turn ? WK_START_SQUARE : BK_START_SQUARE;
+        const int kingTo   = turn ? 5 : 61;
+        return Move(kingFrom, kingTo, CASTLING);
+    }
+
+    // Coordinate moves
     int sourceSquare = 'h' - move[0] + (move[1] - '1') * 8;
     int targetSquare = 'h' - move[3] + (move[4] - '1') * 8;
     return Move(sourceSquare, targetSquare, NONE);

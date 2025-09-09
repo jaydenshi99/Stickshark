@@ -76,6 +76,20 @@ void Board::setFEN(string FEN) {
     }
     setSliderAttacks(gState);
 
+    index += 2;
+
+    // Set castling rights
+    uint8_t castlingRights = 0;
+    while (FEN[index] != ' ') {
+        char c = FEN[index++];
+        if (c == 'K') castlingRights |= 1;
+        if (c == 'Q') castlingRights |= 2;
+        if (c == 'k') castlingRights |= 4;
+        if (c == 'q') castlingRights |= 8;
+    }
+
+    gState.castlingRights = castlingRights;
+
     history.push(gState);
 
     setZobristHash();
@@ -166,7 +180,7 @@ void Board::makeMove(const Move& move) {
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == CASTLING) {
         // Add moved piece to new square
         squares[targetSquare] = movedPiece;
         pieceBitboards[movedPiece] ^= targetSquareMask;
@@ -183,6 +197,63 @@ void Board::makeMove(const Move& move) {
 
         // Update piece attacks of promoted piece
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
+    }
+    
+    // In castling moves, the rook is moved along with the king
+    if (moveFlag == CASTLING) {
+        // Determine rook movement based on target square
+        int rookFrom = -1, rookTo = -1;
+        int rookPiece = (movedPiece < 6) ? WROOK : BROOK;
+
+        if (targetSquare == 1) { rookFrom = 0; rookTo = 2; }
+        else if (targetSquare == 5) { rookFrom = 7; rookTo = 4; }
+        else if (targetSquare == 57) { rookFrom = 56; rookTo = 58; }
+        else if (targetSquare == 61) { rookFrom = 63; rookTo = 60; }
+
+        // Move rook
+        if (rookFrom != -1 && rookTo != -1) {
+            uint64_t rFromMask = 1ULL << rookFrom;
+            uint64_t rToMask   = 1ULL << rookTo;
+
+            squares[rookFrom] = EMPTY;
+            pieceBitboards[rookPiece] ^= rFromMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookFrom];
+            pieceSquareEval -= pieceSquareTables[rookPiece][rookFrom];
+            blockers ^= rFromMask;
+
+            squares[rookTo] = rookPiece;
+            pieceBitboards[rookPiece] ^= rToMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookTo];
+            pieceSquareEval += pieceSquareTables[rookPiece][rookTo];
+            blockers ^= rToMask;
+        }
+    }
+
+    // Update castling rights (compute new mask, then apply Zobrist delta)
+    uint8_t oldRights = oldGamestate.castlingRights;
+    uint8_t rights = oldRights;
+
+    // White
+    if (squares[WK_START_SQUARE] != WKING) rights &= (uint8_t)~(1u | 2u);
+    if (squares[WKR_START_SQUARE] != WROOK) rights &= (uint8_t)~1u;
+    if (squares[WQR_START_SQUARE] != WROOK) rights &= (uint8_t)~2u;
+
+    // Black
+    if (squares[BK_START_SQUARE] != BKING) rights &= (uint8_t)~(4u | 8u);
+    if (squares[BKR_START_SQUARE] != BROOK) rights &= (uint8_t)~4u;
+    if (squares[BQR_START_SQUARE] != BROOK) rights &= (uint8_t)~8u;
+
+    uint8_t changed = oldRights ^ rights;
+    if (changed) {
+        static constexpr int zobristCastlingBase = 769;
+        for (int i = 0; i < 4; ++i) {
+            if (changed & (1u << i)) {
+                zobristHash ^= zobristBitstrings[zobristCastlingBase + i];
+            }
+        }
+        gState.castlingRights = rights;
+    } else {
+        gState.castlingRights = oldRights;
     }
 
     // Update attack of affected pieces if non-slidiing.
@@ -233,7 +304,7 @@ void Board::unmakeMove(const Move& move) {
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == CASTLING) {
         // Remove moved piece from square that it was moved to
         pieceBitboards[movedPiece] ^= currSquareMask;
         zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + currSquare];
@@ -245,6 +316,50 @@ void Board::unmakeMove(const Move& move) {
         pieceBitboards[promotedPiece] ^= currSquareMask;
         zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + currSquare];
         pieceSquareEval -= pieceSquareTables[promotedPiece][currSquare];
+    }
+
+    // In castling moves, the rook is moved along with the king
+    if (moveFlag == CASTLING) {
+        // Determine rook movement based on target square
+        int rookFrom = -1, rookTo = -1;
+        int rookPiece = (movedPiece < 6) ? WROOK : BROOK;
+
+        if (currSquare == 1) { rookTo = 0; rookFrom = 2; }
+        else if (currSquare == 5) { rookTo = 7; rookFrom = 4; }
+        else if (currSquare == 57) { rookTo = 56; rookFrom = 58; }
+        else if (currSquare == 61) { rookTo = 63; rookFrom = 60; }
+
+        // Move rook
+        if (rookFrom != -1 && rookTo != -1) {
+            uint64_t rFromMask = 1ULL << rookFrom;
+            uint64_t rToMask   = 1ULL << rookTo;
+
+            squares[rookFrom] = EMPTY;
+            pieceBitboards[rookPiece] ^= rFromMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookFrom];
+            pieceSquareEval -= pieceSquareTables[rookPiece][rookFrom];
+            blockers ^= rFromMask;
+
+            squares[rookTo] = rookPiece;
+            pieceBitboards[rookPiece] ^= rToMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookTo];
+            pieceSquareEval += pieceSquareTables[rookPiece][rookTo];
+            blockers ^= rToMask;
+        }
+    }
+
+    // Update castling right zobrists
+    uint8_t currRights = gState.castlingRights;
+    uint8_t oldRights = history.top().castlingRights;
+
+    uint8_t changed = oldRights ^ currRights;
+    if (changed) {
+        static constexpr int zobristCastlingBase = 769;
+        for (int i = 0; i < 4; ++i) {
+            if (changed & (1u << i)) {
+                zobristHash ^= zobristBitstrings[zobristCastlingBase + i];
+            }
+        }
     }
 
     // Toggle turn
@@ -354,6 +469,11 @@ void Board::setZobristHash() {
     // 768: turn
     if (turn) {
         zobristHash ^= zobristBitstrings[768];
+    }
+
+    // 769 - 772: castling rights
+    for (int i = 0; i < 4; i++) {
+        zobristHash ^= zobristBitstrings[769 + i] * (history.top().castlingRights & (1 << i));
     }
 }
 

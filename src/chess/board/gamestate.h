@@ -13,4 +13,5 @@ class Gamestate {
     int capturedPiece;
 
     uint64_t attackBitboards[NUM_PIECES];
+    uint8_t castlingRights; // 0 - wk | 1 - wq | 2 - bk | 3 - bq
 };

@@ -82,7 +82,7 @@ string WebInterface::handleMove(const string& moveStr) {
     }
     
     // Convert to Move object using existing utility
-    Move move = notationToMove(moveStr);
+    Move move = notationToMove(moveStr, engine->board.turn);
     
     // Apply the move to engine's board
     engine->board.makeMove(move);
