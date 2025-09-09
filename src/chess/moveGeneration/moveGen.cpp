@@ -281,3 +281,27 @@ void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
 void MoveGen::clearMoves() {
     pseudoMoves.clear();
 }
+
+static inline string squareToNotation(int sq) {
+    // Your indexing: a8=63 ... h1=0
+    int fileIdx = 7 - (sq % 8); // 0..7 -> a..h
+    int rankIdx = (sq / 8);     // 0..7 -> rank 1..8 minus 1
+    char fileChar = static_cast<char>('a' + fileIdx);
+    char rankChar = static_cast<char>('1' + rankIdx);
+    return string() + fileChar + rankChar;
+}
+
+void MoveGen::getLegalMovesDTO(Board& b, vector<LegalMoveDTO>& out) {
+    out.clear();
+    generateLegalMoves(b);
+    out.reserve(legalMoves.size());
+    for (const Move& m : legalMoves) {
+        LegalMoveDTO dto;
+        dto.id = m.moveValue;
+        dto.from = squareToNotation(m.getSource());
+        dto.to = squareToNotation(m.getTarget());
+        dto.flag = static_cast<int>(m.getFlag());
+        // Ignore promotions for now; flags will reflect NONE/CASTLING/ENPASSANT/PAWNTWOFORWARD
+        out.emplace_back(std::move(dto));
+    }
+}

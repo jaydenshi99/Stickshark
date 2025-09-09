@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <string>
 
 #include "../board/board.h"
 #include "../../bit.h"
@@ -35,4 +36,13 @@ class MoveGen {
     void orderMoves(const Board& b, uint16_t bestMoveValue);
 
     void clearMoves();
+
+    struct LegalMoveDTO {
+        uint16_t id;
+        std::string from;
+        std::string to;
+        int flag;
+    };
+
+    void getLegalMovesDTO(Board& b, std::vector<LegalMoveDTO>& out);
 };
