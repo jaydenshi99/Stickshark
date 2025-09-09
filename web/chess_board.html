@@ -556,6 +556,7 @@
         let isAutoRefreshEnabled = false; // Disabled by default since we control when to fetch
         let consoleMessages = [];
         let draggedPiece = null;
+        let selectedFrom = null; // click-click selection
         let isProcessingMove = false; // Track if we're currently processing a move
         let movesByFrom = {}; // Cached legal moves for current side
 
@@ -581,6 +582,7 @@
                     square.addEventListener('drop', handleDrop);
                     square.addEventListener('dragenter', handleDragEnter);
                     square.addEventListener('dragleave', handleDragLeave);
+                    square.addEventListener('click', handleSquareClick);
                     
                     board.appendChild(square);
                 }
@@ -875,14 +877,17 @@
 
             // Highlight legal targets for this piece
             highlightLegalTargets(draggedPiece.square);
+            selectedFrom = draggedPiece.square; // sync click/drag selection
         }
 
         // Click-to-preview legal moves for a piece
         function handlePieceClick(e) {
+            e.stopPropagation();
             if (isProcessingMove) return;
             const square = e.currentTarget.dataset.square;
             if (!square) return;
             highlightLegalTargets(square);
+            selectedFrom = square;
         }
 
         function handleDragOver(e) {
@@ -902,6 +907,71 @@
             const square = e.target.closest('.square');
             if (square) {
                 square.classList.remove('drag-over');
+            }
+        }
+
+        // Click target after selecting a piece
+        async function handleSquareClick(e) {
+            if (isProcessingMove) return;
+            if (!selectedFrom) return;
+
+            const square = e.currentTarget;
+            const targetRank = parseInt(square.dataset.rank);
+            const targetFile = parseInt(square.dataset.file);
+            const targetSquareNotation = `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
+
+            if (selectedFrom === targetSquareNotation) {
+                // deselect if clicking same square
+                clearDropHighlights();
+                clearSelection();
+                selectedFrom = null;
+                return;
+            }
+
+            const candidates = getMovesFor(selectedFrom);
+            const chosen = candidates.find(m => m.to === targetSquareNotation);
+            if (!chosen) return; // not a legal target
+
+            const moveNotation = `${selectedFrom}-${chosen.to}`;
+
+            try {
+                updateConnectionStatus('loading', 'Making move...');
+                isProcessingMove = true;
+                updatePieceOpacity();
+
+                const response = await fetch('http://localhost:8080/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: chosen.id })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const result = await response.json();
+                addToConsole(`player move: ${moveNotation}`);
+
+                if (result && result.board) {
+                    currentBoard = result;
+                    if (result.timestamp) lastTimestamp = result.timestamp;
+                    renderBoard(result);
+                    updateGameInfo(result);
+                    highlightMove(moveNotation, false);
+                    updateConnectionStatus('connected', 'Move processed');
+                    fetchLegalMoves();
+                } else {
+                    await fetchBoardState();
+                    highlightMove(moveNotation, false);
+                }
+            } catch (err) {
+                updateConnectionStatus('disconnected', `Move failed: ${err.message}`);
+            } finally {
+                isProcessingMove = false;
+                updatePieceOpacity();
+                reenableDragAndDrop();
+                draggedPiece = null;
+                selectedFrom = null;
+                clearDropHighlights();
+                clearSelection();
             }
         }
 
