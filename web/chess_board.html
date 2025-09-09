@@ -157,7 +157,7 @@
         .square.invalid-drop::after { background: rgba(248, 113, 113, 0.35); }
 
         .square.valid-drop::after {
-            background: rgba(5, 99, 40, 0.55);
+            background: rgba(48, 45, 35, 0.35);
             width: 30%;
             height: 30%;
             left: 50%;
@@ -175,7 +175,7 @@
             top: 50%;
             transform: translate(-50%, -50%);
             border-radius: 50%;
-            border: 4px solid rgba(5, 99, 40, 0.75);
+            border: 4px solid rgba(48, 45, 35, 0.35);
         }
 
         /* Selected piece/square */
@@ -950,10 +950,14 @@
             const square = e.currentTarget.dataset.square;
             if (!square) return;
             // If a piece is already selected and this clicked piece's square is a legal target,
-            // treat it as clicking the destination (captures supported)
+            // treat it as clicking the destination (captures supported). Otherwise, switch selection to this piece.
             if (selectedFrom && square !== selectedFrom) {
-                tryMakeMoveFromSelected(square);
-                return;
+                const candidates = getMovesFor(selectedFrom);
+                const isLegalCapture = candidates.some(m => m.to === square);
+                if (isLegalCapture) {
+                    tryMakeMoveFromSelected(square);
+                    return;
+                }
             }
             highlightLegalTargets(square);
             selectedFrom = square;
