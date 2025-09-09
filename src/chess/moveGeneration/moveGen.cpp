@@ -3,7 +3,8 @@
 using namespace std;
 
 MoveGen::MoveGen() {
-    moves.reserve(MAX_MOVES);
+    pseudoMoves.reserve(MAX_MOVES);
+    legalMoves.reserve(MAX_MOVES);
 };
 
 void MoveGen::generatePseudoMoves(const Board& b) {
@@ -16,6 +17,21 @@ void MoveGen::generatePseudoMoves(const Board& b) {
     generateKnightMoves(b);
     generateSlidingMoves(b);
     generateKingMoves(b);
+}
+
+void MoveGen::generateLegalMoves(Board& b) {
+    pseudoMoves.clear();
+    legalMoves.clear();
+
+    generatePseudoMoves(b);
+
+    for (Move &move : pseudoMoves) {
+        b.makeMove(move);
+        if (!b.kingInCheck()) {
+            legalMoves.emplace_back(move);
+        }
+        b.unmakeMove(move);
+    }
 }
 
 void MoveGen::generatePawnMoves(const Board& b) {
@@ -57,49 +73,49 @@ void MoveGen::generatePawnMoves(const Board& b) {
     int singlePushOffset = b.turn ? -8 : 8;
     while (singlePushes) {
         int target = popLSB(singlePushes);
-        moves.emplace_back(Move(target + singlePushOffset, target, NONE));
+        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, NONE));
     }
 
     while (promotions) {
         int target = popLSB(promotions);
-        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEBISHOP));
-        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEKNIGHT));
-        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEROOK));
-        moves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
+        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEBISHOP));
+        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEKNIGHT));
+        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEROOK));
+        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
     }
 
     int doublePushOffset = b.turn ? -16 : 16;
     while (doublePushes) {
         int target = popLSB(doublePushes);
-        moves.emplace_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
+        pseudoMoves.emplace_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
     }
 
     int leftDiagonalAttackOffset = b.turn ? -9 : 7;
     while (leftDiagonalAttacks) {
         int target = popLSB(leftDiagonalAttacks);
-        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, NONE));
+        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, NONE));
     }
 
     while (leftDiagonalAttackPromotions) {
         int target = popLSB(leftDiagonalAttackPromotions);
-        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEBISHOP));
-        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEKNIGHT));
-        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEROOK));
-        moves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEQUEEN));
+        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEBISHOP));
+        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEKNIGHT));
+        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEROOK));
+        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEQUEEN));
     }
 
     int rightDiagonalAttackOffset = b.turn ? -7 : 9;
     while (rightDiagonalAttacks) {
         int target = popLSB(rightDiagonalAttacks);
-        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, NONE));
+        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, NONE));
     }
 
     while (rightDiagonalAttackPromotions) {
         int target = popLSB(rightDiagonalAttackPromotions);
-        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEBISHOP));
-        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEKNIGHT));
-        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEROOK));
-        moves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEQUEEN));
+        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEBISHOP));
+        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEKNIGHT));
+        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEROOK));
+        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEQUEEN));
     }
 
     
@@ -115,7 +131,7 @@ void MoveGen::generateKnightMoves(const Board& b) {
 
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.emplace_back(Move(source, target, NONE));
+            pseudoMoves.emplace_back(Move(source, target, NONE));
         }
     }
 }
@@ -134,7 +150,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = bishopAttackBitboards[index] & ~friendly;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.emplace_back(Move(source, target, NONE));
+            pseudoMoves.emplace_back(Move(source, target, NONE));
         }
     }
 
@@ -147,7 +163,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = rookAttackBitboards[index] & ~friendly;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.emplace_back(Move(source, target, NONE));
+            pseudoMoves.emplace_back(Move(source, target, NONE));
         }
     }
 
@@ -164,7 +180,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = (bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex]) & ~friendly;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.emplace_back(Move(source, target, NONE));
+            pseudoMoves.emplace_back(Move(source, target, NONE));
         }
     }
 }
@@ -178,7 +194,7 @@ void MoveGen::generateKingMoves(const Board& b) {
 
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            moves.emplace_back(Move(source, target, NONE));
+            pseudoMoves.emplace_back(Move(source, target, NONE));
         }
     }
 
@@ -210,32 +226,32 @@ void MoveGen::generateKingMoves(const Board& b) {
         if ((b.history.top().castlingRights & W_K) &&
             !(blockers & W_K_EMPTY_MASK) &&
             !(attackedByOpp & W_K_SAFE_MASK)) {
-            moves.emplace_back(Move(E1, G1, CASTLING));
+            pseudoMoves.emplace_back(Move(E1, G1, CASTLING));
         }
 
         if ((b.history.top().castlingRights & W_Q) &&
             !(blockers & W_Q_EMPTY_MASK) &&
             !(attackedByOpp & W_Q_SAFE_MASK)) {
-            moves.emplace_back(Move(E1, C1, CASTLING));
+            pseudoMoves.emplace_back(Move(E1, C1, CASTLING));
         }
     } else {
         // Black to move
         if ((b.history.top().castlingRights & B_K) &&
             !(blockers & B_K_EMPTY_MASK) &&
             !(attackedByOpp & B_K_SAFE_MASK)) {
-            moves.emplace_back(Move(E8, G8, CASTLING));
+            pseudoMoves.emplace_back(Move(E8, G8, CASTLING));
         }
         if ((b.history.top().castlingRights & B_Q) &&
             !(blockers & B_Q_EMPTY_MASK) &&
             !(attackedByOpp & B_Q_SAFE_MASK)) {
-            moves.emplace_back(Move(E8, C8, CASTLING));
+            pseudoMoves.emplace_back(Move(E8, C8, CASTLING));
         }
     }
 }
 
 void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
     // Assign score to each move
-    for (Move& move : moves) {
+    for (Move& move : pseudoMoves) {
         int attackedPiece = b.squares[move.getTarget()];
 
         // Big bonus if the move is the best move from pervious depths. Guaruntees that the move will be searched first.
@@ -252,7 +268,7 @@ void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
     }
 
     // Sort the moves in order of descending moveScore
-    sort(moves.begin(), moves.end(), [](const Move &a, const Move &b) {
+    sort(pseudoMoves.begin(), pseudoMoves.end(), [](const Move &a, const Move &b) {
         return a.moveScore > b.moveScore; 
     });
 
@@ -263,5 +279,5 @@ void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
 }
 
 void MoveGen::clearMoves() {
-    moves.clear();
+    pseudoMoves.clear();
 }

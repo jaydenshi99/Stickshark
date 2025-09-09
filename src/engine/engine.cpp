@@ -89,7 +89,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
 
     mg.orderMoves(board, bestMoveValue);
 
-    for (Move move : mg.moves) {
+    for (Move move : mg.pseudoMoves) {
         if (isTimeUp()) {
             return -1; // Exit immediately with error value
         }

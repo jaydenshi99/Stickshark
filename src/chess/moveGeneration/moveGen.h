@@ -24,12 +24,14 @@ class MoveGen {
     void generateKingMoves(const Board& b);
 
     public:
-    std::vector<Move> moves;
+    std::vector<Move> pseudoMoves;
+    std::vector<Move> legalMoves;
 
     // Constructor
     MoveGen();
 
     void generatePseudoMoves(const Board& b);
+    void generateLegalMoves(Board& b); // Does not have to be optimised as not used in search
     void orderMoves(const Board& b, uint16_t bestMoveValue);
 
     void clearMoves();
