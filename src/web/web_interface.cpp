@@ -338,8 +338,6 @@ string WebInterface::errorResponse(const string& message) const {
     response << "\"message\": \"" << message << "\",";
     response << "\"timestamp\": " << time(nullptr);
     response << "}";
-
-    writeStateToFile("data/board_state.json", response);
     
     return response.str();
 }

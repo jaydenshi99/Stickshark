@@ -105,6 +105,9 @@ bool HttpServer::start(unsigned short port) {
             // Handle CORS preflight requests
             status = 200;
             json = ""; // No body needed for OPTIONS
+        } else if (method == "GET" && (path == "/" || path == "/favicon.ico")) {
+            status = 200;
+            json = "{}";
         } else {
             status = 404;
             json = web.errorResponse("Not found");
