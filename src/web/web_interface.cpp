@@ -169,6 +169,52 @@ string WebInterface::handleGetBoard() {
     return response.str();
 }
 
+string WebInterface::handleGetLegal() {
+    debug("handleGetLegal");
+    MoveGen gen;
+    std::vector<MoveGen::LegalMoveDTO> dtos;
+    gen.getLegalMovesDTO(engine->board, dtos);
+
+    // Build grouped JSON: movesByFrom
+    std::stringstream json;
+    json << "{";
+    json << "\"status\": \"success\",";
+    json << "\"action\": \"getlegal\",";
+    json << "\"turn\": \"" << (engine->board.turn ? "white" : "black") << "\",";
+    json << "\"movesByFrom\": {";
+
+    bool firstFrom = true;
+    std::string currentFrom;
+    // We will accumulate per from in a simple pass; order doesn't matter
+    // Emit by scanning all dtos and grouping inline
+    std::vector<std::string> fromKeys;
+    fromKeys.reserve(dtos.size());
+    for (const auto& d : dtos) fromKeys.push_back(d.from);
+    std::sort(fromKeys.begin(), fromKeys.end());
+    fromKeys.erase(std::unique(fromKeys.begin(), fromKeys.end()), fromKeys.end());
+
+    for (const auto& from : fromKeys) {
+        if (!firstFrom) json << ","; else firstFrom = false;
+        json << "\"" << from << "\":[";
+        bool firstMove = true;
+        for (const auto& d : dtos) {
+            if (d.from != from) continue;
+            if (!firstMove) json << ","; else firstMove = false;
+            json << "{\"id\":" << d.id
+                 << ",\"from\":\"" << d.from << "\""
+                 << ",\"to\":\"" << d.to << "\""
+                 << ",\"flag\":" << d.flag << "}";
+        }
+        json << "]";
+    }
+
+    json << "},";
+    json << "\"timestamp\": " << time(nullptr);
+    json << "}";
+
+    return json.str();
+}
+
 string WebInterface::boardToJson() const {
     stringstream json;
     json << "[";

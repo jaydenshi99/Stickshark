@@ -85,6 +85,8 @@ bool HttpServer::start(unsigned short port) {
 
         if (method == "GET" && path == "/board") {
             json = web.handleGetBoard();
+        } else if (method == "GET" && path == "/legal") {
+            json = web.handleGetLegal();
         } else if (method == "POST" && path == "/newgame") {
             json = web.handleNewGame();
         } else if (method == "POST" && path == "/enginemove") {
