@@ -180,7 +180,7 @@ void Board::makeMove(const Move& move) {
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == CASTLING) {
         // Add moved piece to new square
         squares[targetSquare] = movedPiece;
         pieceBitboards[movedPiece] ^= targetSquareMask;
@@ -197,6 +197,36 @@ void Board::makeMove(const Move& move) {
 
         // Update piece attacks of promoted piece
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
+    }
+    
+    // In castling moves, the rook is moved along with the king
+    if (moveFlag == CASTLING) {
+        // Determine rook movement based on target square
+        int rookFrom = -1, rookTo = -1;
+        int rookPiece = (movedPiece < 6) ? WROOK : BROOK;
+
+        if (targetSquare == 1) { rookFrom = 0; rookTo = 2; }
+        else if (targetSquare == 5) { rookFrom = 7; rookTo = 4; }
+        else if (targetSquare == 57) { rookFrom = 56; rookTo = 58; }
+        else if (targetSquare == 61) { rookFrom = 63; rookTo = 60; }
+
+        // Move rook
+        if (rookFrom != -1 && rookTo != -1) {
+            uint64_t rFromMask = 1ULL << rookFrom;
+            uint64_t rToMask   = 1ULL << rookTo;
+
+            squares[rookFrom] = EMPTY;
+            pieceBitboards[rookPiece] ^= rFromMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookFrom];
+            pieceSquareEval -= pieceSquareTables[rookPiece][rookFrom];
+            blockers ^= rFromMask;
+
+            squares[rookTo] = rookPiece;
+            pieceBitboards[rookPiece] ^= rToMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookTo];
+            pieceSquareEval += pieceSquareTables[rookPiece][rookTo];
+            blockers ^= rToMask;
+        }
     }
 
     // Update castling rights (compute new mask, then apply Zobrist delta)
@@ -274,7 +304,7 @@ void Board::unmakeMove(const Move& move) {
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD) {
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == CASTLING) {
         // Remove moved piece from square that it was moved to
         pieceBitboards[movedPiece] ^= currSquareMask;
         zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + currSquare];
@@ -286,6 +316,36 @@ void Board::unmakeMove(const Move& move) {
         pieceBitboards[promotedPiece] ^= currSquareMask;
         zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + currSquare];
         pieceSquareEval -= pieceSquareTables[promotedPiece][currSquare];
+    }
+
+    // In castling moves, the rook is moved along with the king
+    if (moveFlag == CASTLING) {
+        // Determine rook movement based on target square
+        int rookFrom = -1, rookTo = -1;
+        int rookPiece = (movedPiece < 6) ? WROOK : BROOK;
+
+        if (currSquare == 1) { rookTo = 0; rookFrom = 2; }
+        else if (currSquare == 5) { rookTo = 7; rookFrom = 4; }
+        else if (currSquare == 57) { rookTo = 56; rookFrom = 58; }
+        else if (currSquare == 61) { rookTo = 63; rookFrom = 60; }
+
+        // Move rook
+        if (rookFrom != -1 && rookTo != -1) {
+            uint64_t rFromMask = 1ULL << rookFrom;
+            uint64_t rToMask   = 1ULL << rookTo;
+
+            squares[rookFrom] = EMPTY;
+            pieceBitboards[rookPiece] ^= rFromMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookFrom];
+            pieceSquareEval -= pieceSquareTables[rookPiece][rookFrom];
+            blockers ^= rFromMask;
+
+            squares[rookTo] = rookPiece;
+            pieceBitboards[rookPiece] ^= rToMask;
+            zobristHash ^= zobristBitstrings[rookPiece * NUM_SQUARES + rookTo];
+            pieceSquareEval += pieceSquareTables[rookPiece][rookTo];
+            blockers ^= rToMask;
+        }
     }
 
     // Update castling right zobrists
