@@ -41,14 +41,14 @@ uint64_t knightAttackBitboards[NUM_SQUARES];
 uint64_t bishopAttackBitboards[BISHOP_ATTACK_TABLE_SIZE];
 uint64_t rookAttackBitboards[ROOK_ATTACK_TABLE_SIZE];
 
-uint64_t kingAttackBitboards[NUM_SQUARES];;
+uint64_t kingAttackBitboards[NUM_SQUARES];
 
 uint64_t bishopAttackMagicMasks[NUM_SQUARES];
 uint64_t rookAttackMagicMasks[NUM_SQUARES];
 uint64_t bishopMagics[NUM_SQUARES];
 uint64_t rookMagics[NUM_SQUARES];
 
-uint64_t zobristBitstrings[769];
+uint64_t zobristBitstrings[773];
 
 
 void computeAllTables() {
