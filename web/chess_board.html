@@ -750,6 +750,69 @@
             if (fromEl) fromEl.classList.add('selected');
         }
 
+        // Attempt to make a click-click move from the currently selected square
+        async function tryMakeMoveFromSelected(targetSquareNotation) {
+            if (!selectedFrom) return;
+            if (selectedFrom === targetSquareNotation) {
+                clearDropHighlights();
+                clearSelection();
+                selectedFrom = null;
+                return;
+            }
+
+            const candidates = getMovesFor(selectedFrom);
+            const chosen = candidates.find(m => m.to === targetSquareNotation);
+            if (!chosen) {
+                // not a legal target → clear selection
+                clearDropHighlights();
+                clearSelection();
+                selectedFrom = null;
+                return;
+            }
+
+            const moveNotation = `${selectedFrom}-${chosen.to}`;
+
+            try {
+                updateConnectionStatus('loading', 'Making move...');
+                isProcessingMove = true;
+                updatePieceOpacity();
+
+                const response = await fetch('http://localhost:8080/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: chosen.id })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const result = await response.json();
+                addToConsole(`player move: ${moveNotation}`);
+
+                if (result && result.board) {
+                    currentBoard = result;
+                    if (result.timestamp) lastTimestamp = result.timestamp;
+                    renderBoard(result);
+                    updateGameInfo(result);
+                    highlightMove(moveNotation, false);
+                    updateConnectionStatus('connected', 'Move processed');
+                    fetchLegalMoves();
+                } else {
+                    await fetchBoardState();
+                    highlightMove(moveNotation, false);
+                }
+            } catch (err) {
+                updateConnectionStatus('disconnected', `Move failed: ${err.message}`);
+            } finally {
+                isProcessingMove = false;
+                updatePieceOpacity();
+                reenableDragAndDrop();
+                draggedPiece = null;
+                selectedFrom = null;
+                clearDropHighlights();
+                clearSelection();
+            }
+        }
+
         // Add message to console
         function addToConsole(message) {
             consoleMessages.unshift({
@@ -886,6 +949,12 @@
             if (isProcessingMove) return;
             const square = e.currentTarget.dataset.square;
             if (!square) return;
+            // If a piece is already selected and this clicked piece's square is a legal target,
+            // treat it as clicking the destination (captures supported)
+            if (selectedFrom && square !== selectedFrom) {
+                tryMakeMoveFromSelected(square);
+                return;
+            }
             highlightLegalTargets(square);
             selectedFrom = square;
         }
@@ -919,60 +988,7 @@
             const targetRank = parseInt(square.dataset.rank);
             const targetFile = parseInt(square.dataset.file);
             const targetSquareNotation = `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
-
-            if (selectedFrom === targetSquareNotation) {
-                // deselect if clicking same square
-                clearDropHighlights();
-                clearSelection();
-                selectedFrom = null;
-                return;
-            }
-
-            const candidates = getMovesFor(selectedFrom);
-            const chosen = candidates.find(m => m.to === targetSquareNotation);
-            if (!chosen) return; // not a legal target
-
-            const moveNotation = `${selectedFrom}-${chosen.to}`;
-
-            try {
-                updateConnectionStatus('loading', 'Making move...');
-                isProcessingMove = true;
-                updatePieceOpacity();
-
-                const response = await fetch('http://localhost:8080/move', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: chosen.id })
-                });
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                const result = await response.json();
-                addToConsole(`player move: ${moveNotation}`);
-
-                if (result && result.board) {
-                    currentBoard = result;
-                    if (result.timestamp) lastTimestamp = result.timestamp;
-                    renderBoard(result);
-                    updateGameInfo(result);
-                    highlightMove(moveNotation, false);
-                    updateConnectionStatus('connected', 'Move processed');
-                    fetchLegalMoves();
-                } else {
-                    await fetchBoardState();
-                    highlightMove(moveNotation, false);
-                }
-            } catch (err) {
-                updateConnectionStatus('disconnected', `Move failed: ${err.message}`);
-            } finally {
-                isProcessingMove = false;
-                updatePieceOpacity();
-                reenableDragAndDrop();
-                draggedPiece = null;
-                selectedFrom = null;
-                clearDropHighlights();
-                clearSelection();
-            }
+            await tryMakeMoveFromSelected(targetSquareNotation);
         }
 
         async function handleDrop(e) {
