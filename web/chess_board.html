@@ -204,6 +204,11 @@
             align-items: center;
         }
 
+        /* When board is flipped, reverse file and rank labels */
+        .coordinates.flipped .files {
+            flex-direction: row-reverse;
+        }
+
         .files span {
             width: 70px;
             text-align: center;
@@ -219,6 +224,10 @@
             justify-content: space-between;
             align-items: center;
             writing-mode: horizontal-tb;
+        }
+
+        .coordinates.flipped .ranks {
+            flex-direction: column-reverse;
         }
 
         .ranks span {
@@ -525,6 +534,7 @@
             <div class="controls" style="justify-content: center; margin-top: 0;">
                 <button class="btn btn-primary" onclick="triggerEngineMove()">🤖 Engine Move</button>
                 <button class="btn btn-secondary" onclick="triggerNewGame()">♟️ Reset Board</button>
+                <button class="btn btn-secondary" onclick="flipBoard()">🔁 Flip Board</button>
             </div>
         </div>
         </div>
@@ -562,6 +572,9 @@
 
         // Auto-refresh settings
         const REFRESH_INTERVAL = 1000; // one second
+
+        // Board orientation
+        let isFlipped = false; // when true, white appears at top
 
         // Initialize the chess board grid
         function initializeBoard() {
@@ -606,10 +619,14 @@
             for (let boardRank = 0; boardRank < 8; boardRank++) {
                 for (let boardFile = 0; boardFile < 8; boardFile++) {
                     // Engine's file indexing is mirrored horizontally; flip files for display
-                    const piece = board[boardRank][7 - boardFile];
+                    const fileIdx = 7 - boardFile;
+                    const rankIdx = boardRank;
+                    const srcPiece = board[rankIdx][fileIdx];
+                    const piece = srcPiece;
                     if (piece) {
-                        const displayRank = 7 - boardRank; // Convert board index to display rank
-                        const square = document.getElementById(`square-${displayRank}-${boardFile}`);
+                        const displayRank = isFlipped ? boardRank : 7 - boardRank;
+                        const displayFile = isFlipped ? 7 - boardFile : boardFile;
+                        const square = document.getElementById(`square-${displayRank}-${displayFile}`);
                         
                         if (square) {
                             const wrapper = document.createElement('span');
@@ -629,7 +646,9 @@
                             wrapper.draggable = !isProcessingMove;
                             wrapper.dataset.pieceColor = piece.color;
                             wrapper.dataset.pieceType = piece.type;
-                            wrapper.dataset.square = `${String.fromCharCode(97 + boardFile)}${8 - boardRank}`;
+                            const uiFile = isFlipped ? 7 - boardFile : boardFile;
+                            const uiRank = isFlipped ? boardRank + 1 : 8 - boardRank;
+                            wrapper.dataset.square = `${String.fromCharCode(97 + uiFile)}${uiRank}`;
 
                             // Add drag start and click listeners
                             wrapper.addEventListener('dragstart', handleDragStart);
@@ -696,11 +715,15 @@
         // Player mapping: no horizontal flip
         function squareIdFromNotationPlayer(notation) {
             if (!notation || notation.length < 2) return null;
-            const fileIdx = notation.charCodeAt(0) - 97; // a-h -> 0-7
-            const rank = parseInt(notation[1], 10); // 1-8
+            let fileIdx = notation.charCodeAt(0) - 97; // a-h -> 0-7
+            let rank = parseInt(notation[1], 10); // 1-8
             if (fileIdx < 0 || fileIdx > 7 || isNaN(rank)) return null;
-            const displayRank = rank - 1; // a1 -> rank 0
-            const displayFile = fileIdx; // no flip for player source
+            let displayRank = rank - 1; // a1 -> rank 0
+            let displayFile = fileIdx;
+            if (isFlipped) {
+                displayRank = 7 - displayRank;
+                displayFile = 7 - displayFile;
+            }
             return `square-${displayRank}-${displayFile}`;
         }
         // Engine mapping: horizontal flip to match renderBoard
@@ -729,6 +752,17 @@
 
         function getMovesFor(fromSquare) {
             return (movesByFrom && movesByFrom[fromSquare]) ? movesByFrom[fromSquare] : [];
+        }
+
+        // Convert a UI-displayed square (respecting flip) to engine algebraic notation
+        function toEngineNotation(uiSquare) {
+            if (!uiSquare || uiSquare.length < 2) return uiSquare;
+            if (!isFlipped) return uiSquare;
+            const fileIdx = uiSquare.charCodeAt(0) - 97; // a..h -> 0..7
+            const rank = parseInt(uiSquare[1], 10);      // 1..8
+            const engFile = 7 - fileIdx;                 // mirror horizontally
+            const engRank = 9 - rank;                    // mirror vertically
+            return String.fromCharCode(97 + engFile) + engRank;
         }
 
         function highlightLegalTargets(fromSquare) {
@@ -924,6 +958,20 @@
             window.open('json_viewer.html', '_blank');
         }
 
+        function flipBoard() {
+            isFlipped = !isFlipped;
+            if (currentBoard) {
+                renderBoard(currentBoard);
+                // Re-highlight current selection if any
+                if (selectedFrom) highlightLegalTargets(selectedFrom);
+            }
+            const coords = document.querySelector('.coordinates');
+            if (coords) {
+                if (isFlipped) coords.classList.add('flipped');
+                else coords.classList.remove('flipped');
+            }
+        }
+
         // Drag and drop handlers
         function handleDragStart(e) {
             if (isProcessingMove) {
@@ -934,7 +982,7 @@
             draggedPiece = {
                 color: e.target.dataset.pieceColor,
                 type: parseInt(e.target.dataset.pieceType),
-                square: e.target.dataset.square
+                square: toEngineNotation(e.target.dataset.square)
             };
             e.dataTransfer.effectAllowed = 'move';
 
@@ -951,16 +999,17 @@
             if (!square) return;
             // If a piece is already selected and this clicked piece's square is a legal target,
             // treat it as clicking the destination (captures supported). Otherwise, switch selection to this piece.
-            if (selectedFrom && square !== selectedFrom) {
+            const engineSquare = toEngineNotation(square);
+            if (selectedFrom && engineSquare !== selectedFrom) {
                 const candidates = getMovesFor(selectedFrom);
-                const isLegalCapture = candidates.some(m => m.to === square);
+                const isLegalCapture = candidates.some(m => m.to === engineSquare);
                 if (isLegalCapture) {
-                    tryMakeMoveFromSelected(square);
+                    tryMakeMoveFromSelected(engineSquare);
                     return;
                 }
             }
-            highlightLegalTargets(square);
-            selectedFrom = square;
+            highlightLegalTargets(engineSquare);
+            selectedFrom = engineSquare;
         }
 
         function handleDragOver(e) {
@@ -991,7 +1040,12 @@
             const square = e.currentTarget;
             const targetRank = parseInt(square.dataset.rank);
             const targetFile = parseInt(square.dataset.file);
-            const targetSquareNotation = `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
+            const targetSquareNotation = (() => {
+                if (!isFlipped) return `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
+                const file = 7 - targetFile;
+                const rank = 8 - (targetRank + 1) + 1;
+                return `${String.fromCharCode(97 + file)}${rank}`;
+            })();
             await tryMakeMoveFromSelected(targetSquareNotation);
         }
 
@@ -1009,7 +1063,12 @@
 
             const targetRank = parseInt(targetSquare.dataset.rank);
             const targetFile = parseInt(targetSquare.dataset.file);
-            const targetSquareNotation = `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
+            const targetSquareNotation = (() => {
+                if (!isFlipped) return `${String.fromCharCode(97 + targetFile)}${targetRank + 1}`;
+                const file = 7 - targetFile;
+                const rank = 8 - (targetRank + 1) + 1; // convert display rank back to 1..8
+                return `${String.fromCharCode(97 + file)}${rank}`;
+            })();
 
             // Check if dropping on the same square
             if (draggedPiece.square === targetSquareNotation) {
@@ -1163,6 +1222,13 @@
                 selectedFrom = null;
                 clearDropHighlights();
                 clearSelection();
+                // Reset orientation to white at bottom
+                if (isFlipped) {
+                    isFlipped = false;
+                    const coords = document.querySelector('.coordinates');
+                    if (coords) coords.classList.remove('flipped');
+                    if (currentBoard) renderBoard(currentBoard);
+                }
             } catch (e) {
                 updateConnectionStatus('disconnected', `Reset failed: ${e.message}`);
                 console.error(e);
