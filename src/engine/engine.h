@@ -32,7 +32,7 @@ class Engine {
     Engine(Board b);
 
     // Set methods
-    void setBoard(Board b);
+    void resetEngine(Board b);
 
     void findBestMove(int y);   // Calls negaMax to find the best move and debugs.
     int negaMax(int depth, int alpha, int beta, int turn);    // Sets bestMove to the best move and sets moveEval to the eva

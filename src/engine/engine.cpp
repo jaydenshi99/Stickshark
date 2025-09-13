@@ -7,8 +7,14 @@ Engine::Engine(Board b) {
     bestMove = Move();
 }
 
-void Engine::setBoard(Board b) {
+void Engine::resetEngine(Board b) {
     board = b;
+    leafNodesEvaluated = 0;
+    tableAccesses = 0;
+    searchFinished = true;
+    bestMoveTable.clear();
+    boardEval = 0;
+    bestMove = Move(); 
 }
 
 void Engine::findBestMove(int t) {
