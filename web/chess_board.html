@@ -574,7 +574,8 @@
         const REFRESH_INTERVAL = 1000; // one second
 
         // Board orientation
-        let isFlipped = false; // when true, white appears at top
+        let isFlipped = false;
+        let lastMoveNotation = null; // Store the last move notation for re-highlighting // when true, white appears at top
 
         // Initialize the chess board grid
         function initializeBoard() {
@@ -732,8 +733,16 @@
             const fileIdx = notation.charCodeAt(0) - 97; // a-h -> 0-7
             const rank = parseInt(notation[1], 10); // 1-8
             if (fileIdx < 0 || fileIdx > 7 || isNaN(rank)) return null;
-            const displayRank = rank - 1; // a1 -> rank 0
-            const displayFile = 7 - fileIdx; // flip for engine mapping
+            
+            let displayRank = rank - 1; // a1 -> rank 0
+            let displayFile = 7 - fileIdx; // flip for engine mapping
+            
+            // If board is flipped, flip the coordinates for display
+            if (isFlipped) {
+                displayRank = 7 - displayRank;
+                displayFile = 7 - displayFile;
+            }
+            
             return `square-${displayRank}-${displayFile}`;
         }
         function highlightMove(moveNotation, isEngine = false) {
@@ -964,6 +973,12 @@
                 renderBoard(currentBoard);
                 // Re-highlight current selection if any
                 if (selectedFrom) highlightLegalTargets(selectedFrom);
+                // Re-highlight last move if any
+                if (lastMoveNotation) {
+                    // Determine if it was an engine move by checking if it's in the current board state
+                    const isEngineMove = currentBoard.move === lastMoveNotation;
+                    highlightMove(lastMoveNotation, isEngineMove);
+                }
             }
             const coords = document.querySelector('.coordinates');
             if (coords) {
@@ -1104,6 +1119,7 @@
                 const result = await response.json();
                 // Log the move to console
                 addToConsole(`player move: ${moveNotation}`);
+                lastMoveNotation = moveNotation; // Store for re-highlighting on flip
 
                 // Render directly from server response to avoid race with file writes
                 if (result && result.board) {
@@ -1169,6 +1185,7 @@
                 // Log the engine move to console
                 if (result.move) {
                     addToConsole(`engine move: ${result.move}`);
+                    lastMoveNotation = result.move; // Store for re-highlighting on flip
                 }
                 
                 // Render directly from server response
@@ -1222,6 +1239,7 @@
                 selectedFrom = null;
                 clearDropHighlights();
                 clearSelection();
+                lastMoveNotation = null; // Clear last move on reset
                 // Reset orientation to white at bottom
                 if (isFlipped) {
                     isFlipped = false;
