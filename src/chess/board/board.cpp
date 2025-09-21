@@ -273,12 +273,14 @@ void Board::makeMove(const Move& move) {
     // Push Gamestate
     history.push(gState);
 
-    // Update repetition count
-    repetitionCount[zobristHash]++;
-    if (repetitionCount[zobristHash] == 3) numThreefoldStates++;
-
     // Toggle turn
     swapTurn();
+
+    // Update repetition count after all zobrist updates
+    repetitionCount[zobristHash]++;
+    if (repetitionCount[zobristHash] == 3) {
+        numThreefoldStates++;
+    }
 }
 
 void Board::unmakeMove(const Move& move) {
@@ -288,6 +290,12 @@ void Board::unmakeMove(const Move& move) {
 
     uint64_t oldSquareMask = 1ULL << oldSquare;
     uint64_t currSquareMask = 1ULL << currSquare;
+
+    // Update repetition count with current zobrist hash (before restoring)
+    repetitionCount[zobristHash]--;
+    if (repetitionCount[zobristHash] == 2) {
+        numThreefoldStates--;
+    }
 
     // Get old gamestate
     Gamestate gState = history.top();
@@ -372,10 +380,6 @@ void Board::unmakeMove(const Move& move) {
             }
         }
     }
-
-    // Update repetition count
-    repetitionCount[zobristHash]--;
-    if (repetitionCount[zobristHash] == 3) numThreefoldStates--;
 
     // Toggle turn
     swapTurn();
