@@ -23,6 +23,10 @@ Board::Board() : pieceBitboards{0ULL} {
     setAttackMethods[0] = &Board::setPawnAttacks;
     setAttackMethods[2] = &Board::setKnightAttacks;
     setAttackMethods[5] = &Board::setKingAttacks;
+
+    // Set repetition count
+    repetitionCount.clear();
+    numThreefoldStates = 0;
 }
 
 void Board::setBlockers() {
@@ -91,6 +95,9 @@ void Board::setFEN(string FEN) {
     gState.castlingRights = castlingRights;
 
     history.push(gState);
+
+    repetitionCount.clear();
+    numThreefoldStates = 0;
 
     setZobristHash();
     setPieceSquareEvaluation();
@@ -268,6 +275,12 @@ void Board::makeMove(const Move& move) {
 
     // Toggle turn
     swapTurn();
+
+    // Update repetition count after all zobrist updates
+    repetitionCount[zobristHash]++;
+    if (repetitionCount[zobristHash] == 3) {
+        numThreefoldStates++;
+    }
 }
 
 void Board::unmakeMove(const Move& move) {
@@ -277,6 +290,12 @@ void Board::unmakeMove(const Move& move) {
 
     uint64_t oldSquareMask = 1ULL << oldSquare;
     uint64_t currSquareMask = 1ULL << currSquare;
+
+    // Update repetition count with current zobrist hash (before restoring)
+    repetitionCount[zobristHash]--;
+    if (repetitionCount[zobristHash] == 2) {
+        numThreefoldStates--;
+    }
 
     // Get old gamestate
     Gamestate gState = history.top();

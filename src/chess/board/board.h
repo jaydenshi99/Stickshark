@@ -4,12 +4,14 @@
 #include <bitset>
 #include <cstdint>
 #include <stack>
-
+#include <unordered_map>
 #include "move.h"
 #include "gamestate.h"
 #include "../moveGeneration/bitTables.h"
 #include "../../constants.h"
 #include "../../engine/evalConstants.h"
+
+using namespace std;
 
 class Board {
     public:
@@ -23,7 +25,11 @@ class Board {
     bool turn; // true - white | false - black
 
     // Gamestate History
-    std::stack<Gamestate> history;
+    stack<Gamestate> history;
+
+    // Repetition Tracking
+    unordered_map<uint64_t, int> repetitionCount;
+    int numThreefoldStates;
 
     // Zobrist Hash
     uint64_t zobristHash;
