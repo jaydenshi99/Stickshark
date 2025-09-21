@@ -5,7 +5,7 @@ using namespace std;
 MoveGen::MoveGen() {
     pseudoMoves.reserve(MAX_MOVES);
     legalMoves.reserve(MAX_MOVES);
-    onlyGenerateForcing = true;
+    onlyGenerateForcing = false;
 };
 
 void MoveGen::generatePseudoMoves(const Board& b) {
