@@ -25,6 +25,7 @@ Board::Board() : pieceBitboards{0ULL} {
     setAttackMethods[5] = &Board::setKingAttacks;
 
     // Set repetition count
+    repetitionCount.clear();
     numThreefoldStates = 0;
 }
 
@@ -94,6 +95,9 @@ void Board::setFEN(string FEN) {
     gState.castlingRights = castlingRights;
 
     history.push(gState);
+
+    repetitionCount.clear();
+    numThreefoldStates = 0;
 
     setZobristHash();
     setPieceSquareEvaluation();
