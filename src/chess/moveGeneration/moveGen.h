@@ -25,6 +25,9 @@ class MoveGen {
     void generateKingMoves(const Board& b);
 
     public:
+    
+    bool onlyGenerateForcing;
+
     std::vector<Move> pseudoMoves;
     std::vector<Move> legalMoves;
 
