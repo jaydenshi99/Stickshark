@@ -59,7 +59,7 @@ string WebInterface::handleNewGame() {
     debug("handleNewGame");
 
     Board b;
-    b.setFEN("rnbqkbnr/3b1n2/Q7/1n1p1pQ1/2PPPP2/Q2Q1b2/1b6/RNBQKBNR w KQkq - 0 1");
+    b.setFEN("rnbqkbnr/3b1n2/Q5N1/1n1p1pQ1/2PPPP2/Q1nQ1b2/1b6/RNBQKBbR w KQkq - 0 1");
     engine->resetEngine(b);
     
     stringstream response;

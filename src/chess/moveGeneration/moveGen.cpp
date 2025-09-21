@@ -200,16 +200,19 @@ void MoveGen::generateSlidingMoves(const Board& b) {
 
 void MoveGen::generateKingMoves(const Board& b) {
     uint64_t kingBitboard = b.turn ? b.pieceBitboards[WKING] : b.pieceBitboards[BKING];
+    uint64_t forcingMask = onlyGenerateForcing ? b.blockers : ~0ULL;
 
     while (kingBitboard) {
         int source = popLSB(kingBitboard);
-        uint64_t movesBitboard = kingAttackBitboards[source] & enemyOrEmpty;
+        uint64_t movesBitboard = kingAttackBitboards[source] & enemyOrEmpty & forcingMask;
 
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
             pseudoMoves.emplace_back(Move(source, target, NONE));
         }
     }
+
+    if (onlyGenerateForcing) return; // no castling moves in forcing mode
 
     const uint64_t blockers = b.blockers;
     const uint64_t attackedByOpp = b.turn ? b.getBlackAttacks() : b.getWhiteAttacks();
