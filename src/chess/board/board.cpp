@@ -23,6 +23,9 @@ Board::Board() : pieceBitboards{0ULL} {
     setAttackMethods[0] = &Board::setPawnAttacks;
     setAttackMethods[2] = &Board::setKnightAttacks;
     setAttackMethods[5] = &Board::setKingAttacks;
+
+    // Set repetition count
+    numThreefoldStates = 0;
 }
 
 void Board::setBlockers() {
@@ -266,6 +269,10 @@ void Board::makeMove(const Move& move) {
     // Push Gamestate
     history.push(gState);
 
+    // Update repetition count
+    repetitionCount[zobristHash]++;
+    if (repetitionCount[zobristHash] == 3) numThreefoldStates++;
+
     // Toggle turn
     swapTurn();
 }
@@ -361,6 +368,10 @@ void Board::unmakeMove(const Move& move) {
             }
         }
     }
+
+    // Update repetition count
+    repetitionCount[zobristHash]--;
+    if (repetitionCount[zobristHash] == 3) numThreefoldStates--;
 
     // Toggle turn
     swapTurn();
