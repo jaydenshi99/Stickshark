@@ -12,8 +12,8 @@ class Engine {
     private:
     int searchDepth;
 
-    int leafNodesEvaluated;
-    int quiescenceCalls;
+    int normalNodesSearched;
+    int quiescenceNodesSearched;
     int tableAccesses;
 
     std::chrono::time_point<std::chrono::steady_clock> startTime;

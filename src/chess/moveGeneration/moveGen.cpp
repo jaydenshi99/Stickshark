@@ -126,7 +126,6 @@ void MoveGen::generatePawnMoves(const Board& b) {
 void MoveGen::generateKnightMoves(const Board& b) {
     uint64_t knightBitboard = b.turn ? b.pieceBitboards[WKNIGHT] : b.pieceBitboards[BKNIGHT];
     uint64_t enemyOrEmpty = b.turn ? ~b.getWhitePositions() : ~b.getBlackPositions();
-    uint64_t enemyKingBitboard = b.turn ? b.pieceBitboards[BKING] : b.pieceBitboards[WKING];
     uint64_t forcingMask = onlyGenerateForcing ? b.blockers : ~0ULL;
 
     while (knightBitboard) {
