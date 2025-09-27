@@ -83,7 +83,7 @@ void Engine::findBestMove(int t) {
 int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     if (depth == 0) {
         //return staticEvaluation(board) * turn;
-        return quiescenceSearch(20, alpha, beta, turn); 
+        return quiescenceSearch(alpha, beta, turn); 
     }
 
     normalNodesSearched++;
@@ -154,13 +154,10 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     return searchBestEval;
 }
 
-int Engine::quiescenceSearch(int depth, int alpha, int beta, int turn) {
+int Engine::quiescenceSearch(int alpha, int beta, int turn) {
     quiescenceNodesSearched++;
 
     int bestSoFar = staticEvaluation(board) * turn;
-    if (depth == 0) {
-        return bestSoFar;
-    }
 
     bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
 
@@ -188,7 +185,7 @@ int Engine::quiescenceSearch(int depth, int alpha, int beta, int turn) {
         // Continue with valid positions
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
-            int eval = -quiescenceSearch(depth - 1, -beta, -alpha, -turn);
+            int eval = -quiescenceSearch(-beta, -alpha, -turn);
 
             if (eval >= beta) {
                 board.unmakeMove(move);
