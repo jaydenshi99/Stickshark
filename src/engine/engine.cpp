@@ -175,6 +175,8 @@ int Engine::quiescenceSearch(int alpha, int beta, int turn) {
     mg.onlyGenerateForcing = !currKingInCheck; // force generating if own king is not in check. otherwise evasive moves
     mg.generatePseudoMoves(board);
 
+    mg.orderMoves(board, 0); // best move value is 0 for now because we don't have table for quiescence yet.
+
     for (Move move : mg.pseudoMoves) {
         if (isTimeUp()) {
             return -1; // Exit immediately with error value
