@@ -41,51 +41,39 @@ void MoveGen::generatePawnMoves(const Board& b) {
     uint64_t enemy = b.turn ? b.getBlackPositions() : b.getWhitePositions();
     uint64_t empty = ~b.blockers;
 
-    uint64_t forcingMask = ~0ULL;
-    if (onlyGenerateForcing) {
-        uint64_t enemyKingBitboard = b.turn ? b.pieceBitboards[BKING] : b.pieceBitboards[WKING];
+    // Non forcing moves
+    if (!onlyGenerateForcing) {
+        // Not including pawns which promote on push
+        uint64_t singlePushes = b.turn 
+        ? (pawnBitboard << 8) & empty & notRankBitboards[7]
+        : (pawnBitboard >> 8) & empty & notRankBitboards[0];
 
-        uint64_t pawnCheckingPositionsLeft = !b.turn
-            ? (enemyKingBitboard << 9) & notFileBitboards[7] & notRankBitboards[7]
-            : (enemyKingBitboard >> 7) & notFileBitboards[7] & notRankBitboards[0];
+        uint64_t promotions = b.turn 
+            ? (pawnBitboard << 8) & empty & rankBitboards[7]
+            : (pawnBitboard >> 8) & empty & rankBitboards[0];
 
-        uint64_t pawnCheckingPositionsRight = !b.turn
-            ? (enemyKingBitboard << 7) & notFileBitboards[0] & notRankBitboards[7]
-            : (enemyKingBitboard >> 9) & notFileBitboards[0] & notRankBitboards[0];
+        uint64_t doublePushes = b.turn 
+            ? (singlePushes << 8) & empty & doublePushRank
+            : (singlePushes >> 8) & empty & doublePushRank;
+        int singlePushOffset = b.turn ? -8 : 8;
+        while (singlePushes) {
+            int target = popLSB(singlePushes);
+            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, NONE));
+        }
 
-        forcingMask = b.blockers | pawnCheckingPositionsLeft | pawnCheckingPositionsRight;
-    }
+        while (promotions) {
+            int target = popLSB(promotions);
+            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEBISHOP));
+            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEKNIGHT));
+            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEROOK));
+            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
+        }
 
-    // Not including pawns which promote on push
-    uint64_t singlePushes = b.turn 
-    ? (pawnBitboard << 8) & empty & notRankBitboards[7] & forcingMask
-    : (pawnBitboard >> 8) & empty & notRankBitboards[0] & forcingMask;
-
-    uint64_t promotions = b.turn 
-        ? (pawnBitboard << 8) & empty & rankBitboards[7] & forcingMask
-        : (pawnBitboard >> 8) & empty & rankBitboards[0] & forcingMask;
-
-    uint64_t doublePushes = b.turn 
-        ? (singlePushes << 8) & empty & doublePushRank & forcingMask
-        : (singlePushes >> 8) & empty & doublePushRank & forcingMask;
-    int singlePushOffset = b.turn ? -8 : 8;
-    while (singlePushes) {
-        int target = popLSB(singlePushes);
-        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, NONE));
-    }
-
-    while (promotions) {
-        int target = popLSB(promotions);
-        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEBISHOP));
-        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEKNIGHT));
-        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEROOK));
-        pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
-    }
-
-    int doublePushOffset = b.turn ? -16 : 16;
-    while (doublePushes) {
-        int target = popLSB(doublePushes);
-        pseudoMoves.emplace_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
+        int doublePushOffset = b.turn ? -16 : 16;
+        while (doublePushes) {
+            int target = popLSB(doublePushes);
+            pseudoMoves.emplace_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
+        }
     }
 
     // Generate pawn attacks and promotions
@@ -139,7 +127,7 @@ void MoveGen::generateKnightMoves(const Board& b) {
     uint64_t knightBitboard = b.turn ? b.pieceBitboards[WKNIGHT] : b.pieceBitboards[BKNIGHT];
     uint64_t enemyOrEmpty = b.turn ? ~b.getWhitePositions() : ~b.getBlackPositions();
     uint64_t enemyKingBitboard = b.turn ? b.pieceBitboards[BKING] : b.pieceBitboards[WKING];
-    uint64_t forcingMask = onlyGenerateForcing ? b.blockers | knightAttackBitboards[popLSB(enemyKingBitboard)] : ~0ULL;
+    uint64_t forcingMask = onlyGenerateForcing ? b.blockers : ~0ULL;
 
     while (knightBitboard) {
         int source = popLSB(knightBitboard);
@@ -156,25 +144,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
     uint64_t bishopBitboard = b.turn ? b.pieceBitboards[WBISHOP] : b.pieceBitboards[BBISHOP];
     uint64_t rookBitboard = b.turn ? b.pieceBitboards[WROOK] : b.pieceBitboards[BROOK];
     uint64_t queenBitboard = b.turn ? b.pieceBitboards[WQUEEN] : b.pieceBitboards[BQUEEN];
-    uint64_t enemyKingBitboard = b.turn ? b.pieceBitboards[BKING] : b.pieceBitboards[WKING];
-    int enemyKingSquare = popLSB(enemyKingBitboard);
-
-    // Generate forcing masks
-    uint64_t bishopForcingMask = ~0ULL;
-    uint64_t rookForcingMask = ~0ULL;
-    uint64_t queenForcingMask = ~0ULL;
-
-    if (onlyGenerateForcing) {
-        uint64_t kingOccupancyBishop = bishopAttackMagicMasks[enemyKingSquare] & b.blockers;
-        int kbIndex = BISHOP_ATTACKS_PER_SQUARE * enemyKingSquare + ((bishopMagics[enemyKingSquare] * kingOccupancyBishop) >> 55);
-        bishopForcingMask = b.blockers | bishopAttackBitboards[kbIndex];
-
-        uint64_t kingOccupancyRook = rookAttackMagicMasks[enemyKingSquare] & b.blockers;
-        int krIndex = ROOK_ATTACKS_PER_SQUARE * enemyKingSquare + ((rookMagics[enemyKingSquare] * kingOccupancyRook) >> 52);
-        rookForcingMask = b.blockers | rookAttackBitboards[krIndex];
-
-        queenForcingMask = bishopForcingMask | rookForcingMask;
-    }
+    uint64_t forcingMask = onlyGenerateForcing ? b.blockers : ~0ULL;
 
     // Bishop moves
     while (bishopBitboard) {
@@ -182,7 +152,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
 
         uint64_t occupancy = bishopAttackMagicMasks[source] & b.blockers;
         int index = BISHOP_ATTACKS_PER_SQUARE * source + ((bishopMagics[source] * occupancy) >> 55);
-        uint64_t movesBitboard = bishopAttackBitboards[index] & ~friendly & bishopForcingMask;
+        uint64_t movesBitboard = bishopAttackBitboards[index] & ~friendly & forcingMask;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
             pseudoMoves.emplace_back(Move(source, target, NONE));
@@ -195,7 +165,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
 
         uint64_t occupancy = rookAttackMagicMasks[source] & b.blockers;
         int index = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * occupancy) >> 52);
-        uint64_t movesBitboard = rookAttackBitboards[index] & ~friendly & rookForcingMask;
+        uint64_t movesBitboard = rookAttackBitboards[index] & ~friendly & forcingMask;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
             pseudoMoves.emplace_back(Move(source, target, NONE));
@@ -212,7 +182,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t rookOccupancy = rookAttackMagicMasks[source] & b.blockers;
         int rookIndex = ROOK_ATTACKS_PER_SQUARE * source + ((rookMagics[source] * rookOccupancy) >> 52);
 
-        uint64_t movesBitboard = (bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex]) & ~friendly & queenForcingMask;
+        uint64_t movesBitboard = (bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex]) & ~friendly & forcingMask;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
             pseudoMoves.emplace_back(Move(source, target, NONE));
