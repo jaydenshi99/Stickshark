@@ -12,4 +12,6 @@ int staticEvaluation(const Board& board);
 int staticEvaluationMG(const Board& board);
 int staticEvaluationEG(const Board& board);
 
+int mopUpEval(const Board& board, int materialDiff);
+
 int getEndgamePhase(const Board& board);

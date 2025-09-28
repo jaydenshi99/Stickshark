@@ -38,9 +38,30 @@ int staticEvaluationEG(const Board& board) {
         eval += popcount(board.pieceBitboards[i]) * materialEvaluationsEG[i];
     }
 
+    eval += mopUpEval(board, eval);
+
     eval += board.pieceSquareEvalEG;
 
     return eval;
+}
+
+int mopUpEval(const Board& board, int materialDiff) {
+    const int threshold = 200;
+
+    // no side has a significant enough advantage for mop up eval
+    if (materialDiff > -threshold && materialDiff < threshold) {
+        return 0;
+    }
+
+    int wKingPos = lsb(board.pieceBitboards[WKING]);
+    int bKingPos = lsb(board.pieceBitboards[BKING]);
+
+    int kingDist = manhattanDistances[wKingPos][bKingPos];
+    int centralDist = materialDiff >= threshold ? centralManhattanDistances[bKingPos] : centralManhattanDistances[wKingPos]; // CMD of losing king
+    
+    int eval = 15 * centralDist - 5 * (14 - kingDist);
+
+    return materialDiff >= 200 ? eval : -eval;
 }
 
 
