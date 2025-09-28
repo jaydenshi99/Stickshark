@@ -9,4 +9,7 @@ static const int MAX_PHASE = 24;
 
 int staticEvaluation(const Board& board);
 
+int staticEvaluationMG(const Board& board);
+int staticEvaluationEG(const Board& board);
+
 int getEndgamePhase(const Board& board);

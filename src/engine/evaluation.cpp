@@ -8,7 +8,18 @@ int staticEvaluation(const Board& board) {
     if (board.numThreefoldStates > 0) {
         return 0; 
     }
-    
+
+    int phase = getEndgamePhase(board);
+    int evalMG = staticEvaluationMG(board);
+    int evalEG = staticEvaluationEG(board);
+
+    // Material eval
+    int eval = (evalMG * phase + evalEG * (MAX_PHASE - phase)) / MAX_PHASE;
+
+    return eval;
+}
+
+int staticEvaluationMG(const Board& board) {
     // Material eval
     int eval = 0;
     for (int i = 0; i < 12; i++) {
@@ -19,6 +30,19 @@ int staticEvaluation(const Board& board) {
 
     return eval;
 }
+
+int staticEvaluationEG(const Board& board) {
+    // Material eval
+    int eval = 0;
+    for (int i = 0; i < 12; i++) {
+        eval += popcount(board.pieceBitboards[i]) * materialEvaluationsEG[i];
+    }
+
+    eval += board.pieceSquareEvalEG;
+
+    return eval;
+}
+
 
 int getEndgamePhase(const Board& board) {
     int phase = 0;
