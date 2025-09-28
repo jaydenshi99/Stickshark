@@ -11,6 +11,7 @@
 #include <string>
 
 #include "../../bit.h"
+#include "../../engine/evalConstants.h"
 
 #define NUM_FILES 8 
 #define NUM_RANKS 8

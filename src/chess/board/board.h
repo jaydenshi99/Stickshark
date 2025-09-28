@@ -35,7 +35,8 @@ class Board {
     uint64_t zobristHash;
 
     // Evaluation 
-    int pieceSquareEval; // Positive is better for white
+    int pieceSquareEvalMG; // Positive is better for white
+    int pieceSquareEvalEG; // Positive is better for white
 
     // Array of set attack methods
     void (Board::*setAttackMethods[6])(Gamestate& gamestate, bool white);

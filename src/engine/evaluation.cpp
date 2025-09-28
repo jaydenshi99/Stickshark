@@ -15,7 +15,7 @@ int staticEvaluation(const Board& board) {
         eval += popcount(board.pieceBitboards[i]) * materialEvaluations[i];
     }
 
-    eval += board.pieceSquareEval;
+    eval += board.pieceSquareEvalMG;
 
     return eval;
 }

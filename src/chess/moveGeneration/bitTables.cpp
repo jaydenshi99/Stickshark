@@ -69,6 +69,9 @@ void computeAllTables() {
     computeZobristBitstrings();
     cout << "Zobrist bitstrings computed" << endl;
 
+    calculatePieceSquareTables();
+    cout << "Piece square tables computed" << endl;
+
     auto end = chrono::high_resolution_clock::now();
 
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
