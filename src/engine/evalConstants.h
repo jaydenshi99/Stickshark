@@ -2,7 +2,8 @@
 
 #include "../constants.h"
 
-extern const int materialEvaluations[NUM_PIECES];
+extern const int materialEvaluationsMG[NUM_PIECES];
+extern const int materialEvaluationsEG[NUM_PIECES];
 
 extern const int moveScoreMaterialEvaluations[NUM_PIECES];
 

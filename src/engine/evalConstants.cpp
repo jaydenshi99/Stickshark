@@ -1,12 +1,17 @@
 #include "evalConstants.h"
 
 // King eval should never be used
-const int materialEvaluations[NUM_PIECES] = {
-    100, 330, 320, 500, 900, 20000, 
-    -100, -330, -320, -500, -900, -20000
+const int materialEvaluationsMG[NUM_PIECES] = {
+    82, 337, 365, 477, 1025,  20000, 
+    -82, -337, -365, -477, -1025,  -20000
 };
 
-// Absolute value version of material evaluations.
+const int materialEvaluationsEG[NUM_PIECES] = {
+    94, 281, 297, 512,  936,  20000, 
+    -94, -281, -297, -512,  -936,  -20000
+};
+
+// For MVV-LVA heuristic
 const int moveScoreMaterialEvaluations[NUM_PIECES] = {
     100, 330, 320, 500, 900, 900, 
     100, 330, 320, 500, 900, 900

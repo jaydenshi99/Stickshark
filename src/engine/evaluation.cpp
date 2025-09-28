@@ -12,7 +12,7 @@ int staticEvaluation(const Board& board) {
     // Material eval
     int eval = 0;
     for (int i = 0; i < 12; i++) {
-        eval += popcount(board.pieceBitboards[i]) * materialEvaluations[i];
+        eval += popcount(board.pieceBitboards[i]) * materialEvaluationsMG[i];
     }
 
     eval += board.pieceSquareEvalMG;
