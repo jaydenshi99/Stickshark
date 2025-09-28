@@ -175,7 +175,12 @@ int Engine::quiescenceSearch(int alpha, int beta, int turn) {
     mg.onlyGenerateForcing = !currKingInCheck; // force generating if own king is not in check. otherwise evasive moves
     mg.generatePseudoMoves(board);
 
-    mg.orderMoves(board, 0); // best move value is 0 for now because we don't have table for quiescence yet.
+    uint16_t bestMoveValue = 0;
+    if (retrieveBestMove(board.zobristHash, bestMoveValue)) {
+        tableAccesses++;
+    }
+
+    mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
 
     for (Move move : mg.pseudoMoves) {
         if (isTimeUp()) {

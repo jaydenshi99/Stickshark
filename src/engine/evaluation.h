@@ -5,3 +5,5 @@
 #include "../bit.h"
 
 int staticEvaluation(const Board& board);
+
+bool isEndgame(const Board& board);
