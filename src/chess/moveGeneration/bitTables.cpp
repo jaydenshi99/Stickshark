@@ -48,8 +48,10 @@ uint64_t rookAttackMagicMasks[NUM_SQUARES];
 uint64_t bishopMagics[NUM_SQUARES];
 uint64_t rookMagics[NUM_SQUARES];
 
-uint64_t zobristBitstrings[773];
+int manhattanDistances[NUM_SQUARES][NUM_SQUARES];
+int centralManhattanDistances[NUM_SQUARES];
 
+uint64_t zobristBitstrings[773];
 
 void computeAllTables() {
     auto start = chrono::high_resolution_clock::now();
@@ -68,6 +70,12 @@ void computeAllTables() {
 
     computeZobristBitstrings();
     cout << "Zobrist bitstrings computed" << endl;
+
+    calculatePieceSquareTables();
+    cout << "Piece square tables computed" << endl;
+
+    computeManhattanDistances();
+    cout << "Manhattan distances computed" << endl;
 
     auto end = chrono::high_resolution_clock::now();
 
@@ -405,5 +413,20 @@ void saveMagics() {
 void computeZobristBitstrings() {
     for (int i = 0; i < 773; i++) {
         zobristBitstrings[i] = random_uint64();
+    }
+}
+
+void computeManhattanDistances() {
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        for (int j = 0; j < NUM_SQUARES; j++) {
+            manhattanDistances[i][j] = abs(i % 8 - j % 8) + abs(i / 8 - j / 8);
+        }
+    }
+
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        centralManhattanDistances[i] = manhattanDistances[i][27];
+        centralManhattanDistances[i] = min(centralManhattanDistances[i], manhattanDistances[i][28]);
+        centralManhattanDistances[i] = min(centralManhattanDistances[i], manhattanDistances[i][35]);
+        centralManhattanDistances[i] = min(centralManhattanDistances[i], manhattanDistances[i][36]);
     }
 }
