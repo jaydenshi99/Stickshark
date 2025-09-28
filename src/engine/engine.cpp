@@ -9,7 +9,8 @@ Engine::Engine(Board b) {
 
 void Engine::resetEngine(Board b) {
     board = b;
-    leafNodesEvaluated = 0;
+    normalNodesSearched = 0;
+    quiescenceNodesSearched = 0;
     tableAccesses = 0;
     searchFinished = true;
     bestMoveTable.clear();
@@ -18,7 +19,8 @@ void Engine::resetEngine(Board b) {
 }
 
 void Engine::findBestMove(int t) {
-    leafNodesEvaluated = 0;
+    normalNodesSearched = 0;
+    quiescenceNodesSearched = 0;
     tableAccesses = 0;
     timeLimit = t;
 
@@ -50,7 +52,7 @@ void Engine::findBestMove(int t) {
     auto end = chrono::high_resolution_clock::now();
 
     // Debug
-    cout << "Best move: " << bestMove << endl;
+    cout << endl << "Best move: " << bestMove << endl;
     cout << fixed << setprecision(2);
     cout << "Evaluation: " << (board.turn ? (float) boardEval / 100 : (float) -boardEval / 100) << endl << endl;
 
@@ -59,16 +61,19 @@ void Engine::findBestMove(int t) {
     cout << fixed << setprecision(0);
     cout << "Time taken: " << duration.count() << " ms" << endl;
     cout << "Depth searched: " << searchDepth << endl;
-    cout << "Total nodes evaluated: " << leafNodesEvaluated << endl;
+    cout << "Normal nodes searched: " << normalNodesSearched << endl;
+    cout << "Quiescence nodes searched: " << quiescenceNodesSearched << endl;
 
-    double nodesPerSecond = leafNodesEvaluated / (static_cast<double>(duration.count()) / 1000);
+    int nodesSearched = normalNodesSearched + quiescenceNodesSearched;
+    cout << "Total nodes searched: " << nodesSearched << endl;
+    cout << "Percentage quiescene: " << (double) quiescenceNodesSearched / nodesSearched * 100 << "%" << endl;
+
+    double nodesPerSecond = nodesSearched / (static_cast<double>(duration.count()) / 1000);
 
     cout << fixed << setprecision(0);
     cout << "Nodes / Second: " << nodesPerSecond << endl;
 
-    double branchingFactor = pow(static_cast<double>(leafNodesEvaluated), 1.0 / searchDepth);
-    cout << fixed << setprecision(2);
-    cout << "Branching factor: " << branchingFactor << endl;
+    cout << endl;
 
     cout << "Table Accesses: " << tableAccesses << endl;
 
@@ -77,9 +82,11 @@ void Engine::findBestMove(int t) {
 
 int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     if (depth == 0) {
-        leafNodesEvaluated++;
-        return staticEvaluation(board) * turn; 
+        //return staticEvaluation(board) * turn;
+        return quiescenceSearch(alpha, beta, turn); 
     }
+
+    normalNodesSearched++;
 
     int searchBestEval = MIN_EVAL;
     Move searchBestMove = Move();   // Set to default move
@@ -95,6 +102,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
 
     mg.orderMoves(board, bestMoveValue);
 
+    bool existsValidMove = false;
     for (Move move : mg.pseudoMoves) {
         if (isTimeUp()) {
             return -1; // Exit immediately with error value
@@ -113,6 +121,9 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
                 searchBestMove = move;
             }
 
+            // Update existsValidMove
+            existsValidMove = true;
+
             // Alpha-beta pruning
             alpha = max(alpha, searchBestEval);
             if (alpha >= beta) {
@@ -124,7 +135,14 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         board.unmakeMove(move);
     }
 
-    storeBestMove(board.zobristHash, searchBestMove.moveValue);
+    if (!existsValidMove) {
+        bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+        if (!currKingInCheck) {
+            searchBestEval = 0;
+        }
+    }
+
+    if (existsValidMove && !isTimeUp()) storeBestMove(board.zobristHash, searchBestMove.moveValue);
 
     // Update class if correct depth
     if (depth == searchDepth) {
@@ -134,6 +152,59 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     }
 
     return searchBestEval;
+}
+
+int Engine::quiescenceSearch(int alpha, int beta, int turn) {
+    quiescenceNodesSearched++;
+
+    int bestSoFar = staticEvaluation(board) * turn;
+
+    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+
+    // Standing Pat for non-check positions
+    if (!currKingInCheck) {
+        if (bestSoFar >= beta) {
+            return bestSoFar;
+        }
+    
+        alpha = max(alpha, bestSoFar);
+    }
+
+    // Generate forcing moves
+    MoveGen mg;
+    mg.onlyGenerateForcing = !currKingInCheck; // force generating if own king is not in check. otherwise evasive moves
+    mg.generatePseudoMoves(board);
+
+    mg.orderMoves(board, 0); // best move value is 0 for now because we don't have table for quiescence yet.
+
+    for (Move move : mg.pseudoMoves) {
+        if (isTimeUp()) {
+            return -1; // Exit immediately with error value
+        }
+        
+        board.makeMove(move);
+
+        // Continue with valid positions
+        if (!board.kingInCheck()) {
+            // Evaluate child board from opponent POV
+            int eval = -quiescenceSearch(-beta, -alpha, -turn);
+
+            if (eval >= beta) {
+                board.unmakeMove(move);
+                return eval;
+            }
+
+            if (eval > bestSoFar) {
+                bestSoFar = eval;
+            }
+
+            alpha = max(alpha, bestSoFar);
+        }
+        
+        board.unmakeMove(move);
+    }
+
+    return bestSoFar;
 }
 
 void Engine::storeBestMove(uint64_t zobristKey, uint16_t moveValue) {

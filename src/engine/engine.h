@@ -12,7 +12,8 @@ class Engine {
     private:
     int searchDepth;
 
-    int leafNodesEvaluated;
+    int normalNodesSearched;
+    int quiescenceNodesSearched;
     int tableAccesses;
 
     std::chrono::time_point<std::chrono::steady_clock> startTime;
@@ -36,6 +37,7 @@ class Engine {
 
     void findBestMove(int y);   // Calls negaMax to find the best move and debugs.
     int negaMax(int depth, int alpha, int beta, int turn);    // Sets bestMove to the best move and sets moveEval to the eva
+    int quiescenceSearch(int alpha, int beta, int turn);
 
     // Helper
     inline bool isTimeUp() const {

@@ -217,7 +217,7 @@ string WebInterface::handleEngineMove(int timeMs) {
     
     string moveNotation = string(1, fromFile) + string(1, fromRank) + "-" + 
                          string(1, toFile) + string(1, toRank);
-    debug(string("engine best move: ") + moveNotation);
+    // debug(string("engine best move: ") + moveNotation);
 
     stringstream response;
     response << "{";
