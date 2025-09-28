@@ -139,6 +139,9 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
         if (!currKingInCheck) {
             searchBestEval = 0;
+        } else {
+            // this means checkmate. punish checkmates that occur sooner.
+            searchBestEval = MIN_EVAL + 100 * (MAX_DEPTH - depth);
         }
     }
 
