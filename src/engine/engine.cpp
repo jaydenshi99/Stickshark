@@ -1,10 +1,16 @@
 #include "engine.h"
+#include "transpositionTable.h"
 
 using namespace std;
 
 Engine::Engine(Board b) {
     board = b;
     bestMove = Move();
+    TT = new TranspositionTable();
+}
+
+Engine::~Engine() {
+    delete TT;
 }
 
 void Engine::resetEngine(Board b) {
@@ -13,7 +19,6 @@ void Engine::resetEngine(Board b) {
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
     searchFinished = true;
-    bestMoveTable.clear();
     boardEval = 0;
     bestMove = Move(); 
 }
@@ -23,6 +28,7 @@ void Engine::findBestMove(int t) {
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
     timeLimit = t;
+    TT->incrementGeneration();
 
     int16_t turn = board.turn ? 1 : -1;
 
@@ -95,9 +101,13 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     MoveGen mg;
     mg.generatePseudoMoves(board);
 
+    TTEntry entry;
+    bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
     uint16_t bestMoveValue = 0;
-    if (retrieveBestMove(board.zobristHash, bestMoveValue)) {
+
+    if (entryExists) {
         tableAccesses++;
+        bestMoveValue = entry.bestMove;
     }
 
     mg.orderMoves(board, bestMoveValue);
@@ -141,11 +151,13 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
             searchBestEval = 0;
         } else {
             // this means checkmate. punish checkmates that occur sooner.
-            searchBestEval = -MATE - depth;
+            searchBestEval = -MATE + (searchDepth - depth);
         }
     }
 
-    if (existsValidMove && !isTimeUp()) storeBestMove(board.zobristHash, searchBestMove.moveValue);
+    if (existsValidMove && !isTimeUp())  {
+        TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, 0);
+    }
 
     // Update class if correct depth
     if (depth == searchDepth) {
@@ -178,9 +190,12 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     mg.onlyGenerateForcing = !currKingInCheck; // force generating if own king is not in check. otherwise evasive moves
     mg.generatePseudoMoves(board);
 
+    TTEntry entry;
+    bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
     uint16_t bestMoveValue = 0;
-    if (retrieveBestMove(board.zobristHash, bestMoveValue)) {
+    if (entryExists) {
         tableAccesses++;
+        bestMoveValue = entry.bestMove;
     }
 
     mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
@@ -213,22 +228,4 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     return bestSoFar;
-}
-
-void Engine::storeBestMove(uint64_t zobristKey, uint16_t moveValue) {
-    if (bestMoveTable.size() >= BEST_MOVE_TABLE_MAX_SIZE) {
-        bestMoveTable.erase(bestMoveTable.begin()); // Evict the first inserted entry
-    }
-
-    bestMoveTable[zobristKey] = moveValue;
-}
-
-bool Engine::retrieveBestMove(uint64_t zobristKey, uint16_t& moveValue) const {
-    auto it = bestMoveTable.find(zobristKey); 
-
-    if (it != bestMoveTable.end()) {
-        moveValue = it->second; // Retrieve the associated moveValue
-        return true;            // Indicate success
-    }
-    return false;               // Key not found
 }

@@ -17,10 +17,10 @@ struct TTEntry {
 
 class TranspositionTable {
     private:
-    const static int TABLE_SIZE = (1u << 22); // 2^22
+    const static int TABLE_SIZE = (1u << 22); // 2^22 = 4,194,304 entries (~50MB)
     uint16_t generation = 1;
 
-    TTEntry table[TABLE_SIZE];
+    TTEntry* table;
 
     public:
     TranspositionTable();

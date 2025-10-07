@@ -3,11 +3,12 @@
 using namespace std;
 
 TranspositionTable::TranspositionTable() {
+    table = new TTEntry[TABLE_SIZE];
     clear();
 }
 
 TranspositionTable::~TranspositionTable() {
-    clear();
+    delete[] table;
 }
 
 void TranspositionTable::clear() {
@@ -22,10 +23,10 @@ void TranspositionTable::incrementGeneration() {
 }
 
 void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t evaluation, uint8_t depth, uint8_t flag) {
-    uint64_t key22 = zobristHash >> (64 - 22);
+    uint64_t tkey16 = zobristHash >> (64 - 16);
     uint16_t key16 = zobristHash & 0xFFFF;
 
-    TTEntry currentEntry = table[key22];
+    TTEntry currentEntry = table[tkey16];
 
     // priorities higher depth and newer entries
     if (currentEntry.depth > depth) {
@@ -35,14 +36,14 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
     }
 
     // Add the entry to the table
-    table[key22] = TTEntry(key16, bestMove, evaluation, generation, depth, flag);
+    table[tkey16] = TTEntry(key16, bestMove, evaluation, generation, depth, flag);
 }
 
 bool TranspositionTable::retrieveEntry(uint64_t zobristHash, TTEntry& entry) {
-    uint64_t key22 = zobristHash >> (64 - 22);
+    uint64_t tkey16 = zobristHash >> (64 - 16);
     uint16_t key16 = zobristHash & 0xFFFF;
 
-    entry = table[key22];
+    entry = table[tkey16];
     if (generation != 0 && entry.key16 == key16) {
         return true;
     }

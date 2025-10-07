@@ -7,7 +7,8 @@
 #include "../chess/moveGeneration/moveGen.h"
 #include "evaluation.h"
 #include "../constants.h"
-#include "transpositionTable.h"
+
+class TranspositionTable;
 
 class Engine {
     private:
@@ -22,7 +23,7 @@ class Engine {
 
     bool searchFinished;
 
-    std::unordered_map<uint64_t, uint16_t> bestMoveTable;
+    TranspositionTable* TT;
 
     public:
     Board board;
@@ -32,6 +33,7 @@ class Engine {
 
     // Constructor
     Engine(Board b);
+    ~Engine();
 
     // Set methods
     void resetEngine(Board b);
@@ -46,8 +48,4 @@ class Engine {
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
         return elapsedTime >= timeLimit;
     }
-
-    // Hashmaps
-    void storeBestMove(uint64_t zobristKey, uint16_t moveValue);
-    bool retrieveBestMove(uint64_t zobristKey, uint16_t& moveValue) const; 
 };
