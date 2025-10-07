@@ -7,6 +7,7 @@
 #include "../chess/moveGeneration/moveGen.h"
 #include "evaluation.h"
 #include "../constants.h"
+#include "transpositionTable.h"
 
 class Engine {
     private:
