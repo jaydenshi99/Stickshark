@@ -24,7 +24,7 @@ void Engine::findBestMove(int t) {
     tableAccesses = 0;
     timeLimit = t;
 
-    int turn = board.turn ? 1 : -1;
+    int16_t turn = board.turn ? 1 : -1;
 
     cout << "Calculating best move... " << endl;
     
@@ -39,7 +39,7 @@ void Engine::findBestMove(int t) {
         searchFinished = false;
 
         searchDepth = d;
-        negaMax(d, MIN_EVAL, MAX_EVAL, turn);
+        negaMax(d, -MATE, MATE, turn);
 
         if (searchFinished) {
             d += 1;
@@ -80,7 +80,7 @@ void Engine::findBestMove(int t) {
     cout << endl;
 }
 
-int Engine::negaMax(int depth, int alpha, int beta, int turn) {
+int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     if (depth == 0) {
         //return staticEvaluation(board) * turn;
         return quiescenceSearch(alpha, beta, turn); 
@@ -88,7 +88,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
 
     normalNodesSearched++;
 
-    int searchBestEval = MIN_EVAL;
+    int16_t searchBestEval = -MATE;
     Move searchBestMove = Move();   // Set to default move
 
     // Generate posible moves
@@ -113,7 +113,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         // Continue with valid positions
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
-            int eval = -negaMax(depth - 1, -beta, -alpha, -turn);
+            int16_t eval = -negaMax(depth - 1, -beta, -alpha, -turn);
 
             // Update best evals and best moves
             if (eval > searchBestEval) {
@@ -141,7 +141,7 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
             searchBestEval = 0;
         } else {
             // this means checkmate. punish checkmates that occur sooner.
-            searchBestEval = MIN_EVAL + 100 * (MAX_DEPTH - depth);
+            searchBestEval = -MATE - depth;
         }
     }
 
@@ -157,10 +157,10 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
     return searchBestEval;
 }
 
-int Engine::quiescenceSearch(int alpha, int beta, int turn) {
+int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     quiescenceNodesSearched++;
 
-    int bestSoFar = staticEvaluation(board) * turn;
+    int16_t bestSoFar = staticEvaluation(board) * turn;
 
     bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
 
@@ -195,7 +195,7 @@ int Engine::quiescenceSearch(int alpha, int beta, int turn) {
         // Continue with valid positions
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
-            int eval = -quiescenceSearch(-beta, -alpha, -turn);
+            int16_t eval = -quiescenceSearch(-beta, -alpha, -turn);
 
             if (eval >= beta) {
                 board.unmakeMove(move);

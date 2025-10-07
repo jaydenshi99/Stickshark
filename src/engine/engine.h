@@ -28,7 +28,7 @@ class Engine {
     Board board;
     Move bestMove;
 
-    int boardEval;
+    int16_t boardEval;
 
     // Constructor
     Engine(Board b);
@@ -37,8 +37,8 @@ class Engine {
     void resetEngine(Board b);
 
     void findBestMove(int y);   // Calls negaMax to find the best move and debugs.
-    int negaMax(int depth, int alpha, int beta, int turn);    // Sets bestMove to the best move and sets moveEval to the eva
-    int quiescenceSearch(int alpha, int beta, int turn);
+    int16_t negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn);    // Sets bestMove to the best move and sets moveEval to the eva
+    int16_t quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn);
 
     // Helper
     inline bool isTimeUp() const {
