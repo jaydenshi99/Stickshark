@@ -7,6 +7,11 @@ Move::Move() {
     moveValue = 0;
 }
 
+Move::Move(uint16_t mv) {
+    moveScore = 0;
+    moveValue = mv;
+}
+
 Move::Move(int s, int t, int f) {
     moveScore = 0;
     moveValue = (f << 12) | (s << 6) | t;

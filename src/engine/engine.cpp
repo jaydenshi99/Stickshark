@@ -21,6 +21,7 @@ void Engine::resetEngine(Board b) {
     searchFinished = true;
     boardEval = 0;
     bestMove = Move(); 
+    TT->clear();
 }
 
 void Engine::findBestMove(int t) {
@@ -82,6 +83,7 @@ void Engine::findBestMove(int t) {
     cout << endl;
 
     cout << "Table Accesses: " << tableAccesses << endl;
+    cout << "Hit Rate: " << (double) tableAccesses / (normalNodesSearched + quiescenceNodesSearched) * 100 << "%" << endl;
 
     cout << endl;
 }
@@ -107,7 +109,23 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 
     if (entryExists) {
         tableAccesses++;
+
         bestMoveValue = entry.bestMove;
+
+        // we have encountered this position before, don't search further.
+        if (depth <= entry.depth) {
+            searchBestMove = Move(entry.bestMove);
+            searchBestEval = entry.evaluation;
+
+            // Update class if correct depth
+            if (depth == searchDepth) {
+                bestMove = searchBestMove;
+                boardEval = searchBestEval;
+                searchFinished = true;
+            }
+
+            return searchBestEval;
+        }
     }
 
     mg.orderMoves(board, bestMoveValue);
@@ -155,7 +173,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         }
     }
 
-    if (existsValidMove && !isTimeUp())  {
+    if (!isTimeUp())  {
         TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, 0);
     }
 
@@ -196,6 +214,8 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     if (entryExists) {
         tableAccesses++;
         bestMoveValue = entry.bestMove;
+
+        return entry.evaluation; // all depths stored will be better than the quiescence search
     }
 
     mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
