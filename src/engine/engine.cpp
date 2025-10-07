@@ -18,6 +18,7 @@ void Engine::resetEngine(Board b) {
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
+    tableAccessesQuiescence = 0;
     searchFinished = true;
     boardEval = 0;
     bestMove = Move(); 
@@ -28,6 +29,7 @@ void Engine::findBestMove(int t) {
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
+    tableAccessesQuiescence = 0;
     timeLimit = t;
     TT->incrementGeneration();
 
@@ -82,15 +84,16 @@ void Engine::findBestMove(int t) {
 
     cout << endl;
 
-    cout << "Table Accesses: " << tableAccesses << endl;
-    cout << "Hit Rate: " << (double) tableAccesses / (normalNodesSearched + quiescenceNodesSearched) * 100 << "%" << endl;
+    cout << "Table Accesses Normal: " << tableAccesses << endl;
+    cout << "Hit Rate Normal: " << (double) tableAccesses / (normalNodesSearched) * 100 << "%" << endl;
+    cout << "Table Accesses Quiescence: " << tableAccessesQuiescence << endl;
+    cout << "Hit Rate Quiescence: " << (double) tableAccessesQuiescence / quiescenceNodesSearched * 100 << "%" << endl;
 
     cout << endl;
 }
 
 int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     if (depth == 0) {
-        //return staticEvaluation(board) * turn;
         return quiescenceSearch(alpha, beta, turn); 
     }
 
@@ -114,8 +117,12 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 
         // we have encountered this position before, don't search further.
         if (depth <= entry.depth) {
-            searchBestMove = Move(entry.bestMove);
-            searchBestEval = entry.evaluation;
+            if (board.numThreefoldStates == 0) {
+                searchBestMove = Move(entry.bestMove);
+                searchBestEval = entry.evaluation;
+            } else {
+                searchBestEval = 0;
+            }
 
             // Update class if correct depth
             if (depth == searchDepth) {
@@ -174,7 +181,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     if (!isTimeUp())  {
-        TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, 0);
+        TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, EXACT);
     }
 
     // Update class if correct depth
@@ -212,10 +219,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
     uint16_t bestMoveValue = 0;
     if (entryExists) {
-        tableAccesses++;
+        tableAccessesQuiescence++;
         bestMoveValue = entry.bestMove;
 
-        return entry.evaluation; // all depths stored will be better than the quiescence search
+        return board.numThreefoldStates > 0 ? 0 : entry.evaluation; // all depths stored will be better than the quiescence search
     }
 
     mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.

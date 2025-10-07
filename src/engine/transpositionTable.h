@@ -2,6 +2,10 @@
 
 #include "../chess/moveGeneration/moveGen.h"
 
+#define EXACT 0
+#define UPPERBOUND 1
+#define LOWERBOUND 2
+
 struct TTEntry {
     uint16_t key16; // lowest 16 bits
     uint16_t bestMove;

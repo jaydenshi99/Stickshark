@@ -304,6 +304,10 @@ void Board::unmakeMove(const Move& move) {
         numThreefoldStates--;
     }
 
+    if (repetitionCount[zobristHash] == 0) {
+        repetitionCount.erase(zobristHash);
+    }
+
     // Get old gamestate
     Gamestate gState = history.top();
     history.pop();
