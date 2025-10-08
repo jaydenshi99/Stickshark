@@ -222,7 +222,9 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         tableAccessesQuiescence++;
         bestMoveValue = entry.bestMove;
 
-        return board.numThreefoldStates > 0 ? 0 : entry.evaluation; // all depths stored will be better than the quiescence search
+        if (entry.depth == 0) {
+            return board.numThreefoldStates > 0 ? 0 : entry.evaluation; // all depths stored will be better than the quiescence search
+        }
     }
 
     mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
@@ -245,6 +247,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
             }
 
             if (eval > bestSoFar) {
+                bestMoveValue = move.moveValue;
                 bestSoFar = eval;
             }
 
@@ -252,6 +255,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         }
         
         board.unmakeMove(move);
+    }
+
+    if (!isTimeUp())  {
+        TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, EXACT);
     }
 
     return bestSoFar;
