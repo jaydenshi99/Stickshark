@@ -59,7 +59,7 @@ string WebInterface::handleNewGame() {
     debug("handleNewGame");
 
     Board b;
-    b.setFEN("8/4k3/8/8/4PK2/8/8/8 w - - 0 1");
+    b.setFEN(STARTING_FEN);
     engine->resetEngine(b);
     
     stringstream response;
