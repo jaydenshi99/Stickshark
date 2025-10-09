@@ -2,6 +2,7 @@
 
 #define STARTING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define PAWN_ENDGAME "8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w HAha - 0 1"
+#define ROOK_V_KING "8/8/8/3k4/8/8/8/K6R w HAha - 0 1"
 
 #define EMPTY   -1
 #define WPAWN   0

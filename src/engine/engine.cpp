@@ -111,32 +111,35 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     uint16_t bestMoveValue = 0;
 
     if (entryExists) {
-        tableAccesses++;
-
         bestMoveValue = entry.bestMove;
 
         // we have encountered this position before, don't search further.
         if (depth <= entry.depth) {
-            if (board.numThreefoldStates == 0) {
-                searchBestMove = Move(entry.bestMove);
-                searchBestEval = entry.evaluation;
-            } else {
-                searchBestEval = 0;
+            if (entry.flag == EXACT) {
+                tableAccesses++;
+                if (board.numThreefoldStates == 0) {
+                    searchBestMove = Move(entry.bestMove);
+                    searchBestEval = entry.evaluation;
+                } else {
+                    searchBestEval = 0;
+                }
+
+                // Update class if correct depth
+                if (depth == searchDepth) {
+                    bestMove = searchBestMove;
+                    boardEval = searchBestEval;
+                    searchFinished = true;
+                }
+
+                return searchBestEval;
             }
 
-            // Update class if correct depth
-            if (depth == searchDepth) {
-                bestMove = searchBestMove;
-                boardEval = searchBestEval;
-                searchFinished = true;
-            }
-
-            return searchBestEval;
         }
     }
 
     mg.orderMoves(board, bestMoveValue);
 
+    int16_t alphaOrig = alpha;
     bool existsValidMove = false;
     for (Move move : mg.pseudoMoves) {
         if (isTimeUp()) {
@@ -180,8 +183,15 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         }
     }
 
-    if (!isTimeUp())  {
-        TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, EXACT);
+    uint8_t flag = EXACT;
+    if (searchBestEval < alphaOrig) {
+        flag = UPPERBOUND;
+    } else if (searchBestEval > beta) {
+        flag = LOWERBOUND;
+    }
+
+    if (!isTimeUp() && board.numThreefoldStates == 0)  {
+        TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
     }
 
     // Update class if correct depth
@@ -219,16 +229,17 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
     uint16_t bestMoveValue = 0;
     if (entryExists) {
-        tableAccessesQuiescence++;
         bestMoveValue = entry.bestMove;
 
-        if (entry.depth == 0) {
+        if (entry.depth == 0 && entry.flag == EXACT) {
+            tableAccessesQuiescence++;
             return board.numThreefoldStates > 0 ? 0 : entry.evaluation; // all depths stored will be better than the quiescence search
         }
     }
 
     mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
 
+    int16_t alphaOrig = alpha;
     for (Move move : mg.pseudoMoves) {
         if (isTimeUp()) {
             return -1; // Exit immediately with error value
@@ -257,8 +268,15 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         board.unmakeMove(move);
     }
 
-    if (!isTimeUp())  {
-        TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, EXACT);
+    uint8_t flag = EXACT;
+    if (bestSoFar < alphaOrig) {
+        flag = UPPERBOUND;
+    } else if (bestSoFar > beta) {
+        flag = LOWERBOUND;
+    }
+
+    if (!isTimeUp() && board.numThreefoldStates == 0)  {
+        TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
     }
 
     return bestSoFar;
