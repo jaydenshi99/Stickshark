@@ -104,9 +104,12 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     if (entryExists) {
         tableAccesses++;
         bestMoveValue = entry.bestMove;
+        
+        uint16_t generation;
+        TT->getGeneration(generation);
 
         // we have encountered this position before, don't search further.
-        if (depth <= entry.depth) {
+        if (depth <= entry.depth && generation == entry.generation) {
             int16_t TTScore = entry.evaluation;
             if (entry.flag == EXACT) {
                 searchBestMove = Move(entry.bestMove);
@@ -214,7 +217,9 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         tableAccessesQuiescence++;
         bestMoveValue = entry.bestMove;
 
-        if (entry.depth == 0) {
+        uint16_t generation;
+        TT->getGeneration(generation);
+        if (entry.depth == 0 && generation == entry.generation) {
             int16_t TTScore = entry.evaluation;
             if (entry.flag == EXACT) {
                 return TTScore;

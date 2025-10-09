@@ -30,6 +30,10 @@ class TranspositionTable {
     TranspositionTable();
     ~TranspositionTable();
 
+    inline void getGeneration(uint16_t& gen) const {
+        gen = generation;
+    }
+
     void clear();
     void incrementGeneration();
     void addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t evaluation, uint8_t depth, uint8_t flag);

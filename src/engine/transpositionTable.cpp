@@ -29,16 +29,21 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
     TTEntry currentEntry = table[key22];
 
     // Replace if:
-    // 1. Empty slot (key16 == 0)
-    // 2. Same position but deeper/newer search
-    // 3. Different position but newer generation
+    // 1) Empty slot
+    // 2) Same position: deeper depth OR same depth but newer/same generation
+    // 3) Different position: newer generation OR same generation but deeper/equal depth
 
     bool empty = currentEntry.key16 == 0;
-    bool samePosition = currentEntry.key16 == key16 && ( depth > currentEntry.depth || 
-        (depth == currentEntry.depth && generation > currentEntry.generation));
-    bool diffPosition = currentEntry.key16 != key16 && generation > currentEntry.generation;
+    bool samePos = currentEntry.key16 == key16;
 
-    if (empty || samePosition || diffPosition) {
+    bool replace =
+        empty
+        || (samePos && (depth > currentEntry.depth ||
+                        (depth == currentEntry.depth && generation >= currentEntry.generation)))
+        || (!samePos && (generation > currentEntry.generation ||
+                        (generation == currentEntry.generation && depth >= currentEntry.depth)));
+
+    if (replace) {
         table[key22] = TTEntry(key16, bestMove, evaluation, generation, depth, flag);
     }
 }
