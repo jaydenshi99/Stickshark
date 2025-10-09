@@ -117,12 +117,8 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         if (depth <= entry.depth) {
             if (entry.flag == EXACT) {
                 tableAccesses++;
-                if (board.numThreefoldStates == 0) {
-                    searchBestMove = Move(entry.bestMove);
-                    searchBestEval = entry.evaluation;
-                } else {
-                    searchBestEval = 0;
-                }
+                searchBestMove = Move(entry.bestMove);
+                searchBestEval = entry.evaluation;
 
                 // Update class if correct depth
                 if (depth == searchDepth) {
@@ -190,7 +186,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         flag = LOWERBOUND;
     }
 
-    if (!isTimeUp() && board.numThreefoldStates == 0)  {
+    if (!isTimeUp())  {
         TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
     }
 
@@ -233,7 +229,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
         if (entry.depth == 0 && entry.flag == EXACT) {
             tableAccessesQuiescence++;
-            return board.numThreefoldStates > 0 ? 0 : entry.evaluation; // all depths stored will be better than the quiescence search
+            return entry.evaluation; // all depths stored will be better than the quiescence search
         }
     }
 
@@ -275,7 +271,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         flag = LOWERBOUND;
     }
 
-    if (!isTimeUp() && board.numThreefoldStates == 0)  {
+    if (!isTimeUp())  {
         TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
     }
 

@@ -51,7 +51,7 @@ uint64_t rookMagics[NUM_SQUARES];
 int manhattanDistances[NUM_SQUARES][NUM_SQUARES];
 int centralManhattanDistances[NUM_SQUARES];
 
-uint64_t zobristBitstrings[773];
+uint64_t zobristBitstrings[774];
 
 void computeAllTables() {
     auto start = chrono::high_resolution_clock::now();
@@ -411,7 +411,7 @@ void saveMagics() {
 }
 
 void computeZobristBitstrings() {
-    for (int i = 0; i < 773; i++) {
+    for (int i = 0; i < 774; i++) {
         zobristBitstrings[i] = random_uint64();
     }
 }
