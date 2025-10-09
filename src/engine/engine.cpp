@@ -93,32 +93,24 @@ void Engine::findBestMove(int t) {
 }
 
 int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
-    if (depth == 0) {
-        return quiescenceSearch(alpha, beta, turn); 
-    }
-
     normalNodesSearched++;
 
+    // Transposition Table Query
     int16_t searchBestEval = -MATE;
     Move searchBestMove = Move();   // Set to default move
-
-    // Generate posible moves
-    MoveGen mg;
-    mg.generatePseudoMoves(board);
-
     TTEntry entry;
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
     uint16_t bestMoveValue = 0;
-
     if (entryExists) {
+        tableAccesses++;
         bestMoveValue = entry.bestMove;
 
         // we have encountered this position before, don't search further.
         if (depth <= entry.depth) {
+            int16_t TTScore = entry.evaluation;
             if (entry.flag == EXACT) {
-                tableAccesses++;
                 searchBestMove = Move(entry.bestMove);
-                searchBestEval = entry.evaluation;
+                searchBestEval = TTScore;
 
                 // Update class if correct depth
                 if (depth == searchDepth) {
@@ -128,11 +120,21 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
                 }
 
                 return searchBestEval;
+            } else if (entry.flag == LOWERBOUND) {
+                alpha = max(alpha, TTScore);
+            } else if (entry.flag == UPPERBOUND) {
+                beta = min(beta, TTScore);
             }
-
         }
     }
 
+    if (depth == 0) {
+        return quiescenceSearch(alpha, beta, turn); 
+    }
+
+    // Generate posible moves
+    MoveGen mg;
+    mg.generatePseudoMoves(board);
     mg.orderMoves(board, bestMoveValue);
 
     int16_t alphaOrig = alpha;
@@ -203,7 +205,30 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     quiescenceNodesSearched++;
 
+    // Transposition Table Query
     int16_t bestSoFar = staticEvaluation(board) * turn;
+    TTEntry entry;
+    bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
+    uint16_t bestMoveValue = 0;
+    if (entryExists) {
+        tableAccessesQuiescence++;
+        bestMoveValue = entry.bestMove;
+
+        if (entry.depth == 0) {
+            int16_t TTScore = entry.evaluation;
+            if (entry.flag == EXACT) {
+                return TTScore;
+            } else if (entry.flag == LOWERBOUND) {
+                alpha = max(alpha, TTScore);
+            } else if (entry.flag == UPPERBOUND) {
+                beta = min(beta, TTScore);
+            }
+
+            if (alpha >= beta) {
+                return TTScore;
+            }
+        }
+    }
 
     bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
 
@@ -221,17 +246,6 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     mg.onlyGenerateForcing = !currKingInCheck; // force generating if own king is not in check. otherwise evasive moves
     mg.generatePseudoMoves(board);
 
-    TTEntry entry;
-    bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
-    uint16_t bestMoveValue = 0;
-    if (entryExists) {
-        bestMoveValue = entry.bestMove;
-
-        if (entry.depth == 0 && entry.flag == EXACT) {
-            tableAccessesQuiescence++;
-            return entry.evaluation; // all depths stored will be better than the quiescence search
-        }
-    }
 
     mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
 
