@@ -59,7 +59,7 @@ string WebInterface::handleNewGame() {
     debug("handleNewGame");
 
     Board b;
-    b.setFEN(PAWN_ENDGAME);
+    b.setFEN(ROOK_V_KING);
     engine->resetEngine(b);
     
     stringstream response;

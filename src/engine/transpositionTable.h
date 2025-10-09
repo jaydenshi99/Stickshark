@@ -7,16 +7,16 @@
 #define LOWERBOUND 2
 
 struct TTEntry {
-    uint16_t key16; // lowest 16 bits
-    uint16_t bestMove;
-    int16_t evaluation;
-    uint16_t generation;
-    uint8_t depth;
-    uint8_t flag; // EXACT, UPPERBOUND, LOWERBOUND
+    uint32_t key32 = 0;       // lowest 32 bits
+    uint16_t bestMove = 0;
+    int16_t evaluation = 0;
+    uint16_t generation = 0;
+    uint8_t depth = 0;
+    uint8_t flag = 0;         // EXACT, UPPERBOUND, LOWERBOUND
     
-    TTEntry() = default;
-    TTEntry(uint16_t k, uint16_t bm, int16_t eval, uint16_t gen, uint8_t d, uint8_t f) 
-        : key16(k), bestMove(bm), evaluation(eval), generation(gen), depth(d), flag(f) {}
+    TTEntry() = default; // value-initialized to zeros via member initializers
+    TTEntry(uint32_t k, uint16_t bm, int16_t eval, uint16_t gen, uint8_t d, uint8_t f) 
+        : key32(k), bestMove(bm), evaluation(eval), generation(gen), depth(d), flag(f) {}
 };
 
 class TranspositionTable {
