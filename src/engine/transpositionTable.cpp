@@ -13,7 +13,7 @@ TranspositionTable::~TranspositionTable() {
 
 void TranspositionTable::clear() {
     generation = 1;
-    for (int i = 0; i < TABLE_SIZE; i++) {
+    for (uint64_t i = 0; i < TABLE_SIZE; i++) {
         table[i] = TTEntry();
     }
 }
@@ -23,17 +23,17 @@ void TranspositionTable::incrementGeneration() {
 }
 
 void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t evaluation, uint8_t depth, uint8_t flag) {
-    uint64_t key22 = (uint64_t)((zobristHash >> 42) & ((1ull << 22) - 1));
+    uint64_t slotIndex = (uint64_t)((zobristHash >> 42) & ((1ull << 22) - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
-    TTEntry currentEntry = table[key22];
+    TTEntry currentEntry = table[slotIndex];
 
     // Replace if:
     // 1) Empty slot
     // 2) Same position: deeper depth OR same depth but newer/same generation
     // 3) Different position: newer generation OR same generation but deeper/equal depth
 
-    bool empty = currentEntry.key32 == 0;
+    bool empty = currentEntry.generation == 0; // treat never-written entries as empty
     bool samePos = currentEntry.key32 == key32;
 
     bool replace =
@@ -44,15 +44,15 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
                         (generation == currentEntry.generation && depth >= currentEntry.depth)));
 
     if (replace) {
-        table[key22] = TTEntry(key32, bestMove, evaluation, generation, depth, flag);
+        table[slotIndex] = TTEntry(key32, bestMove, evaluation, generation, depth, flag);
     }
 }
 
 bool TranspositionTable::retrieveEntry(uint64_t zobristHash, TTEntry& entry) {
-    uint64_t key22 = (uint64_t)((zobristHash >> 42) & ((1ull << 22) - 1));
+    uint64_t slotIndex = (uint64_t)((zobristHash >> 42) & ((1ull << 22) - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
-    entry = table[key22];
+    entry = table[slotIndex];
     if (entry.key32 == key32 && entry.generation != 0) {
         return true;
     }

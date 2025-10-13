@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../chess/moveGeneration/moveGen.h"
+#include "../constants.h"
 
 #define EXACT 0
 #define UPPERBOUND 1
@@ -21,7 +22,7 @@ struct TTEntry {
 
 class TranspositionTable {
     private:
-    const static int TABLE_SIZE = (1u << 22); // 2^22 = 4,194,304 entries (~50MB)
+    const static uint64_t TABLE_SIZE = (1ull << 22); // fixed 2^22 entries (~50MB)
     uint16_t generation = 1;
 
     TTEntry* table;
