@@ -52,9 +52,10 @@ void Engine::findBestMove(int t) {
 
         cout << "Depth: " << d << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
-        if (!isTimeUp()) {
+        if (searchFinished) {
             d += 1;
         } else {
+            d -= 1;
             break;
         }
     }
@@ -94,6 +95,10 @@ void Engine::findBestMove(int t) {
 }
 
 int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
+    if (isTimeUp()) {
+        return 7777;
+    }
+
     normalNodesSearched++;
 
     // Transposition Table Query
@@ -127,6 +132,10 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
             int16_t eval = -negaMax(depth - 1, -beta, -alpha, -turn);
+            if (isTimeUp()) {
+                board.unmakeMove(move);
+                return 7777;
+            }
 
             // Update best evals and best moves
             if (eval > searchBestEval) {
@@ -171,8 +180,11 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 }
 
 int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
-    quiescenceNodesSearched++;
+    if (isTimeUp()) {
+        return 7777;
+    }
 
+    quiescenceNodesSearched++;
 
     // Transposition Table Query
     int16_t bestSoFar = staticEvaluation(board) * turn;
@@ -212,6 +224,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
             int16_t eval = -quiescenceSearch(-beta, -alpha, -turn);
+            if (isTimeUp()) {
+                board.unmakeMove(move);
+                return 7777;
+            }
 
             if (eval >= beta) {
                 board.unmakeMove(move);
