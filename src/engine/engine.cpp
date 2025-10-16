@@ -7,6 +7,16 @@ Engine::Engine(Board b) {
     board = b;
     bestMove = Move();
     TT = new TranspositionTable();
+    
+    // Initialize all member variables
+    searchDepth = 0;
+    normalNodesSearched = 0;
+    quiescenceNodesSearched = 0;
+    tableAccesses = 0;
+    tableAccessesQuiescence = 0;
+    timeLimit = 1000;
+    searchFinished = true;
+    boardEval = 0;
 }
 
 Engine::~Engine() {

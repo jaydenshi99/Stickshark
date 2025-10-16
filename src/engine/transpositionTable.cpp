@@ -23,7 +23,7 @@ void TranspositionTable::incrementGeneration() {
 }
 
 void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t evaluation, uint8_t depth, uint8_t flag) {
-    uint64_t slotIndex = (uint64_t)((zobristHash >> 42) & ((1ull << 22) - 1));
+    uint64_t slotIndex = (uint64_t)((zobristHash >> 42) & (TABLE_SIZE - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
     TTEntry currentEntry = table[slotIndex];
@@ -49,7 +49,7 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
 }
 
 bool TranspositionTable::retrieveEntry(uint64_t zobristHash, TTEntry& entry) {
-    uint64_t slotIndex = (uint64_t)((zobristHash >> 42) & ((1ull << 22) - 1));
+    uint64_t slotIndex = (uint64_t)((zobristHash >> 42) & (TABLE_SIZE - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
     entry = table[slotIndex];

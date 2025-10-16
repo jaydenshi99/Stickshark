@@ -11,31 +11,21 @@ class WebInterface {
 private:
     Engine* engine;
     bool quiet = false; // suppress engine stdout when true
-    
-    // Debug logging helper (prints only when not quiet)
     void debug(const std::string& msg) const;
-    
 public:
     WebInterface();
     ~WebInterface();
-    
-    // Control verbosity
     inline void setQuiet(bool q) { quiet = q; }
-    
-    // Main entry point for web commands
     std::string processCommand(const std::string& input);
-    
-    // Individual command handlers
     std::string handleNewGame();
     std::string handleMove(const std::string& moveStr);
     std::string handleValidatedMove(const std::string& body);
     std::string handleEngineMove(int timeMs = 1000);
     std::string handleGetBoard();
     std::string handleGetLegal();
-    
-    // Utility functions
     std::string boardToJson() const;
-    std::string legalToJson();
     std::string errorResponse(const std::string& message) const;
     void writeStateToFile(const std::string& filename, const std::stringstream& state) const;
 };
+
+

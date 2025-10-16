@@ -1,6 +1,7 @@
 #include "main.h"
-#include "web/web_interface.h"
-#include "web/http_server.h"
+#include "communication/web_interface.h"
+#include "communication/http_server.h"
+#include "communication/uci.h"
 
 using namespace std;
 
@@ -8,24 +9,33 @@ int main (int argc, char* argv[]) {
     // Mode flags
     bool cliMode = false;    // stdin/stdout JSON driver
     bool serverMode = false; // embedded HTTP API
+    bool uciMode = false;    // UCI protocol on stdin/stdout
     if (argc > 1 && string(argv[1]) == "--cli") {
         cliMode = true;
     } else if (argc > 1 && string(argv[1]) == "--server") {
         serverMode = true;
+    } else if (argc > 1 && string(argv[1]) == "--uci") {
+        uciMode = true;
     }
     
-    // Suppress initialization output in cliMode
-    if (cliMode) {
-        streambuf* orig = cout.rdbuf();
+    // Suppress initialization output in cliMode and uciMode
+    if (cliMode || uciMode) {
+        streambuf* orig_cout = cout.rdbuf();
+        streambuf* orig_cerr = cerr.rdbuf();
         stringstream devnull;
         cout.rdbuf(devnull.rdbuf());
+        cerr.rdbuf(devnull.rdbuf());
         computeAllTables();
-        cout.rdbuf(orig);
+        cout.rdbuf(orig_cout);
+        cerr.rdbuf(orig_cerr);
     } else {
         computeAllTables();
     }
 
-    if (cliMode || serverMode) {
+    if (uciMode) {
+        UCI uci;
+        uci.loop();
+    } else if (cliMode || serverMode) {
         WebInterface webInterface;
         webInterface.setQuiet(cliMode);
         if (serverMode) {
@@ -46,6 +56,14 @@ int main (int argc, char* argv[]) {
     } else {
         // Original chess game mode
         playEngine(STARTING_FEN, 1000);
+
+        // Board board = Board();
+        // board.setFEN(STARTING_FEN);
+        // Engine engine = Engine(board);
+
+        // engine.findBestMove(1000);
+
+        // engine.findBestMove(1000);
     }
 
     return 0;
