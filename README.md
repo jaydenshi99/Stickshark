@@ -65,6 +65,11 @@ Stickshark includes a web-based GUI for visual chess gameplay.
    - **Visual Board**: http://localhost:8000/web/chess_board.html
    - **Raw JSON View**: http://localhost:8000/web/json_viewer.html
 
+## Versions
+
+### 1.1
+- Added pawn shield evaluation, punishing engine for not having pawns infront of king
+
 ### 1.0 - Initial Release
 - **Core Engine**: Basic chess engine with negamax search and alpha-beta pruning
 - **Move Generation**: Bitboard-based move generation for all piece types
