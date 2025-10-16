@@ -154,9 +154,10 @@ void UCI::handleGo(const string& line) {
 string UCI::moveToUci(const Move& m) {
     int s = m.getSource();
     int t = m.getTarget();
-    char sf = 'a' + (s % 8);
+    // Flip file coordinates: a->h, b->g, ..., h->a
+    char sf = 'h' - (s % 8);  // Flip file: 0->h, 1->g, ..., 7->a
     char sr = '1' + (s / 8);
-    char tf = 'a' + (t % 8);
+    char tf = 'h' - (t % 8);  // Flip file: 0->h, 1->g, ..., 7->a
     char tr = '1' + (t / 8);
     string u;
     u += sf; u += sr; u += tf; u += tr;
@@ -176,9 +177,9 @@ bool UCI::parseUciMoveToken(const string& token, int& src, int& dst, int& promoF
     if (token.size() < 4) return false;
     char f1 = token[0], r1 = token[1], f2 = token[2], r2 = token[3];
     if (f1 < 'a' || f1 > 'h' || f2 < 'a' || f2 > 'h' || r1 < '1' || r1 > '8' || r2 < '1' || r2 > '8') return false;
-    int file1 = f1 - 'a';
+    int file1 = 'h' - f1;  // Flip file: 'a'->7, 'b'->6, ..., 'h'->0
     int rank1 = r1 - '1';
-    int file2 = f2 - 'a';
+    int file2 = 'h' - f2;  // Flip file: 'a'->7, 'b'->6, ..., 'h'->0
     int rank2 = r2 - '1';
     src = rank1 * 8 + file1;
     dst = rank2 * 8 + file2;
