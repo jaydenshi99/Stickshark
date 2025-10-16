@@ -48,7 +48,7 @@ extern int manhattanDistances[NUM_SQUARES][NUM_SQUARES];
 extern int centralManhattanDistances[NUM_SQUARES];
 
 // 0 - 63: WPAWN, 64 - 127: WBISHOP ...
-extern uint64_t zobristBitstrings[773]; // 64 * 12 + 1 + 4 for pieces on squares and turn and castling rights
+extern uint64_t zobristBitstrings[774]; // 64 * 12 + 1 + 4 + 1 for pieces on squares and turn and castling rights and threefold states
 
 
 void computeAllTables();

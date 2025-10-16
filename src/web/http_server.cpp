@@ -91,7 +91,7 @@ bool HttpServer::start(unsigned short port) {
             json = web.handleNewGame();
         } else if (method == "POST" && path == "/enginemove") {
             // Optional: parse timeMs from body later; default
-            json = web.handleEngineMove(1000);
+            json = web.handleEngineMove(500);
         } else if (method == "POST" && path == "/move") {
             // Accept either {id} or {from,to,flag} or legacy {move:"e2-e4"}
             if (body.find("\"id\"") != string::npos ||

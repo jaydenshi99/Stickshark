@@ -173,17 +173,17 @@ void calculatePieceSquareTables() {
         pieceSquareTablesMG[WKING][i] = mg_king_table[flippedRow * 8 + flippedCol];
         pieceSquareTablesEG[WKING][i] = eg_king_table[flippedRow * 8 + flippedCol];
 
-        pieceSquareTablesMG[BPAWN][i] = -mg_pawn_table[row * 8 + col];
-        pieceSquareTablesEG[BPAWN][i] = -eg_pawn_table[row * 8 + col];
-        pieceSquareTablesMG[BBISHOP][i] = -mg_bishop_table[row * 8 + col];
-        pieceSquareTablesEG[BBISHOP][i] = -eg_bishop_table[row * 8 + col];
-        pieceSquareTablesMG[BKNIGHT][i] = -mg_knight_table[row * 8 + col];
-        pieceSquareTablesEG[BKNIGHT][i] = -eg_knight_table[row * 8 + col];
-        pieceSquareTablesMG[BROOK][i] = -mg_rook_table[row * 8 + col];
-        pieceSquareTablesEG[BROOK][i] = -eg_rook_table[row * 8 + col];
-        pieceSquareTablesMG[BQUEEN][i] = -mg_queen_table[row * 8 + col];
-        pieceSquareTablesEG[BQUEEN][i] = -eg_queen_table[row * 8 + col];
-        pieceSquareTablesMG[BKING][i] = -mg_king_table[row * 8 + col];
-        pieceSquareTablesEG[BKING][i] = -eg_king_table[row * 8 + col];
+        pieceSquareTablesMG[BPAWN][i] = -mg_pawn_table[row * 8 + flippedCol];
+        pieceSquareTablesEG[BPAWN][i] = -eg_pawn_table[row * 8 + flippedCol];
+        pieceSquareTablesMG[BBISHOP][i] = -mg_bishop_table[row * 8 + flippedCol];
+        pieceSquareTablesEG[BBISHOP][i] = -eg_bishop_table[row * 8 + flippedCol];
+        pieceSquareTablesMG[BKNIGHT][i] = -mg_knight_table[row * 8 + flippedCol];
+        pieceSquareTablesEG[BKNIGHT][i] = -eg_knight_table[row * 8 + flippedCol];
+        pieceSquareTablesMG[BROOK][i] = -mg_rook_table[row * 8 + flippedCol];
+        pieceSquareTablesEG[BROOK][i] = -eg_rook_table[row * 8 + flippedCol];
+        pieceSquareTablesMG[BQUEEN][i] = -mg_queen_table[row * 8 + flippedCol];
+        pieceSquareTablesEG[BQUEEN][i] = -eg_queen_table[row * 8 + flippedCol];
+        pieceSquareTablesMG[BKING][i] = -mg_king_table[row * 8 + flippedCol];
+        pieceSquareTablesEG[BKING][i] = -eg_king_table[row * 8 + flippedCol];
     }
 }

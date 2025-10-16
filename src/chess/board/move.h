@@ -26,6 +26,7 @@ class Move {
 
     // Constructors
     Move();
+    Move(uint16_t mv);
     Move(int s, int t, int f);
 
     // Get methods (inlined for hot-path performance)

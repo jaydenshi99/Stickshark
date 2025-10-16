@@ -1,10 +1,16 @@
 #include "engine.h"
+#include "transpositionTable.h"
 
 using namespace std;
 
 Engine::Engine(Board b) {
     board = b;
     bestMove = Move();
+    TT = new TranspositionTable();
+}
+
+Engine::~Engine() {
+    delete TT;
 }
 
 void Engine::resetEngine(Board b) {
@@ -12,19 +18,22 @@ void Engine::resetEngine(Board b) {
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
+    tableAccessesQuiescence = 0;
     searchFinished = true;
-    bestMoveTable.clear();
     boardEval = 0;
     bestMove = Move(); 
+    TT->clear();
 }
 
 void Engine::findBestMove(int t) {
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
+    tableAccessesQuiescence = 0;
     timeLimit = t;
+    TT->incrementGeneration();
 
-    int turn = board.turn ? 1 : -1;
+    int16_t turn = board.turn ? 1 : -1;
 
     cout << "Calculating best move... " << endl;
     
@@ -39,12 +48,14 @@ void Engine::findBestMove(int t) {
         searchFinished = false;
 
         searchDepth = d;
-        negaMax(d, MIN_EVAL, MAX_EVAL, turn);
+        negaMax(d, -MATE, MATE, turn);
+
+        cout << "Depth: " << d << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
         if (searchFinished) {
             d += 1;
         } else {
-            searchDepth--;
+            d -= 1;
             break;
         }
     }
@@ -75,45 +86,56 @@ void Engine::findBestMove(int t) {
 
     cout << endl;
 
-    cout << "Table Accesses: " << tableAccesses << endl;
+    cout << "Table Accesses Normal: " << tableAccesses << endl;
+    cout << "Hit Rate Normal: " << (double) tableAccesses / (normalNodesSearched) * 100 << "%" << endl;
+    cout << "Table Accesses Quiescence: " << tableAccessesQuiescence << endl;
+    cout << "Hit Rate Quiescence: " << (double) tableAccessesQuiescence / quiescenceNodesSearched * 100 << "%" << endl;
 
     cout << endl;
 }
 
-int Engine::negaMax(int depth, int alpha, int beta, int turn) {
-    if (depth == 0) {
-        //return staticEvaluation(board) * turn;
-        return quiescenceSearch(alpha, beta, turn); 
+int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
+    if (isTimeUp()) {
+        return 7777;
     }
 
     normalNodesSearched++;
 
-    int searchBestEval = MIN_EVAL;
+    // Transposition Table Query
+    int16_t searchBestEval = -MATE;
     Move searchBestMove = Move();   // Set to default move
+    uint16_t bestMoveValue = 0;
+
+    // Transposition Table Query
+    TTEntry entry;
+    bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
+
+    if (entryExists) {
+        tableAccesses++;
+        bestMoveValue = entry.bestMove;
+    }
+
+    if (depth == 0) {
+        return quiescenceSearch(alpha, beta, turn); 
+    }
 
     // Generate posible moves
     MoveGen mg;
     mg.generatePseudoMoves(board);
-
-    uint16_t bestMoveValue = 0;
-    if (retrieveBestMove(board.zobristHash, bestMoveValue)) {
-        tableAccesses++;
-    }
-
     mg.orderMoves(board, bestMoveValue);
 
     bool existsValidMove = false;
     for (Move move : mg.pseudoMoves) {
-        if (isTimeUp()) {
-            return -1; // Exit immediately with error value
-        }
-        
         board.makeMove(move);
 
         // Continue with valid positions
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
-            int eval = -negaMax(depth - 1, -beta, -alpha, -turn);
+            int16_t eval = -negaMax(depth - 1, -beta, -alpha, -turn);
+            if (isTimeUp()) {
+                board.unmakeMove(move);
+                return 7777;
+            }
 
             // Update best evals and best moves
             if (eval > searchBestEval) {
@@ -141,11 +163,9 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
             searchBestEval = 0;
         } else {
             // this means checkmate. punish checkmates that occur sooner.
-            searchBestEval = MIN_EVAL + 100 * (MAX_DEPTH - depth);
+            searchBestEval = -MATE + (searchDepth - depth);
         }
     }
-
-    if (existsValidMove && !isTimeUp()) storeBestMove(board.zobristHash, searchBestMove.moveValue);
 
     // Update class if correct depth
     if (depth == searchDepth) {
@@ -154,13 +174,29 @@ int Engine::negaMax(int depth, int alpha, int beta, int turn) {
         searchFinished = true;
     }
 
+    TT->addEntry(board.zobristHash, bestMoveValue, searchBestEval, depth, EXACT);
+
     return searchBestEval;
 }
 
-int Engine::quiescenceSearch(int alpha, int beta, int turn) {
+int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
+    if (isTimeUp()) {
+        return 7777;
+    }
+
     quiescenceNodesSearched++;
 
-    int bestSoFar = staticEvaluation(board) * turn;
+    // Transposition Table Query
+    int16_t bestSoFar = staticEvaluation(board) * turn;
+    TTEntry entry;
+    bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
+
+    uint16_t bestMoveValue = 0;
+
+    if (entryExists) {
+        tableAccessesQuiescence++;
+        bestMoveValue = entry.bestMove;
+    }
 
     bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
 
@@ -178,24 +214,20 @@ int Engine::quiescenceSearch(int alpha, int beta, int turn) {
     mg.onlyGenerateForcing = !currKingInCheck; // force generating if own king is not in check. otherwise evasive moves
     mg.generatePseudoMoves(board);
 
-    uint16_t bestMoveValue = 0;
-    if (retrieveBestMove(board.zobristHash, bestMoveValue)) {
-        tableAccesses++;
-    }
 
     mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
 
     for (Move move : mg.pseudoMoves) {
-        if (isTimeUp()) {
-            return -1; // Exit immediately with error value
-        }
-        
         board.makeMove(move);
 
         // Continue with valid positions
         if (!board.kingInCheck()) {
             // Evaluate child board from opponent POV
-            int eval = -quiescenceSearch(-beta, -alpha, -turn);
+            int16_t eval = -quiescenceSearch(-beta, -alpha, -turn);
+            if (isTimeUp()) {
+                board.unmakeMove(move);
+                return 7777;
+            }
 
             if (eval >= beta) {
                 board.unmakeMove(move);
@@ -203,6 +235,7 @@ int Engine::quiescenceSearch(int alpha, int beta, int turn) {
             }
 
             if (eval > bestSoFar) {
+                bestMoveValue = move.moveValue;
                 bestSoFar = eval;
             }
 
@@ -212,23 +245,7 @@ int Engine::quiescenceSearch(int alpha, int beta, int turn) {
         board.unmakeMove(move);
     }
 
+    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, EXACT);
+
     return bestSoFar;
-}
-
-void Engine::storeBestMove(uint64_t zobristKey, uint16_t moveValue) {
-    if (bestMoveTable.size() >= BEST_MOVE_TABLE_MAX_SIZE) {
-        bestMoveTable.erase(bestMoveTable.begin()); // Evict the first inserted entry
-    }
-
-    bestMoveTable[zobristKey] = moveValue;
-}
-
-bool Engine::retrieveBestMove(uint64_t zobristKey, uint16_t& moveValue) const {
-    auto it = bestMoveTable.find(zobristKey); 
-
-    if (it != bestMoveTable.end()) {
-        moveValue = it->second; // Retrieve the associated moveValue
-        return true;            // Indicate success
-    }
-    return false;               // Key not found
 }

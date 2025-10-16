@@ -283,10 +283,18 @@ void Board::makeMove(const Move& move) {
     // Toggle turn
     swapTurn();
 
-    // Update repetition count after all zobrist updates
-    repetitionCount[zobristHash]++;
-    if (repetitionCount[zobristHash] == 3) {
+    // Update repetition count after all zobrist updates.
+    // Important: repetition counting must ignore the threefold bit in the key
+    // to keep counts consistent across toggles.
+    uint64_t repetitionKey = (numThreefoldStates > 0) ? (zobristHash ^ zobristBitstrings[773]) : zobristHash;
+    int &repCount = repetitionCount[repetitionKey];
+    repCount++;
+    if (repCount == 3) {
         numThreefoldStates++;
+        if (numThreefoldStates == 1) {
+            // Set a dedicated bit in the TT hash to distinguish drawish states
+            zobristHash ^= zobristBitstrings[773];
+        }
     }
 }
 
@@ -298,10 +306,20 @@ void Board::unmakeMove(const Move& move) {
     uint64_t oldSquareMask = 1ULL << oldSquare;
     uint64_t currSquareMask = 1ULL << currSquare;
 
-    // Update repetition count with current zobrist hash (before restoring)
-    repetitionCount[zobristHash]--;
-    if (repetitionCount[zobristHash] == 2) {
+    // Update repetition count with current position (before restoring).
+    // Use a key that ignores the threefold bit so it mirrors makeMove.
+    uint64_t repetitionKey = (numThreefoldStates > 0) ? (zobristHash ^ zobristBitstrings[773]) : zobristHash;
+    int &repCount = repetitionCount[repetitionKey];
+    repCount--;
+    if (repCount == 2) {
         numThreefoldStates--;
+        if (numThreefoldStates == 0) {
+            // Clear the dedicated TT bit when leaving drawish state
+            zobristHash ^= zobristBitstrings[773];
+        }
+    }
+    if (repCount == 0) {
+        repetitionCount.erase(repetitionKey);
     }
 
     // Get old gamestate
@@ -506,6 +524,11 @@ void Board::setZobristHash() {
     // 769 - 772: castling rights
     for (int i = 0; i < 4; i++) {
         zobristHash ^= zobristBitstrings[769 + i] * (history.top().castlingRights & (1 << i));
+    }
+
+    // 773: threefold states
+    if (numThreefoldStates > 0) {
+        zobristHash ^= zobristBitstrings[773]; // include a single bit if threefold repetition occurred
     }
 }
 
