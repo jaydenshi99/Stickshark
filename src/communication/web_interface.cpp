@@ -42,7 +42,7 @@ string WebInterface::processCommand(const string& input) {
 
 string WebInterface::handleNewGame() {
     debug("handleNewGame");
-    Board b; b.setFEN(STARTING_FEN); engine->resetEngine(b);
+    Board b; b.setFEN("r1bqk2r/pppp1ppp/2n2n2/4p1B1/1b2P3/3P1N2/PPP2PPP/RN1QKB1R w KQkq - 3 5"); engine->resetEngine(b);
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
