@@ -51,6 +51,8 @@ uint64_t rookMagics[NUM_SQUARES];
 int manhattanDistances[NUM_SQUARES][NUM_SQUARES];
 int centralManhattanDistances[NUM_SQUARES];
 
+int kingPawnShieldMasks[NUM_SQUARES * 2];
+
 uint64_t zobristBitstrings[774];
 
 void computeAllTables() {
@@ -76,6 +78,9 @@ void computeAllTables() {
 
     computeManhattanDistances();
     cout << "Manhattan distances computed" << endl;
+
+    computeKingPawnShieldMasks();
+    cout << "King forward masks computed" << endl;
 
     auto end = chrono::high_resolution_clock::now();
 
@@ -428,5 +433,19 @@ void computeManhattanDistances() {
         centralManhattanDistances[i] = min(centralManhattanDistances[i], manhattanDistances[i][28]);
         centralManhattanDistances[i] = min(centralManhattanDistances[i], manhattanDistances[i][35]);
         centralManhattanDistances[i] = min(centralManhattanDistances[i], manhattanDistances[i][36]);
+    }
+}
+
+void computeKingPawnShieldMasks() {
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        // white
+        kingPawnShieldMasks[i] |= 1ULL << (i + 7) & notFileBitboards[0];
+        kingPawnShieldMasks[i] |= 1ULL << (i + 8);
+        kingPawnShieldMasks[i] |= 1ULL << (i + 9) & notFileBitboards[7];
+
+        // black
+        kingPawnShieldMasks[i + NUM_SQUARES] |= 1ULL << (i - 7) & notFileBitboards[7];
+        kingPawnShieldMasks[i + NUM_SQUARES] |= 1ULL << (i - 8);
+        kingPawnShieldMasks[i + NUM_SQUARES] |= 1ULL << (i - 9) & notFileBitboards[0];
     }
 }

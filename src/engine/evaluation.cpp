@@ -26,7 +26,11 @@ int staticEvaluationMG(const Board& board) {
         eval += popcount(board.pieceBitboards[i]) * materialEvaluationsMG[i];
     }
 
+    // piece squares
     eval += board.pieceSquareEvalMG;
+
+    // pawn shield
+    eval += pawnShieldEval(board);
 
     return eval;
 }
@@ -64,6 +68,23 @@ int mopUpEval(const Board& board, int materialDiff) {
     return materialDiff >= 200 ? eval : -eval;
 }
 
+int pawnShieldEval(const Board& board) {
+    int eval = 0;
+    int wKingPos = lsb(board.pieceBitboards[WKING]);
+    int bKingPos = lsb(board.pieceBitboards[BKING]);
+
+    uint64_t wKingPawnShieldMask = kingPawnShieldMasks[wKingPos];
+    uint64_t bKingPawnShieldMask = kingPawnShieldMasks[bKingPos + NUM_SQUARES];
+
+    uint64_t wPawnShield = board.pieceBitboards[WPAWN] & wKingPawnShieldMask;
+    uint64_t bPawnShield = board.pieceBitboards[BPAWN] & bKingPawnShieldMask;
+
+    // punish for missing pawns
+    eval -= popcount(wPawnShield ^ wKingPawnShieldMask) * 15; // white
+    eval += popcount(bPawnShield ^ bKingPawnShieldMask) * 15; // black
+
+    return eval;
+}
 
 int getEndgamePhase(const Board& board) {
     int phase = 0;
