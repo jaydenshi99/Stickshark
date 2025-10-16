@@ -146,7 +146,7 @@ void UCI::handleGo(const string& line) {
     
     // Temporarily restore cout for bestmove response
     std::cout.rdbuf(orig_cout);
-    cout << "pv " << moveToUci(engine->bestMove) << "\n";
+    cout << "bestmove " << moveToUci(engine->bestMove) << "\n";
     cout.flush();
     std::cout.rdbuf(&nullBuffer);
 }
