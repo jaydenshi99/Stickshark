@@ -22,13 +22,9 @@ Before building the project, ensure the following dependencies are installed:
 
 ### Build Tools
 - `make`: The Makefile requires a compatible `make` utility.
-  - Install on Linux: `sudo apt install make`
-  - Install on macOS: `xcode-select --install`
-  - Install on Windows: Use MinGW Make or WSL.
 
 ### Additional Libraries
 - None required.
-
 
 ## Installation Steps
 
