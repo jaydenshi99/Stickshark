@@ -5,6 +5,8 @@
 extern const int materialEvaluationsMG[NUM_PIECES];
 extern const int materialEvaluationsEG[NUM_PIECES];
 
+extern const int kingZoneAttackPenalty[40];
+
 extern const int moveScoreMaterialEvaluations[NUM_PIECES];
 
 extern int pieceSquareTablesMG[NUM_PIECES][NUM_SQUARES];

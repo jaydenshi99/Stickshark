@@ -11,6 +11,13 @@ const int materialEvaluationsEG[NUM_PIECES] = {
     -94, -281, -297, -512,  -936,  -20000
 };
 
+const int kingZoneAttackPenalty[40] = {
+    0, 0, 1, 1, 2, 2, 3, 3, 5, 5, 
+    8, 8, 13, 13, 21, 21, 34, 34, 55, 
+    55, 89, 89, 144, 144, 233, 233, 300, 300,
+    350, 350, 370, 370, 390, 390, 410, 410, 420
+};
+
 // For MVV-LVA heuristic
 const int moveScoreMaterialEvaluations[NUM_PIECES] = {
     100, 330, 320, 500, 900, 900, 

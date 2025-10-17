@@ -29,8 +29,9 @@ int staticEvaluationMG(const Board& board) {
     // piece squares
     eval += board.pieceSquareEvalMG;
 
-    // pawn shield
+    // king safety
     eval += pawnShieldEval(board);
+    eval += kingZoneEval(board);
 
     return eval;
 }
@@ -79,11 +80,37 @@ int pawnShieldEval(const Board& board) {
     uint64_t wPawnShield = board.pieceBitboards[WPAWN] & wKingPawnShieldMask;
     uint64_t bPawnShield = board.pieceBitboards[BPAWN] & bKingPawnShieldMask;
 
-    // punish for missing pawns
-    eval -= popcount(wPawnShield ^ wKingPawnShieldMask) * 15; // white
-    eval += popcount(bPawnShield ^ bKingPawnShieldMask) * 15; // black
+    // punish for missing shield pawns
+    eval -= popcount(wPawnShield ^ wKingPawnShieldMask) * 12; // white
+    eval += popcount(bPawnShield ^ bKingPawnShieldMask) * 12; // black
 
     return eval;
+}
+
+int kingZoneEval(const Board& board) {
+    int wKingPos = lsb(board.pieceBitboards[WKING]);
+    int bKingPos = lsb(board.pieceBitboards[BKING]);
+
+    uint64_t wKingZone = kingZoneMasks[wKingPos];
+    uint64_t bKingZone = kingZoneMasks[bKingPos + NUM_SQUARES];
+
+    int wKingPenalty = 0;
+    int bKingPenalty = 0;
+
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BBISHOP));
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BKNIGHT));
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BROOK));
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BQUEEN));
+
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WBISHOP));
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WKNIGHT));
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WROOK));
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WQUEEN));
+
+    wKingPenalty = min(wKingPenalty, 40);
+    bKingPenalty = min(bKingPenalty, 40);
+    
+    return kingZoneAttackPenalty[bKingPenalty] - kingZoneAttackPenalty[wKingPenalty];
 }
 
 int getEndgamePhase(const Board& board) {

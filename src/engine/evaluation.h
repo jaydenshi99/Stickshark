@@ -15,5 +15,6 @@ int staticEvaluationEG(const Board& board);
 int mopUpEval(const Board& board, int materialDiff);
 
 int pawnShieldEval(const Board& board);
+int kingZoneEval(const Board& board);
 
 int getEndgamePhase(const Board& board);
