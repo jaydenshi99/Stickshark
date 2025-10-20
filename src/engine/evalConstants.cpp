@@ -11,12 +11,8 @@ const int materialEvaluationsEG[NUM_PIECES] = {
     -94, -281, -297, -512,  -936,  -20000
 };
 
-const int kingZoneAttackPenalty[40] = {
-    0, 0, 1, 1, 2, 2, 3, 3, 5, 5, 
-    8, 8, 13, 13, 21, 21, 34, 34, 55, 
-    55, 89, 89, 144, 144, 233, 233, 300, 300,
-    350, 350, 370, 370, 390, 390, 410, 410, 420
-};
+// S Shaped curve
+int kingZoneAttackPenalty[120];
 
 // For MVV-LVA heuristic
 const int moveScoreMaterialEvaluations[NUM_PIECES] = {
@@ -192,5 +188,20 @@ void calculatePieceSquareTables() {
         pieceSquareTablesEG[BQUEEN][i] = -eg_queen_table[row * 8 + flippedCol];
         pieceSquareTablesMG[BKING][i] = -mg_king_table[row * 8 + flippedCol];
         pieceSquareTablesEG[BKING][i] = -eg_king_table[row * 8 + flippedCol];
+    }
+}
+
+void calculateKingZoneAttackPenalty() {
+    const double L = 480.0;   // maximum centipawn penalty
+    const double k = 0.09;    // steepness
+    const double x0 = 45.0;   // midpoint
+
+    for (int i = 0; i < 120; i++) {
+        double first = L / (1.0 + exp(-k * (i - x0)));
+        double shift = L / (1.0 + exp(k * x0));
+
+        double penalty = first - shift;
+        
+        kingZoneAttackPenalty[i] = static_cast<int>(round(penalty));
     }
 }

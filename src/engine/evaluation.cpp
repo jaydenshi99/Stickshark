@@ -2,6 +2,12 @@
 
 using namespace std;
 
+static constexpr int ATTACK_UNIT_P = 3;
+static constexpr int ATTACK_UNIT_N = 3;
+static constexpr int ATTACK_UNIT_B = 3;
+static constexpr int ATTACK_UNIT_R = 5;
+static constexpr int ATTACK_UNIT_Q = 7;
+
 // Returns eval, positive means white is doing better
 int staticEvaluation(const Board& board) {
     // Threefold repetition
@@ -87,6 +93,7 @@ int pawnShieldEval(const Board& board) {
     return eval;
 }
 
+// rough guideline: 
 int kingZoneEval(const Board& board) {
     int wKingPos = lsb(board.pieceBitboards[WKING]);
     int bKingPos = lsb(board.pieceBitboards[BKING]);
@@ -97,18 +104,20 @@ int kingZoneEval(const Board& board) {
     int wKingPenalty = 0;
     int bKingPenalty = 0;
 
-    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BBISHOP));
-    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BKNIGHT));
-    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BROOK));
-    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BQUEEN));
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BPAWN)) * ATTACK_UNIT_P;
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BBISHOP)) * ATTACK_UNIT_B;
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BKNIGHT)) * ATTACK_UNIT_N;
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BROOK)) * ATTACK_UNIT_R;
+    wKingPenalty += popcount(wKingZone & board.getPieceAttacks(BQUEEN)) * ATTACK_UNIT_Q;
 
-    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WBISHOP));
-    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WKNIGHT));
-    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WROOK));
-    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WQUEEN));
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WPAWN)) * ATTACK_UNIT_P;
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WBISHOP)) * ATTACK_UNIT_B;
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WKNIGHT)) * ATTACK_UNIT_N;
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WROOK)) * ATTACK_UNIT_R;
+    bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WQUEEN)) * ATTACK_UNIT_Q;
 
-    wKingPenalty = min(wKingPenalty, 40);
-    bKingPenalty = min(bKingPenalty, 40);
+    wKingPenalty = min(wKingPenalty, 120);
+    bKingPenalty = min(bKingPenalty, 120);
     
     return kingZoneAttackPenalty[bKingPenalty] - kingZoneAttackPenalty[wKingPenalty];
 }

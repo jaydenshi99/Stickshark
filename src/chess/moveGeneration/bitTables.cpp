@@ -78,6 +78,9 @@ void computeAllTables() {
     calculatePieceSquareTables();
     cout << "Piece square tables computed" << endl;
 
+    calculateKingZoneAttackPenalty();
+    cout << "King zone attack penalty computed" << endl;
+
     computeManhattanDistances();
     cout << "Manhattan distances computed" << endl;
 

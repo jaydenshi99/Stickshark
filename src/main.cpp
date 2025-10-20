@@ -55,15 +55,9 @@ int main (int argc, char* argv[]) {
         }
     } else {
         // Original chess game mode
-        playEngine(STARTING_FEN, 1000);
+        // playEngine(STARTING_FEN, 1000);
 
-        // Board board = Board();
-        // board.setFEN(STARTING_FEN);
-        // Engine engine = Engine(board);
-
-        // engine.findBestMove(1000);
-
-        // engine.findBestMove(1000);
+        perft(5, STARTING_FEN);
     }
 
     return 0;
