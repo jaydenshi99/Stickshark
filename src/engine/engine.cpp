@@ -17,6 +17,7 @@ Engine::Engine(Board b) {
     timeLimit = 1000;
     searchFinished = true;
     boardEval = 0;
+    principalVariation.clear();
 }
 
 Engine::~Engine() {
@@ -32,7 +33,12 @@ void Engine::resetEngine(Board b) {
     searchFinished = true;
     boardEval = 0;
     bestMove = Move(); 
+    principalVariation.clear();
     TT->clear();
+}
+
+void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback) {
+    uciInfoCallback = callback;
 }
 
 void Engine::findBestMove(int t) {
@@ -63,6 +69,18 @@ void Engine::findBestMove(int t) {
         cout << "Depth: " << d << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
         if (searchFinished) {
+            // Report UCI info for completed depth
+            if (uciInfoCallback) {
+                auto currentTime = chrono::high_resolution_clock::now();
+                auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(currentTime - startTime).count();
+                int totalNodes = normalNodesSearched + quiescenceNodesSearched;
+                int nps = elapsedTime > 0 ? (totalNodes * 1000) / elapsedTime : 0;
+                
+                // Convert score to side-to-move perspective
+                int scoreCp = board.turn ? boardEval : -boardEval;
+                
+                uciInfoCallback(d, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
+            }
             d += 1;
         } else {
             d -= 1;
@@ -182,6 +200,12 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         bestMove = searchBestMove;
         boardEval = searchBestEval;
         searchFinished = true;
+        
+        // Update principal variation (simple version - just the best move)
+        principalVariation.clear();
+        if (searchBestMove.getSource() != 0 || searchBestMove.getTarget() != 0) { // Valid move
+            principalVariation.push_back(searchBestMove);
+        }
     }
 
     TT->addEntry(board.zobristHash, bestMoveValue, searchBestEval, depth, EXACT);

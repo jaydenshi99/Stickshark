@@ -73,7 +73,7 @@ int mopUpEval(const Board& board, int materialDiff) {
     int centralDist = materialDiff >= threshold ? centralManhattanDistances[bKingPos] : centralManhattanDistances[wKingPos]; // CMD of losing king
 
     
-    int eval = 15 * centralDist + 5 * (14 - kingDist);
+    int eval = 21 * centralDist + 6 * (14 - kingDist);
 
     return materialDiff >= 200 ? eval : -eval;
 }

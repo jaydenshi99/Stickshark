@@ -15,6 +15,33 @@ UCI::UCI() {
     Board b;
     b.setFEN(STARTING_FEN);
     engine = new Engine(b);
+    
+    // Set up UCI info callback
+    engine->setUciInfoCallback([this](int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv) {
+        // Temporarily restore cout for UCI info
+        std::cout.rdbuf(orig_cout);
+        
+        // Format UCI info line
+        cout << "info depth " << depth 
+             << " time " << timeMs 
+             << " nodes " << nodes 
+             << " nps " << nps 
+             << " score cp " << scoreCp;
+        
+        // Add principal variation if available
+        if (!pv.empty()) {
+            cout << " pv";
+            for (const Move& move : pv) {
+                cout << " " << moveToUci(move);
+            }
+        }
+        
+        cout << endl;
+        cout.flush();
+        
+        // Restore null buffer
+        std::cout.rdbuf(&nullBuffer);
+    });
 }
 
 UCI::~UCI() {
