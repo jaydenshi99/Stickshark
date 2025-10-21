@@ -61,4 +61,8 @@ class Engine {
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
         return elapsedTime >= timeLimit;
     }
+
+private:
+    // Helper method to reset search statistics
+    void resetSearchStats();
 };

@@ -26,27 +26,13 @@ Engine::~Engine() {
 
 void Engine::resetEngine(Board b) {
     board = b;
-    normalNodesSearched = 0;
-    quiescenceNodesSearched = 0;
-    tableAccesses = 0;
-    tableAccessesQuiescence = 0;
-    searchFinished = true;
-    boardEval = 0;
-    bestMove = Move(); 
-    principalVariation.clear();
+    resetSearchStats();
     TT->clear();
 }
 
 void Engine::setPosition(Board b) {
     board = b;
-    normalNodesSearched = 0;
-    quiescenceNodesSearched = 0;
-    tableAccesses = 0;
-    tableAccessesQuiescence = 0;
-    searchFinished = true;
-    boardEval = 0;
-    bestMove = Move(); 
-    principalVariation.clear();
+    resetSearchStats();
     // Note: TT is NOT cleared - this preserves transposition table across position changes
 }
 
@@ -54,11 +40,19 @@ void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int no
     uciInfoCallback = callback;
 }
 
-void Engine::findBestMove(int t) {
+void Engine::resetSearchStats() {
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
     tableAccessesQuiescence = 0;
+    searchFinished = true;
+    boardEval = 0;
+    bestMove = Move();
+    principalVariation.clear();
+}
+
+void Engine::findBestMove(int t) {
+    resetSearchStats();
     timeLimit = t;
     TT->incrementGeneration();
 
