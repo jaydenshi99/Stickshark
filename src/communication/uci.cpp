@@ -125,7 +125,7 @@ void UCI::handlePosition(const string& line) {
         return;
     }
 
-    engine->resetEngine(b);
+    engine->setPosition(b);
 
     if (p != string::npos) {
         size_t movesStart = line.find(' ', p + 1);

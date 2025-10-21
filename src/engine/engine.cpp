@@ -37,6 +37,19 @@ void Engine::resetEngine(Board b) {
     TT->clear();
 }
 
+void Engine::setPosition(Board b) {
+    board = b;
+    normalNodesSearched = 0;
+    quiescenceNodesSearched = 0;
+    tableAccesses = 0;
+    tableAccessesQuiescence = 0;
+    searchFinished = true;
+    boardEval = 0;
+    bestMove = Move(); 
+    principalVariation.clear();
+    // Note: TT is NOT cleared - this preserves transposition table across position changes
+}
+
 void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback) {
     uciInfoCallback = callback;
 }

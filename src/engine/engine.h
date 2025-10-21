@@ -45,6 +45,7 @@ class Engine {
 
     // Set methods
     void resetEngine(Board b);
+    void setPosition(Board b);  // Set position without clearing TT
 
     void findBestMove(int y);   // Calls negaMax to find the best move and debugs.
     int16_t negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn);    // Sets bestMove to the best move and sets moveEval to the eva
