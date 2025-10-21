@@ -9,11 +9,13 @@ int main (int argc, char* argv[]) {
     // Mode flags
     bool cliMode = false;    // stdin/stdout JSON driver
     bool serverMode = false; // embedded HTTP API
-    bool uciMode = false;    // UCI protocol on stdin/stdout
+    bool uciMode = true;     // UCI protocol on stdin/stdout (default)
     if (argc > 1 && string(argv[1]) == "--cli") {
         cliMode = true;
+        uciMode = false;
     } else if (argc > 1 && string(argv[1]) == "--server") {
         serverMode = true;
+        uciMode = false;
     } else if (argc > 1 && string(argv[1]) == "--uci") {
         uciMode = true;
     }
