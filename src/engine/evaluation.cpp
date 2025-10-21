@@ -2,12 +2,6 @@
 
 using namespace std;
 
-static constexpr int ATTACK_UNIT_P = 3;
-static constexpr int ATTACK_UNIT_N = 3;
-static constexpr int ATTACK_UNIT_B = 3;
-static constexpr int ATTACK_UNIT_R = 5;
-static constexpr int ATTACK_UNIT_Q = 7;
-
 // Returns eval, positive means white is doing better
 int staticEvaluation(const Board& board) {
     // Threefold repetition
