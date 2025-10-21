@@ -64,13 +64,16 @@ int mopUpEval(const Board& board, int materialDiff) {
         return 0;
     }
 
+    bool whiteAdvantage = materialDiff >= threshold;
+
     int wKingPos = lsb(board.pieceBitboards[WKING]);
     int bKingPos = lsb(board.pieceBitboards[BKING]);
 
     int kingDist = manhattanDistances[wKingPos][bKingPos];
     int centralDist = materialDiff >= threshold ? centralManhattanDistances[bKingPos] : centralManhattanDistances[wKingPos]; // CMD of losing king
+
     
-    int eval = 15 * centralDist - 5 * (14 - kingDist);
+    int eval = 15 * centralDist + 5 * (14 - kingDist);
 
     return materialDiff >= 200 ? eval : -eval;
 }
