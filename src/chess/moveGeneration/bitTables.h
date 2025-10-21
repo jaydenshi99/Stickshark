@@ -47,6 +47,9 @@ extern uint64_t rookMagics[NUM_SQUARES];
 extern int manhattanDistances[NUM_SQUARES][NUM_SQUARES];
 extern int centralManhattanDistances[NUM_SQUARES];
 
+extern uint64_t kingPawnShieldMasks[NUM_SQUARES * 2];
+extern uint64_t kingZoneMasks[NUM_SQUARES * 2];
+
 // 0 - 63: WPAWN, 64 - 127: WBISHOP ...
 extern uint64_t zobristBitstrings[774]; // 64 * 12 + 1 + 4 + 1 for pieces on squares and turn and castling rights and threefold states
 
@@ -79,3 +82,7 @@ void computeZobristBitstrings();
 
 // Distance
 void computeManhattanDistances();
+
+// Bitmasks
+void computeKingPawnShieldMasks();
+void computeKingZoneMasks();

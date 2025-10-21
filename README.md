@@ -22,13 +22,9 @@ Before building the project, ensure the following dependencies are installed:
 
 ### Build Tools
 - `make`: The Makefile requires a compatible `make` utility.
-  - Install on Linux: `sudo apt install make`
-  - Install on macOS: `xcode-select --install`
-  - Install on Windows: Use MinGW Make or WSL.
 
 ### Additional Libraries
 - None required.
-
 
 ## Installation Steps
 
@@ -68,24 +64,6 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 4. **Open your web browser** and navigate to:
    - **Visual Board**: http://localhost:8000/web/chess_board.html
    - **Raw JSON View**: http://localhost:8000/web/json_viewer.html
-
-## Version History
-
-### 1.0 - Initial Release
-- **Core Engine**: Basic chess engine with negamax search and alpha-beta pruning
-- **Move Generation**: Bitboard-based move generation for all piece types
-- **Evaluation**: Piece-square tables + basic material evaluation + endgame bonus
-- **Web Interface**: HTTP server with visual chess board
-- **Features**: 
-  - Legal move validation
-  - Drag-and-drop interface
-  - Board flipping
-  - Engine vs human gameplay
-
-- **Transposition Table**: Added TT for caching search results (~50MB), only used for move ordering currently
-- **Quiescence Search**: Extended search for captures and checks
-- **Move Ordering**: MVV-LVA (Most Valuable Victim - Least Valuable Attacker) + best move heuristic
-- **Threefold Repetition**: Zobrist hash-based repetition detection
 
 ## Contact
 For questions or feedback, feel free to contact:

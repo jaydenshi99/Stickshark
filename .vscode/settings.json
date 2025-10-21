@@ -69,6 +69,7 @@
         "fstream": "cpp",
         "numeric": "cpp",
         "random": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "thread": "cpp"
     }
 }

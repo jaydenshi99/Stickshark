@@ -69,6 +69,11 @@ class Board {
         return pieceBitboards[turn ? BKING : WKING] & (turn ? getWhiteAttacks() : getBlackAttacks());
     }
 
+    inline __attribute__((always_inline)) uint64_t getPieceAttacks(int piece) const {
+        const Gamestate& gamestate = history.top();
+        return gamestate.attackBitboards[piece];
+    }
+
     // Set methods
     void setFEN(std::string FEN);
     void setStartingPosition();
