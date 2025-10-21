@@ -48,6 +48,7 @@ uint64_t rookAttackMagicMasks[NUM_SQUARES];
 uint64_t bishopMagics[NUM_SQUARES];
 uint64_t rookMagics[NUM_SQUARES];
 
+int chebyshevDistances[NUM_SQUARES][NUM_SQUARES];
 int manhattanDistances[NUM_SQUARES][NUM_SQUARES];
 int centralManhattanDistances[NUM_SQUARES];
 
@@ -80,6 +81,9 @@ void computeAllTables() {
 
     calculateKingZoneAttackPenalty();
     cout << "King zone attack penalty computed" << endl;
+
+    computeManhattanDistances();
+    cout << "Chebyshev distances computed" << endl;
 
     computeManhattanDistances();
     cout << "Manhattan distances computed" << endl;
@@ -426,6 +430,14 @@ void saveMagics() {
 void computeZobristBitstrings() {
     for (int i = 0; i < 774; i++) {
         zobristBitstrings[i] = random_uint64();
+    }
+}
+
+void computeChebyshevDistances() {
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        for (int j = 0; j < NUM_SQUARES; j++) {
+            chebyshevDistances[i][j] = max(abs(i % 8 - j % 8), abs(i / 8 - j / 8));
+        }
     }
 }
 
