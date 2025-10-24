@@ -193,7 +193,7 @@ void calculatePieceSquareTables() {
 
 void calculateKingZoneAttackPenalty() {
     const double L = 480.0;   // maximum centipawn penalty
-    const double k = 0.01;    // steepness
+    const double k = 0.13;    // steepness
     const double x0 = 75.0;   // midpoint
 
     for (int i = 0; i < 1000; i++) {
