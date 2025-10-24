@@ -7,7 +7,7 @@
 extern const int materialEvaluationsMG[NUM_PIECES];
 extern const int materialEvaluationsEG[NUM_PIECES];
 
-extern int kingZoneAttackPenalty[120];
+extern int kingZoneAttackPenalty[1000];
 
 extern const int moveScoreMaterialEvaluations[NUM_PIECES];
 

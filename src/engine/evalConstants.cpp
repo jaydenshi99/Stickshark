@@ -12,7 +12,7 @@ const int materialEvaluationsEG[NUM_PIECES] = {
 };
 
 // S Shaped curve
-int kingZoneAttackPenalty[120];
+int kingZoneAttackPenalty[1000];
 
 // For MVV-LVA heuristic
 const int moveScoreMaterialEvaluations[NUM_PIECES] = {
@@ -193,10 +193,10 @@ void calculatePieceSquareTables() {
 
 void calculateKingZoneAttackPenalty() {
     const double L = 480.0;   // maximum centipawn penalty
-    const double k = 0.09;    // steepness
-    const double x0 = 45.0;   // midpoint
+    const double k = 0.01;    // steepness
+    const double x0 = 75.0;   // midpoint
 
-    for (int i = 0; i < 120; i++) {
+    for (int i = 0; i < 1000; i++) {
         double first = L / (1.0 + exp(-k * (i - x0)));
         double shift = L / (1.0 + exp(k * x0));
 

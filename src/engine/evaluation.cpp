@@ -64,15 +64,12 @@ int mopUpEval(const Board& board, int materialDiff) {
         return 0;
     }
 
-    bool whiteAdvantage = materialDiff >= threshold;
-
     int wKingPos = lsb(board.pieceBitboards[WKING]);
     int bKingPos = lsb(board.pieceBitboards[BKING]);
 
     int kingDist = manhattanDistances[wKingPos][bKingPos];
     int centralDist = materialDiff >= threshold ? centralManhattanDistances[bKingPos] : centralManhattanDistances[wKingPos]; // CMD of losing king
 
-    
     int eval = 21 * centralDist + 6 * (14 - kingDist);
 
     return materialDiff >= 200 ? eval : -eval;
@@ -119,8 +116,8 @@ int kingZoneEval(const Board& board) {
     bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WROOK)) * ATTACK_UNIT_R;
     bKingPenalty += popcount(bKingZone & board.getPieceAttacks(WQUEEN)) * ATTACK_UNIT_Q;
 
-    wKingPenalty = min(wKingPenalty, 120);
-    bKingPenalty = min(bKingPenalty, 120);
+    wKingPenalty = min(wKingPenalty, 1000);
+    bKingPenalty = min(bKingPenalty, 1000);
     
     return kingZoneAttackPenalty[bKingPenalty] - kingZoneAttackPenalty[wKingPenalty];
 }

@@ -70,7 +70,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ### 1.1
 - Added pawn shield evaluation, punishing engine for not having pawns infront of king
 - Added penalty for attacking pieces around king
-- Fixed mop up evaluation bug
+- Fixed bug in mop up evaluation
 
 ### 1.0 - Initial Release
 - **Core Engine**: Basic chess engine with negamax search and alpha-beta pruning
