@@ -25,8 +25,16 @@ UCI::UCI() {
         cout << "info depth " << depth 
              << " time " << timeMs 
              << " nodes " << nodes 
-             << " nps " << nps 
-             << " score cp " << scoreCp;
+             << " nps " << nps;
+        
+        // Check if this is a mate score
+        if (abs(scoreCp) > 31900) {
+            // Calculate ply to mate: ply = 32000 - |eval|
+            int plyToMate = 32000 - abs(scoreCp);
+            cout << " score mate " << plyToMate;
+        } else {
+            cout << " score cp " << scoreCp;
+        }
         
         // Add principal variation if available
         if (!pv.empty()) {

@@ -19,7 +19,7 @@ int staticEvaluation(const Board& board) {
     int evalMG = staticEvaluationMG(board);
     int evalEG = staticEvaluationEG(board);
 
-    // Material eval
+    // interpolate between mg and eg
     int eval = (evalMG * phase + evalEG * (MAX_PHASE - phase)) / MAX_PHASE;
 
     return eval;
