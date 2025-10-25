@@ -15,6 +15,33 @@ UCI::UCI() {
     Board b;
     b.setFEN(STARTING_FEN);
     engine = new Engine(b);
+    
+    // Set up UCI info callback
+    engine->setUciInfoCallback([this](int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv) {
+        // Temporarily restore cout for UCI info
+        std::cout.rdbuf(orig_cout);
+        
+        // Format UCI info line
+        cout << "info depth " << depth 
+             << " time " << timeMs 
+             << " nodes " << nodes 
+             << " nps " << nps 
+             << " score cp " << scoreCp;
+        
+        // Add principal variation if available
+        if (!pv.empty()) {
+            cout << " pv";
+            for (const Move& move : pv) {
+                cout << " " << moveToUci(move);
+            }
+        }
+        
+        cout << endl;
+        cout.flush();
+        
+        // Restore null buffer
+        std::cout.rdbuf(&nullBuffer);
+    });
 }
 
 UCI::~UCI() {
@@ -98,7 +125,7 @@ void UCI::handlePosition(const string& line) {
         return;
     }
 
-    engine->resetEngine(b);
+    engine->setPosition(b);
 
     if (p != string::npos) {
         size_t movesStart = line.find(' ', p + 1);
@@ -129,8 +156,12 @@ void UCI::handlePosition(const string& line) {
 }
 
 void UCI::handleGo(const string& line) {
-    // Parse a very small subset: go movetime X  OR go wtime WT btime BT winc WI binc BI (we'll prefer movetime if present)
+    // Parse UCI time controls: go wtime WT btime BT movestogo MT winc WI binc BI movetime MT
+    // Priority: movetime > time per move from wtime/btime/movestogo > default
+    
     int movetime = 1000; // default 1s
+    
+    // Check for explicit movetime first (highest priority)
     size_t mt = line.find("movetime");
     if (mt != string::npos) {
         size_t p = line.find(' ', mt + 8);
@@ -139,7 +170,90 @@ void UCI::handleGo(const string& line) {
             string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
             try { movetime = std::stoi(num); } catch (...) {}
         }
+    } else {
+        // Parse time control parameters
+        int wtime = -1, btime = -1, movestogo = -1, winc = 0, binc = 0;
+        
+        // Extract wtime
+        size_t wt = line.find("wtime");
+        if (wt != string::npos) {
+            size_t p = line.find(' ', wt + 5);
+            if (p != string::npos) {
+                size_t q = line.find(' ', p + 1);
+                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
+                try { wtime = std::stoi(num); } catch (...) {}
+            }
+        }
+        
+        // Extract btime
+        size_t bt = line.find("btime");
+        if (bt != string::npos) {
+            size_t p = line.find(' ', bt + 5);
+            if (p != string::npos) {
+                size_t q = line.find(' ', p + 1);
+                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
+                try { btime = std::stoi(num); } catch (...) {}
+            }
+        }
+        
+        // Extract movestogo
+        size_t mtg = line.find("movestogo");
+        if (mtg != string::npos) {
+            size_t p = line.find(' ', mtg + 9);
+            if (p != string::npos) {
+                size_t q = line.find(' ', p + 1);
+                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
+                try { movestogo = std::stoi(num); } catch (...) {}
+            }
+        }
+        
+        // Extract winc and binc (increments)
+        size_t wi = line.find("winc");
+        if (wi != string::npos) {
+            size_t p = line.find(' ', wi + 4);
+            if (p != string::npos) {
+                size_t q = line.find(' ', p + 1);
+                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
+                try { winc = std::stoi(num); } catch (...) {}
+            }
+        }
+        
+        size_t bi = line.find("binc");
+        if (bi != string::npos) {
+            size_t p = line.find(' ', bi + 4);
+            if (p != string::npos) {
+                size_t q = line.find(' ', p + 1);
+                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
+                try { binc = std::stoi(num); } catch (...) {}
+            }
+        }
+        
+        // Calculate time per move based on current side to move
+        if (wtime > 0 && btime > 0) {
+            int currentTime = engine->board.turn ? wtime : btime;
+            int increment = engine->board.turn ? winc : binc;
+            
+            if (movestogo > 0) {
+                // Time control with moves remaining
+                // Allocate time proportionally, leaving some buffer
+                int timePerMove = (currentTime + increment) / movestogo;
+                // Apply a more conservative safety factor (use 70% of calculated time)
+                // This gives more buffer for complex positions
+                movetime = (timePerMove * 70) / 100;
+            } else {
+                // Sudden death time control (no movestogo specified)
+                // Use a smaller portion of remaining time (e.g., 1/30th)
+                int timePerMove = currentTime / 30;
+                movetime = timePerMove + increment;
+            }
+        }
     }
+    
+    // Temporarily restore cout for debug info
+    std::cout.rdbuf(orig_cout);
+    cout << "info string Time per move: " << movetime << "ms\n";
+    cout.flush();
+    std::cout.rdbuf(&nullBuffer);
     
     // Engine output is already silenced by the loop, so just call findBestMove
     engine->findBestMove(movetime);

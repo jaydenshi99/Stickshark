@@ -22,13 +22,9 @@ Before building the project, ensure the following dependencies are installed:
 
 ### Build Tools
 - `make`: The Makefile requires a compatible `make` utility.
-  - Install on Linux: `sudo apt install make`
-  - Install on macOS: `xcode-select --install`
-  - Install on Windows: Use MinGW Make or WSL.
 
 ### Additional Libraries
 - None required.
-
 
 ## Installation Steps
 
@@ -68,6 +64,15 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 4. **Open your web browser** and navigate to:
    - **Visual Board**: http://localhost:8000/web/chess_board.html
    - **Raw JSON View**: http://localhost:8000/web/json_viewer.html
+
+## Versions
+
+### 1.1
+- 1.1.0: Added pawn shield evaluation, punishing engine for not having pawns infront of king
+- 1.1.1: Added penalty for attacking pieces around king
+- 1.1.2: Fixed bug in mop up evaluation
+- 1.1.3: Tweaked parameters in king attack penalty evaluation
+- 1.1.4: Null move pruning
 
 ### 1.0 - Initial Release
 - **Core Engine**: Basic chess engine with negamax search and alpha-beta pruning

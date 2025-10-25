@@ -17,6 +17,7 @@ Engine::Engine(Board b) {
     timeLimit = 1000;
     searchFinished = true;
     boardEval = 0;
+    principalVariation.clear();
 }
 
 Engine::~Engine() {
@@ -25,21 +26,33 @@ Engine::~Engine() {
 
 void Engine::resetEngine(Board b) {
     board = b;
+    resetSearchStats();
+    TT->clear();
+}
+
+void Engine::setPosition(Board b) {
+    board = b;
+    resetSearchStats();
+    // Note: TT is NOT cleared - this preserves transposition table across position changes
+}
+
+void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback) {
+    uciInfoCallback = callback;
+}
+
+void Engine::resetSearchStats() {
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
     tableAccessesQuiescence = 0;
     searchFinished = true;
     boardEval = 0;
-    bestMove = Move(); 
-    TT->clear();
+    bestMove = Move();
+    principalVariation.clear();
 }
 
 void Engine::findBestMove(int t) {
-    normalNodesSearched = 0;
-    quiescenceNodesSearched = 0;
-    tableAccesses = 0;
-    tableAccessesQuiescence = 0;
+    resetSearchStats();
     timeLimit = t;
     TT->incrementGeneration();
 
@@ -63,6 +76,18 @@ void Engine::findBestMove(int t) {
         cout << "Depth: " << d << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
         if (searchFinished) {
+            // Report UCI info for completed depth
+            if (uciInfoCallback) {
+                auto currentTime = chrono::high_resolution_clock::now();
+                auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(currentTime - startTime).count();
+                int totalNodes = normalNodesSearched + quiescenceNodesSearched;
+                int nps = elapsedTime > 0 ? (totalNodes * 1000) / elapsedTime : 0;
+                
+                // Convert score to side-to-move perspective
+                int scoreCp = board.turn ? boardEval : -boardEval;
+                
+                uciInfoCallback(d, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
+            }
             d += 1;
         } else {
             d -= 1;
@@ -124,9 +149,34 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         tableAccesses++;
         bestMoveValue = entry.bestMove;
     }
-
+    
+    // Quiescence search at leaf nodes
     if (depth == 0) {
         return quiescenceSearch(alpha, beta, turn); 
+    }
+
+    // Null move pruning guards, no checks + has pieces
+    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+    uint64_t pieces = board.turn ? 
+    board.pieceBitboards[WBISHOP] | board.pieceBitboards[WKNIGHT] | board.pieceBitboards[WROOK] | board.pieceBitboards[WQUEEN] :
+    board.pieceBitboards[BBISHOP] | board.pieceBitboards[BKNIGHT] | board.pieceBitboards[BROOK] | board.pieceBitboards[BQUEEN];
+
+    constexpr int r = 4; // reduced depth
+
+    if (!currKingInCheck && depth >= r + 1 && pieces != 0) {
+        // Make the null move
+        board.swapTurn();
+
+        // find null move eval by searching to reduced depth
+        int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, -turn);
+
+        // unmake the null move
+        board.swapTurn();
+
+        // if the null eval is greater than beta, we assume all moves will be greater than beta
+        if (nullEval >= beta) {
+            return nullEval;
+        }
     }
 
     // Generate posible moves
@@ -168,7 +218,6 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     if (!existsValidMove) {
-        bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
         if (!currKingInCheck) {
             searchBestEval = 0;
         } else {
@@ -182,6 +231,12 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         bestMove = searchBestMove;
         boardEval = searchBestEval;
         searchFinished = true;
+        
+        // Update principal variation (simple version - just the best move)
+        principalVariation.clear();
+        if (searchBestMove.getSource() != 0 || searchBestMove.getTarget() != 0) { // Valid move
+            principalVariation.push_back(searchBestMove);
+        }
     }
 
     TT->addEntry(board.zobristHash, bestMoveValue, searchBestEval, depth, EXACT);

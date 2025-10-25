@@ -9,11 +9,13 @@ int main (int argc, char* argv[]) {
     // Mode flags
     bool cliMode = false;    // stdin/stdout JSON driver
     bool serverMode = false; // embedded HTTP API
-    bool uciMode = false;    // UCI protocol on stdin/stdout
+    bool uciMode = true;     // UCI protocol on stdin/stdout (default)
     if (argc > 1 && string(argv[1]) == "--cli") {
         cliMode = true;
+        uciMode = false;
     } else if (argc > 1 && string(argv[1]) == "--server") {
         serverMode = true;
+        uciMode = false;
     } else if (argc > 1 && string(argv[1]) == "--uci") {
         uciMode = true;
     }
@@ -55,15 +57,9 @@ int main (int argc, char* argv[]) {
         }
     } else {
         // Original chess game mode
-        playEngine(STARTING_FEN, 1000);
+        // playEngine(STARTING_FEN, 1000);
 
-        // Board board = Board();
-        // board.setFEN(STARTING_FEN);
-        // Engine engine = Engine(board);
-
-        // engine.findBestMove(1000);
-
-        // engine.findBestMove(1000);
+        perft(5, STARTING_FEN);
     }
 
     return 0;
