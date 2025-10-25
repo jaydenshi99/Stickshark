@@ -161,7 +161,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     board.pieceBitboards[WBISHOP] | board.pieceBitboards[WKNIGHT] | board.pieceBitboards[WROOK] | board.pieceBitboards[WQUEEN] :
     board.pieceBitboards[BBISHOP] | board.pieceBitboards[BKNIGHT] | board.pieceBitboards[BROOK] | board.pieceBitboards[BQUEEN];
 
-    constexpr int r = 4; // reduced depth
+    constexpr int r = 2; // reduced depth
 
     if (!currKingInCheck && depth >= r + 1 && pieces != 0) {
         // Make the null move
