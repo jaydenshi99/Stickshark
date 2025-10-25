@@ -70,6 +70,7 @@ void Board::setFEN(string FEN) {
     setBlockers();
 
     // Set new gamestate
+    while (!history.empty()) history.pop();
     Gamestate gState = Gamestate(EMPTY);
 
     // Set attack bitboards
@@ -513,9 +514,9 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
 }
 
 void Board::setZobristHash() {
-    // 0 - 767: piece positions
     zobristHash = 0ULL;
     
+    // 0 - 767: piece positions
     for (int square = 0; square < NUM_SQUARES; square++) {
         if (squares[square] == EMPTY) {
             continue;
