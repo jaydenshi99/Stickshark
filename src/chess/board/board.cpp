@@ -245,17 +245,36 @@ void Board::makeMove(const Move& move) {
 
     // Update castling rights (compute new mask, then apply Zobrist delta)
     uint8_t oldRights = oldGamestate.castlingRights;
-    uint8_t rights = oldRights;
-
-    // White
-    if (squares[WK_START_SQUARE] != WKING) rights &= (uint8_t)~(1u | 2u);
-    if (squares[WKR_START_SQUARE] != WROOK) rights &= (uint8_t)~1u;
-    if (squares[WQR_START_SQUARE] != WROOK) rights &= (uint8_t)~2u;
-
-    // Black
-    if (squares[BK_START_SQUARE] != BKING) rights &= (uint8_t)~(4u | 8u);
-    if (squares[BKR_START_SQUARE] != BROOK) rights &= (uint8_t)~4u;
-    if (squares[BQR_START_SQUARE] != BROOK) rights &= (uint8_t)~8u;
+    uint8_t rights    = oldRights;
+    
+    constexpr uint8_t W_K = 1u, W_Q = 2u, B_K = 4u, B_Q = 8u;
+    
+    const int s = (int)move.getSource();
+    const int t = (int)move.getTarget();
+    
+    // 1) King moved => clear both
+    if (movedPiece == WKING) rights &= (uint8_t)~(W_K | W_Q);
+    if (movedPiece == BKING) rights &= (uint8_t)~(B_K | B_Q);
+    
+    // 2) Rook moved off its start square => clear that side’s right
+    if (movedPiece == WROOK) {
+        if (s == WKR_START_SQUARE) rights &= (uint8_t)~W_K;
+        if (s == WQR_START_SQUARE) rights &= (uint8_t)~W_Q;
+    }
+    if (movedPiece == BROOK) {
+        if (s == BKR_START_SQUARE) rights &= (uint8_t)~B_K;
+        if (s == BQR_START_SQUARE) rights &= (uint8_t)~B_Q;
+    }
+    
+    // 3) Rook captured on its start square => clear that side’s right
+    if (capturedPiece == WROOK) {
+        if (t == WKR_START_SQUARE) rights &= (uint8_t)~W_K;
+        if (t == WQR_START_SQUARE) rights &= (uint8_t)~W_Q;
+    }
+    if (capturedPiece == BROOK) {
+        if (t == BKR_START_SQUARE) rights &= (uint8_t)~B_K;
+        if (t == BQR_START_SQUARE) rights &= (uint8_t)~B_Q;
+    }
 
     uint8_t changed = oldRights ^ rights;
     if (changed) {
@@ -284,17 +303,10 @@ void Board::makeMove(const Move& move) {
     swapTurn();
 
     // Update repetition count after all zobrist updates.
-    // Important: repetition counting must ignore the threefold bit in the key
-    // to keep counts consistent across toggles.
-    uint64_t repetitionKey = (numThreefoldStates > 0) ? (zobristHash ^ zobristBitstrings[773]) : zobristHash;
-    int &repCount = repetitionCount[repetitionKey];
+    int &repCount = repetitionCount[zobristHash];
     repCount++;
     if (repCount == 3) {
         numThreefoldStates++;
-        if (numThreefoldStates == 1) {
-            // Set a dedicated bit in the TT hash to distinguish drawish states
-            zobristHash ^= zobristBitstrings[773];
-        }
     }
 }
 
@@ -307,19 +319,13 @@ void Board::unmakeMove(const Move& move) {
     uint64_t currSquareMask = 1ULL << currSquare;
 
     // Update repetition count with current position (before restoring).
-    // Use a key that ignores the threefold bit so it mirrors makeMove.
-    uint64_t repetitionKey = (numThreefoldStates > 0) ? (zobristHash ^ zobristBitstrings[773]) : zobristHash;
-    int &repCount = repetitionCount[repetitionKey];
+    int &repCount = repetitionCount[zobristHash];
     repCount--;
     if (repCount == 2) {
         numThreefoldStates--;
-        if (numThreefoldStates == 0) {
-            // Clear the dedicated TT bit when leaving drawish state
-            zobristHash ^= zobristBitstrings[773];
-        }
     }
     if (repCount == 0) {
-        repetitionCount.erase(repetitionKey);
+        repetitionCount.erase(zobristHash);
     }
 
     // Get old gamestate
@@ -508,6 +514,8 @@ void Board::setSliderAttacks(Gamestate& gamestate) {
 
 void Board::setZobristHash() {
     // 0 - 767: piece positions
+    zobristHash = 0ULL;
+    
     for (int square = 0; square < NUM_SQUARES; square++) {
         if (squares[square] == EMPTY) {
             continue;
@@ -523,12 +531,9 @@ void Board::setZobristHash() {
 
     // 769 - 772: castling rights
     for (int i = 0; i < 4; i++) {
-        zobristHash ^= zobristBitstrings[769 + i] * (history.top().castlingRights & (1 << i));
-    }
-
-    // 773: threefold states
-    if (numThreefoldStates > 0) {
-        zobristHash ^= zobristBitstrings[773]; // include a single bit if threefold repetition occurred
+        if (history.top().castlingRights & (1u << i)) {
+            zobristHash ^= zobristBitstrings[769 + i];
+        }
     }
 }
 
