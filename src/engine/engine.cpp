@@ -136,7 +136,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 
     normalNodesSearched++;
 
-    // Transposition Table Query
+    // Initialise variables
     int16_t searchBestEval = -MATE;
     Move searchBestMove = Move();   // Set to default move
     uint16_t bestMoveValue = 0;
@@ -146,8 +146,37 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
 
     if (entryExists) {
-        tableAccesses++;
         bestMoveValue = entry.bestMove;
+        if (entry.flag == EXACT) {
+            if (entry.depth >= depth) {
+                tableAccesses++;
+                int16_t unpackedScore = entry.score;
+                if (abs(entry.score) == MATE) {
+                    if (entry.score > 0) {
+                        unpackedScore = MATE - entry.plyToMate;
+                    } else {
+                        unpackedScore = -MATE + entry.plyToMate;
+                    }
+                }
+
+                searchBestEval = unpackedScore;
+                searchBestMove = Move(entry.bestMove);
+
+                if (depth == searchDepth) {
+                    bestMove = searchBestMove;
+                    boardEval = searchBestEval;
+                    searchFinished = true;
+                    
+                    // Update principal variation (simple version - just the best move)
+                    principalVariation.clear();
+                    if (searchBestMove.getSource() != 0 || searchBestMove.getTarget() != 0) { // Valid move
+                        principalVariation.push_back(searchBestMove);
+                    }
+                }
+
+                return searchBestEval;
+            }
+        }
     }
     
     // Quiescence search at leaf nodes
@@ -184,6 +213,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     mg.generatePseudoMoves(board);
     mg.orderMoves(board, bestMoveValue);
 
+    int16_t oldAlpha = alpha;
     bool existsValidMove = false;
     for (Move move : mg.pseudoMoves) {
         board.makeMove(move);
@@ -239,7 +269,14 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         }
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, searchBestEval, depth, EXACT);
+    uint8_t flag = EXACT;
+    if (searchBestEval <= oldAlpha) {
+        flag = UPPERBOUND;
+    } else if (searchBestEval >= beta) {
+        flag = LOWERBOUND;
+    }
+
+    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
 
     return searchBestEval;
 }
@@ -310,7 +347,14 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         board.unmakeMove(move);
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, EXACT);
+    uint8_t flag = EXACT;
+    if (bestSoFar <= alpha) {
+        flag = UPPERBOUND;
+    } else if (bestSoFar >= beta) {
+        flag = LOWERBOUND;
+    }
+
+    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
 
     return bestSoFar;
 }

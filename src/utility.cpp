@@ -84,6 +84,8 @@ void perft(int depth, string FEN) {
     board.setFEN(FEN);
 
     board.displayBoard();
+
+    cout << "Zobrist before: " << board.zobristHash << endl;
     
     cout << "Searching to depth " << depth << "..." << endl;
 
@@ -103,6 +105,8 @@ void perft(int depth, string FEN) {
 
     cout << fixed << setprecision(0);
     cout << "Moves / Second: " << movesPerSecond << endl;
+
+    cout << "Zobrist after: " << board.zobristHash << endl;
 }
 
 long perftRecursive(Board& b, int depth) {
