@@ -187,14 +187,19 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
             }
         }
     }
+
+    // Check extension
+    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+    if (currKingInCheck) {
+        depth += 1;
+    }
     
     // Quiescence search at leaf nodes
     if (depth == 0) {
         return quiescenceSearch(alpha, beta, turn); 
     }
 
-    // Null move pruning guards, no checks + has pieces
-    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+    // Null move pruning guards, no checks + has pieces    
     uint64_t pieces = board.turn ? 
     board.pieceBitboards[WBISHOP] | board.pieceBitboards[WKNIGHT] | board.pieceBitboards[WROOK] | board.pieceBitboards[WQUEEN] :
     board.pieceBitboards[BBISHOP] | board.pieceBitboards[BKNIGHT] | board.pieceBitboards[BROOK] | board.pieceBitboards[BQUEEN];
