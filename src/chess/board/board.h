@@ -29,7 +29,6 @@ class Board {
 
     // Repetition Tracking
     unordered_map<uint64_t, int> repetitionCount;
-    int numThreefoldStates;
 
     // Zobrist Hash
     uint64_t zobristHash;

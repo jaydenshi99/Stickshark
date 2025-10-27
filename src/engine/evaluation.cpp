@@ -10,11 +10,6 @@ static constexpr int ATTACK_UNIT_Q = 7;
 
 // Returns eval, positive means white is doing better
 int staticEvaluation(const Board& board) {
-    // Threefold repetition
-    if (board.numThreefoldStates > 0) {
-        return 0; 
-    }
-
     int phase = getEndgamePhase(board);
     int evalMG = staticEvaluationMG(board);
     int evalEG = staticEvaluationEG(board);

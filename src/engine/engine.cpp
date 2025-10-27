@@ -135,7 +135,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     // Check for threefold
-    if (board.numThreefoldStates > 0) {
+    if (board.repetitionCount[board.zobristHash] >= 3) {
         return 0;
     }
 
