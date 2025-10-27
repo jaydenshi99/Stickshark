@@ -285,16 +285,39 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
     quiescenceNodesSearched++;
 
-    // Transposition Table Query
+
     int16_t bestSoFar = staticEvaluation(board) * turn;
+    uint16_t bestMoveValue = 0;
+    int16_t oldAlpha = alpha;
+
+    // Transposition Table Query
     TTEntry entry;
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
-
-    uint16_t bestMoveValue = 0;
 
     if (entryExists) {
         tableAccessesQuiescence++;
         bestMoveValue = entry.bestMove;
+
+        // unpack score
+        int16_t unpackedScore = entry.score;
+        if (abs(entry.score) == MATE) {
+            if (entry.score > 0) {
+                unpackedScore = MATE - entry.plyToMate;
+            } else {
+                unpackedScore = -MATE + entry.plyToMate;
+            }
+        }
+
+        if (entry.flag == EXACT) {
+            bestSoFar = unpackedScore;
+            return bestSoFar;
+        } else if (entry.flag == LOWERBOUND) {
+            if (unpackedScore >= beta) return unpackedScore;
+            alpha = max(alpha, unpackedScore);
+        } else if (entry.flag == UPPERBOUND) {
+            if (unpackedScore <= alpha) return unpackedScore;
+            beta = min(beta, unpackedScore);
+        }
     }
 
     bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
@@ -345,7 +368,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     uint8_t flag = EXACT;
-    if (bestSoFar <= alpha) {
+    if (bestSoFar <= oldAlpha) {
         flag = UPPERBOUND;
     } else if (bestSoFar >= beta) {
         flag = LOWERBOUND;
