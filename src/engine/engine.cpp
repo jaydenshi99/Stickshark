@@ -147,7 +147,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 
     if (entryExists) {
         bestMoveValue = entry.bestMove;
-        if (entry.flag == EXACT) {
+        if (entry.flag == EXACT && board.numThreefoldStates == 0) {
             if (entry.depth >= depth) {
                 tableAccesses++;
                 int16_t unpackedScore = entry.score;

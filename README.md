@@ -67,6 +67,9 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 
 ## Versions
 
+### 1.2
+- 1.2.0: Transposition exact queries for normal search
+
 ### 1.1
 - 1.1.0: Added pawn shield evaluation, punishing engine for not having pawns infront of king
 - 1.1.1: Added penalty for attacking pieces around king
