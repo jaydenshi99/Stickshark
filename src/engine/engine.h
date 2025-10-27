@@ -65,4 +65,5 @@ class Engine {
 private:
     // Helper method to reset search statistics
     void resetSearchStats();
+    void setFinalResult(int16_t score, Move& move);
 };

@@ -134,12 +134,18 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         return 7777;
     }
 
+    // Check for threefold
+    if (board.numThreefoldStates > 0) {
+        return 0;
+    }
+
     normalNodesSearched++;
 
     // Initialise variables
     int16_t searchBestEval = -MATE;
     Move searchBestMove = Move();   // Set to default move
     uint16_t bestMoveValue = 0;
+    int16_t oldAlpha = alpha;
 
     // Transposition Table Query
     TTEntry entry;
@@ -147,34 +153,34 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 
     if (entryExists) {
         bestMoveValue = entry.bestMove;
-        if (entry.flag == EXACT && board.numThreefoldStates == 0) {
-            if (entry.depth >= depth) {
-                tableAccesses++;
-                int16_t unpackedScore = entry.score;
-                if (abs(entry.score) == MATE) {
-                    if (entry.score > 0) {
-                        unpackedScore = MATE - entry.plyToMate;
-                    } else {
-                        unpackedScore = -MATE + entry.plyToMate;
-                    }
-                }
+        if (entry.depth >= depth) {
+            tableAccesses++;
 
+            // unpack score
+            int16_t unpackedScore = entry.score;
+            if (abs(entry.score) == MATE) {
+                if (entry.score > 0) {
+                    unpackedScore = MATE - entry.plyToMate;
+                } else {
+                    unpackedScore = -MATE + entry.plyToMate;
+                }
+            }
+
+            if (entry.flag == EXACT) {
                 searchBestEval = unpackedScore;
                 searchBestMove = Move(entry.bestMove);
-
+    
                 if (depth == searchDepth) {
-                    bestMove = searchBestMove;
-                    boardEval = searchBestEval;
-                    searchFinished = true;
-                    
-                    // Update principal variation (simple version - just the best move)
-                    principalVariation.clear();
-                    if (searchBestMove.getSource() != 0 || searchBestMove.getTarget() != 0) { // Valid move
-                        principalVariation.push_back(searchBestMove);
-                    }
+                    setFinalResult(searchBestEval, searchBestMove);
                 }
-
+    
                 return searchBestEval;
+            } else if (entry.flag == LOWERBOUND) {
+                if (unpackedScore >= beta) return unpackedScore;
+                alpha = max(alpha, unpackedScore);
+            } else if (entry.flag == UPPERBOUND) {
+                if (unpackedScore <= alpha) return unpackedScore;
+                beta = min(beta, unpackedScore);
             }
         }
     }
@@ -213,7 +219,6 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     mg.generatePseudoMoves(board);
     mg.orderMoves(board, bestMoveValue);
 
-    int16_t oldAlpha = alpha;
     bool existsValidMove = false;
     for (Move move : mg.pseudoMoves) {
         board.makeMove(move);
@@ -258,15 +263,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
 
     // Update class if correct depth
     if (depth == searchDepth) {
-        bestMove = searchBestMove;
-        boardEval = searchBestEval;
-        searchFinished = true;
-        
-        // Update principal variation (simple version - just the best move)
-        principalVariation.clear();
-        if (searchBestMove.getSource() != 0 || searchBestMove.getTarget() != 0) { // Valid move
-            principalVariation.push_back(searchBestMove);
-        }
+        setFinalResult(searchBestEval, searchBestMove);
     }
 
     uint8_t flag = EXACT;
@@ -357,4 +354,16 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
 
     return bestSoFar;
+}
+
+void Engine::setFinalResult(int16_t score, Move& move) {
+    bestMove = move;
+    boardEval = score;
+    searchFinished = true;
+    
+    // Update principal variation (simple version - just the best move)
+    principalVariation.clear();
+    if (move.getSource() != 0 || move.getTarget() != 0) { // Valid move
+        principalVariation.push_back(move);
+    }
 }
