@@ -65,15 +65,13 @@ void Engine::findBestMove(int t) {
     // Search
     startTime = chrono::high_resolution_clock::now();
 
-    int d = 1;
+    searchDepth = 1;
 
-    while (d <= MAX_DEPTH) {
+    while (searchDepth <= MAX_DEPTH) {
         searchFinished = false;
+        negaMax(searchDepth, -MATE, MATE, turn, true);
 
-        searchDepth = d;
-        negaMax(d, -MATE, MATE, turn);
-
-        cout << "Depth: " << d << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
+        cout << "Depth: " << searchDepth << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
         if (searchFinished) {
             // Report UCI info for completed depth
@@ -86,11 +84,11 @@ void Engine::findBestMove(int t) {
                 // Convert score to side-to-move perspective
                 int scoreCp = board.turn ? boardEval : -boardEval;
                 
-                uciInfoCallback(d, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
+                uciInfoCallback(searchDepth, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
             }
-            d += 1;
+            searchDepth += 1;
         } else {
-            d -= 1;
+            searchDepth -= 1;
             break;
         }
     }
@@ -132,7 +130,7 @@ void Engine::findBestMove(int t) {
     cout << endl;
 }
 
-int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
+int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bool isRoot) {
     if (isTimeUp()) {
         return 7777;
     }
@@ -173,7 +171,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
                 searchBestEval = unpackedScore;
                 searchBestMove = Move(entry.bestMove);
     
-                if (depth == searchDepth) {
+                if (isRoot) {
                     setFinalResult(searchBestEval, searchBestMove);
                 }
     
@@ -270,7 +268,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     // Update class if correct depth
-    if (depth == searchDepth) {
+    if (isRoot) {
         setFinalResult(searchBestEval, searchBestMove);
     }
 
