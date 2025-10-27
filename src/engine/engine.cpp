@@ -121,6 +121,9 @@ void Engine::findBestMove(int t) {
 
     cout << endl;
 
+    cout << fixed << setprecision(2);
+
+    cout << "Table Capacity: " << (float) TT->getNumFilledEntries() / (1 << 22) * 100 << "%" << endl;
     cout << "Table Accesses Normal: " << tableAccesses << endl;
     cout << "Hit Rate Normal: " << (double) tableAccesses / (normalNodesSearched) * 100 << "%" << endl;
     cout << "Table Accesses Quiescence: " << tableAccessesQuiescence << endl;
@@ -152,9 +155,9 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
 
     if (entryExists) {
+        tableAccesses++;
         bestMoveValue = entry.bestMove;
         if (entry.depth >= depth) {
-            tableAccesses++;
 
             // unpack score
             int16_t unpackedScore = entry.score;

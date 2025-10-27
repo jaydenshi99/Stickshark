@@ -25,6 +25,7 @@ class TranspositionTable {
     private:
     const static uint64_t TABLE_SIZE = (1ull << 22); // fixed 2^22 entries (~50MB)
     uint16_t generation = 1;
+    int numFilledEntries = 0;
 
     TTEntry* table;
 
@@ -40,4 +41,6 @@ class TranspositionTable {
     void incrementGeneration();
     void addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag);
     bool retrieveEntry(uint64_t zobristHash, TTEntry& entry);
+
+    int getNumFilledEntries();
 };

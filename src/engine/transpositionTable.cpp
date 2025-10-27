@@ -48,6 +48,8 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
 
     if (replace) {
         table[slotIndex] = TTEntry(key32, bestMove, packedScore, generation, depth, flag, plyToMate);
+
+        if (empty) numFilledEntries++;
     }
 }
 
@@ -61,4 +63,8 @@ bool TranspositionTable::retrieveEntry(uint64_t zobristHash, TTEntry& entry) {
     }
 
     return false;
+}
+
+int TranspositionTable::getNumFilledEntries() {
+    return numFilledEntries;
 }
