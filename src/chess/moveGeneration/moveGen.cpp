@@ -256,6 +256,74 @@ void MoveGen::generateKingMoves(const Board& b) {
     }
 }
 
+/**
+ * Finds the least valuable attack to some target square
+ */
+Move MoveGen::getLeastValuableAttack(Board& b, int targetSquare) {
+    clearMoves();
+    onlyGenerateForcing = true;
+
+    Move leastValuableAttack = Move();
+
+    generatePawnMoves(b);
+
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    generateKnightMoves(b);
+
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    generateSlidingMoves(b);
+    
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    generateKingMoves(b);
+    
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    return leastValuableAttack;
+}
+
+bool MoveGen::findLegalMoveToTarget(Board& b, int targetSquare, Move& out) {
+    for (Move& move : pseudoMoves) {
+        // only care about attacks on the target square
+        if (move.getTarget() != targetSquare) {
+            continue;
+        }
+
+        b.makeMove(move);
+        if (b.kingInCheck()) {
+            b.unmakeMove(move);
+            continue;
+        }
+        b.unmakeMove(move);
+
+        // is legal move
+        out = move;
+        return true;
+    }
+
+    return false;
+}
+
+
+
 void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
     // Assign score to each move
     for (Move& move : pseudoMoves) {
