@@ -72,7 +72,7 @@ void Engine::findBestMove(int t) {
 
     while (searchDepth <= MAX_DEPTH) {
         searchFinished = false;
-        negaMax(searchDepth, -MATE, MATE, turn, true);
+        negaMax(searchDepth, -MATE, MATE, turn, 2, true);
 
         cout << "Depth: " << searchDepth << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
@@ -133,7 +133,7 @@ void Engine::findBestMove(int t) {
     cout << endl;
 }
 
-int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bool isRoot) {
+int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, int remainingCheckExtensions, bool isRoot) {
     if (isTimeUp()) {
         return 7777;
     }
@@ -213,7 +213,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         board.swapTurn();
 
         // find null move eval by searching to reduced depth
-        int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, -turn);
+        int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, 0, -turn); // no extensions for null move
 
         // unmake the null move
         board.swapTurn();
@@ -237,12 +237,14 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         if (!board.kingInCheck(false)) {
             // Attacking check extensions with SEE >= 0 guard
             int childDepth = depth - 1;
-            if (board.kingInCheck(true) && recursiveSEE(board, move.getTarget()) >= 0) {
+            int childRemainingCheckExtensions = remainingCheckExtensions;
+            if (depth <= 3 && remainingCheckExtensions > 0 && board.kingInCheck(true) && recursiveSEE(board, move.getTarget()) >= 0) {
                 childDepth += 1;
+                childRemainingCheckExtensions -= 1; // decrement remaining check extensions
             }
 
             // Evaluate child board from opponent POV
-            int16_t eval = -negaMax(childDepth, -beta, -alpha, -turn);
+            int16_t eval = -negaMax(childDepth, -beta, -alpha, -turn, childRemainingCheckExtensions);
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 return 7777;
@@ -336,7 +338,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         }
     }
 
-    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+    bool currKingInCheck = board.kingInCheck(true);
 
     // Standing Pat for non-check positions
     if (!currKingInCheck) {
