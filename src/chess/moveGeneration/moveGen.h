@@ -39,7 +39,7 @@ class MoveGen {
     void generatePseudoMoves(const Board& b);
     void generateLegalMoves(Board& b); // Does not have to be optimised as not used in search
     Move getLeastValuableAttack(Board& b, int targetSquare);
-    void orderMoves(const Board& b, uint16_t bestMoveValue);
+    void orderMoves(Board& b, uint16_t bestMoveValue);
 
     void clearMoves();
 

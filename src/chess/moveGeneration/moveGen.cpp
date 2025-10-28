@@ -324,7 +324,7 @@ bool MoveGen::findLegalMoveToTarget(Board& b, int targetSquare, Move& out) {
 
 
 
-void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
+void MoveGen::orderMoves(Board& b, uint16_t bestMoveValue) {
     // Assign score to each move
     for (Move& move : pseudoMoves) {
         int attackedPiece = b.squares[move.getTarget()];
@@ -338,7 +338,8 @@ void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
         // Higher score, better move is and thus should be searched earlier
         else if (attackedPiece != EMPTY) {
             int movedPiece = b.squares[move.getSource()];
-            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
+            move.moveScore = staticExchangeEval(b, move);
+            // move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
         }
     }
 
