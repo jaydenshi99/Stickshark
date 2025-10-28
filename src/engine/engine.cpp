@@ -203,11 +203,6 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
 
     bool currentKingInCheck = board.kingInCheck(true);
 
-    // evasion check extension
-    if (currentKingInCheck) {
-        depth += 1;
-    }
-
     if (!currentKingInCheck && depth >= r + 1 && pieces != 0) {
         // Make the null move
         board.swapTurn();
@@ -235,8 +230,14 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
 
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
+            // Check extension with SEE guard
+            int childDepth = depth - 1;
+            if (board.kingInCheck(true) && recursiveSEE(board, move.getTarget()) >= 0) {
+                childDepth += 1;
+            }
+
             // Evaluate child board from opponent POV
-            int16_t eval = -negaMax(depth - 1, -beta, -alpha, -turn);
+            int16_t eval = -negaMax(childDepth, -beta, -alpha, -turn);
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 return 7777;
