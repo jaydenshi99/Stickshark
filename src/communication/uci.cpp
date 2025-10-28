@@ -333,7 +333,7 @@ bool UCI::findLegalMoveBySquares(const Board& board, int src, int dst, int promo
         if (promoFlag != 0 && (int)m.getFlag() != promoFlag) continue;
         // legality
         copy.makeMove(m);
-        bool legal = !copy.kingInCheck();
+        bool legal = !copy.kingInCheck(false);
         copy.unmakeMove(m);
         if (legal) { out = m; return true; }
     }

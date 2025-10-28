@@ -28,7 +28,7 @@ void MoveGen::generateLegalMoves(Board& b) {
 
     for (Move &move : pseudoMoves) {
         b.makeMove(move);
-        if (!b.kingInCheck()) {
+        if (!b.kingInCheck(false)) {
             legalMoves.emplace_back(move);
         }
         b.unmakeMove(move);
@@ -308,7 +308,7 @@ bool MoveGen::findLegalMoveToTarget(Board& b, int targetSquare, Move& out) {
         }
 
         b.makeMove(move);
-        if (b.kingInCheck()) {
+        if (b.kingInCheck(false)) {
             b.unmakeMove(move);
             continue;
         }

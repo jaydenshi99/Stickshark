@@ -64,8 +64,9 @@ class Board {
                gamestate.attackBitboards[BKNIGHT] | gamestate.attackBitboards[BROOK] |
                gamestate.attackBitboards[BQUEEN] | gamestate.attackBitboards[BKING];
     }
-    inline __attribute__((always_inline)) bool kingInCheck() const {
-        return pieceBitboards[turn ? BKING : WKING] & (turn ? getWhiteAttacks() : getBlackAttacks());
+    inline __attribute__((always_inline)) bool kingInCheck(bool toMove) const {
+        bool side = toMove ? turn : !turn;
+        return pieceBitboards[side ? WKING : BKING] & (side ? getBlackAttacks() : getWhiteAttacks());
     }
 
     inline __attribute__((always_inline)) uint64_t getPieceAttacks(int piece) const {

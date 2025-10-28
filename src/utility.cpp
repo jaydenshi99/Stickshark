@@ -120,7 +120,7 @@ long perftRecursive(Board& b, int depth) {
     long totalMoves = 0;
     for (Move m : mg.pseudoMoves) {
         b.makeMove(m);
-        if (!b.kingInCheck()) {
+        if (!b.kingInCheck(false)) {
             totalMoves += perftRecursive(b, depth - 1);
         }
         b.unmakeMove(m);

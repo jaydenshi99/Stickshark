@@ -188,12 +188,6 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             }
         }
     }
-
-    // Check extension
-    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
-    if (currKingInCheck) {
-        depth += 1;
-    }
     
     // Quiescence search at leaf nodes
     if (depth == 0) {
@@ -207,7 +201,8 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
 
     constexpr int r = 2; // reduced depth
 
-    if (!currKingInCheck && depth >= r + 1 && pieces != 0) {
+    bool currentKingInCheck = board.kingInCheck(true);
+    if (!currentKingInCheck && depth >= r + 1 && pieces != 0) {
         // Make the null move
         board.swapTurn();
 
@@ -233,9 +228,15 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         board.makeMove(move);
 
         // Continue with valid positions
-        if (!board.kingInCheck()) {
+        if (!board.kingInCheck(false)) {
+            // Check extension with SEE >= 0 guard
+            int childDepth = depth - 1;
+            if (board.kingInCheck(true) && recursiveSEE(board, move.getTarget()) >= 0) {
+                childDepth += 1;
+            }
+
             // Evaluate child board from opponent POV
-            int16_t eval = -negaMax(depth - 1, -beta, -alpha, -turn);
+            int16_t eval = -negaMax(childDepth, -beta, -alpha, -turn);
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 return 7777;
@@ -262,7 +263,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     }
 
     if (!existsValidMove) {
-        if (!currKingInCheck) {
+        if (!currentKingInCheck) {
             searchBestEval = 0;
         } else {
             // this means checkmate. punish checkmates that occur sooner.
@@ -352,7 +353,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         board.makeMove(move);
 
         // Continue with valid positions
-        if (!board.kingInCheck()) {
+        if (!board.kingInCheck(false)) {
             // Evaluate child board from opponent POV
             int16_t eval = -quiescenceSearch(-beta, -alpha, -turn);
             if (isTimeUp()) {

@@ -20,5 +20,5 @@ int kingZoneEval(const Board& board);
 
 int getEndgamePhase(const Board& board);
 
-int staticExchangeEval(const Board& board, const Move& move);
+int staticExchangeEval(Board& board, const Move& move);
 int recursiveSEE(Board& board, int targetSquare);
