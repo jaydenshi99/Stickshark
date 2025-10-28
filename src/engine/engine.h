@@ -54,6 +54,7 @@ class Engine {
     // UCI interface
     void setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback);
     const std::vector<Move>& getPrincipalVariation() const { return principalVariation; }
+    void resetSearchStats();
 
     // Helper
     inline bool isTimeUp() const {
@@ -63,7 +64,5 @@ class Engine {
     }
 
 private:
-    // Helper method to reset search statistics
-    void resetSearchStats();
     void setFinalResult(int16_t score, Move& move);
 };

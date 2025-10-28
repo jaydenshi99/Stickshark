@@ -18,3 +18,5 @@ int pawnShieldEval(const Board& board);
 int kingZoneEval(const Board& board);
 
 int getEndgamePhase(const Board& board);
+
+int staticExchangeEval(const Board& board, const Move& move);

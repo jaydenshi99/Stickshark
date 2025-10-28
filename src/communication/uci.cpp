@@ -28,9 +28,15 @@ UCI::UCI() {
              << " nps " << nps;
         
         // Check if this is a mate score
-        if (abs(scoreCp) > 31900) {
-            // Calculate ply to mate: ply = 32000 - |eval|
-            int plyToMate = 32000 - abs(scoreCp);
+        // Winning line: score = +MATE - ply, so ply = MATE - score
+        // Losing line: score = -MATE + ply, so ply = score + MATE
+        if (scoreCp > 31900) {
+            // Winning mate: score = +MATE - ply
+            int plyToMate = 32000 - scoreCp;
+            cout << " score mate " << plyToMate;
+        } else if (scoreCp < -31900) {
+            // Losing mate: score = -MATE + ply
+            int plyToMate = scoreCp + 32000;
             cout << " score mate " << plyToMate;
         } else {
             cout << " score cp " << scoreCp;
@@ -115,9 +121,9 @@ void UCI::handlePosition(const string& line) {
     size_t q = line.find(' ', p + 1);
     string what = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
 
-    Board b;
+    // Set the initial position on the existing engine board
     if (what == "startpos") {
-        b.setFEN(STARTING_FEN);
+        engine->board.setFEN(STARTING_FEN);
         p = q == string::npos ? string::npos : line.find("moves", q + 1);
     } else if (what == "fen") {
         // Extract FEN tokens until either end or "moves"
@@ -127,13 +133,14 @@ void UCI::handlePosition(const string& line) {
         // Trim
         while (!fen.empty() && fen.front() == ' ') fen.erase(fen.begin());
         while (!fen.empty() && fen.back() == ' ') fen.pop_back();
-        b.setFEN(fen);
+        engine->board.setFEN(fen);
         p = movesPos;
     } else {
         return;
     }
-
-    engine->setPosition(b);
+    
+    // Reset search stats (TT not cleared)
+    engine->resetSearchStats();
 
     if (p != string::npos) {
         size_t movesStart = line.find(' ', p + 1);

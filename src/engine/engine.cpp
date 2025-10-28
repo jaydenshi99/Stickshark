@@ -27,6 +27,9 @@ Engine::~Engine() {
 void Engine::resetEngine(Board b) {
     board = b;
     resetSearchStats();
+    searchFinished = true;
+    boardEval = 0;
+    bestMove = Move();
     TT->clear();
 }
 
@@ -45,14 +48,14 @@ void Engine::resetSearchStats() {
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
     tableAccessesQuiescence = 0;
-    searchFinished = true;
-    boardEval = 0;
-    bestMove = Move();
     principalVariation.clear();
 }
 
 void Engine::findBestMove(int t) {
     resetSearchStats();
+    searchFinished = false;
+    boardEval = 0;
+    bestMove = Move();
     timeLimit = t;
     TT->incrementGeneration();
 

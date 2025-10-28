@@ -74,7 +74,7 @@ class Board {
     }
 
     // Set methods
-    void setFEN(std::string FEN);
+    void setFEN(std::string FEN, bool clearRepetitionHistory = true);
     void setStartingPosition();
     void swapTurn();
 

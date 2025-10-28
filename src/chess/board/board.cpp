@@ -35,7 +35,7 @@ void Board::setBlockers() {
 
 // moved inline to board.h for performance
 
-void Board::setFEN(string FEN) {
+void Board::setFEN(string FEN, bool clearRepetitionHistory) {
     for (int i = 0; i < NUM_PIECES; i++) {
         pieceBitboards[i] = 0ULL;
     }
@@ -97,7 +97,9 @@ void Board::setFEN(string FEN) {
 
     history.push(gState);
 
-    repetitionCount.clear();
+    if (clearRepetitionHistory) {
+        repetitionCount.clear();
+    }
 
     setZobristHash();
     setPieceSquareEvaluation();
