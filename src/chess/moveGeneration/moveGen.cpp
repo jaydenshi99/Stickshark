@@ -334,12 +334,10 @@ void MoveGen::orderMoves(Board& b, uint16_t bestMoveValue) {
             move.moveScore = 100000;
         }
 
-        // If attacked calcluate move score using MVV - LVA heuristic otherwise keep move score as 0
-        // Higher score, better move is and thus should be searched earlier
+        // Higher score, better move is and thus should be searched earlier. Ordered with MVV - LVA heuristic
         else if (attackedPiece != EMPTY) {
             int movedPiece = b.squares[move.getSource()];
-            move.moveScore = staticExchangeEval(b, move);
-            // move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
+            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
         }
     }
 
