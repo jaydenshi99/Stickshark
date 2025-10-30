@@ -2,17 +2,6 @@
 
 Stickshark is a C++ chess engine designed for high efficiency, featuring advanced move generation through bit manipulation and selects best moves utilising negamax with alpha-beta pruning and other techniques.
 
-Project Logs: https://www.notion.so/stickshark-42a22c01dacb4826a874dbc6d1b53562?pvs=4
-
-Note: Enpassant not yet supported
-
-## Features
-- **Efficient Move Generation**: Uses bitboards for fast chessboard representation.
-- **Alpha-Beta Pruning**: Optimised decision-making.
-- **Heuristics**: Implements MVV-LVA for move ordering.
-- **User Interface**: Visual chess board accessible via web browser.
-
-
 ## Prerequisites
 
 Before building the project, ensure the following dependencies are installed:
@@ -82,20 +71,20 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 - 1.1.4: Null move pruning
 
 ### 1.0 - Initial Release
-- **Core Engine**: Basic chess engine with negamax search and alpha-beta pruning
-- **Move Generation**: Bitboard-based move generation for all piece types
-- **Evaluation**: Piece-square tables + basic material evaluation + endgame bonus
-- **Web Interface**: HTTP server with visual chess board
-- **Features**: 
+- Core Engine: Basic chess engine with negamax search and alpha-beta pruning
+- Move Generation: Bitboard-based move generation for all piece types
+- Evaluation: Piece-square tables + basic material evaluation + endgame bonus
+- Web Interface: HTTP server with visual chess board
+- Features: 
   - Legal move validation
   - Drag-and-drop interface
   - Board flipping
   - Engine vs human gameplay
 
-- **Transposition Table**: Added TT for caching search results (~50MB), only used for move ordering currently
-- **Quiescence Search**: Extended search for captures and checks
-- **Move Ordering**: MVV-LVA (Most Valuable Victim - Least Valuable Attacker) + best move heuristic
-- **Threefold Repetition**: Zobrist hash-based repetition detection
+- Transposition Table: Added TT for caching search results (~50MB), only used for move ordering currently
+- Quiescence Search: Extended search for captures and checks
+- Move Ordering: MVV-LVA (Most Valuable Victim - Least Valuable Attacker) + best move heuristic
+- Threefold Repetition: Zobrist hash-based repetition detection
 
 ## Contact
 For questions or feedback, feel free to contact:
