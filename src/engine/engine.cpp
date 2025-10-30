@@ -27,6 +27,9 @@ Engine::~Engine() {
 void Engine::resetEngine(Board b) {
     board = b;
     resetSearchStats();
+    searchFinished = true;
+    boardEval = 0;
+    bestMove = Move();
     TT->clear();
 }
 
@@ -45,14 +48,14 @@ void Engine::resetSearchStats() {
     quiescenceNodesSearched = 0;
     tableAccesses = 0;
     tableAccessesQuiescence = 0;
-    searchFinished = true;
-    boardEval = 0;
-    bestMove = Move();
     principalVariation.clear();
 }
 
 void Engine::findBestMove(int t) {
     resetSearchStats();
+    searchFinished = false;
+    boardEval = 0;
+    bestMove = Move();
     timeLimit = t;
     TT->incrementGeneration();
 
@@ -65,15 +68,13 @@ void Engine::findBestMove(int t) {
     // Search
     startTime = chrono::high_resolution_clock::now();
 
-    int d = 1;
+    searchDepth = 1;
 
-    while (d <= MAX_DEPTH) {
+    while (searchDepth <= MAX_DEPTH) {
         searchFinished = false;
+        negaMax(searchDepth, -MATE, MATE, turn, true);
 
-        searchDepth = d;
-        negaMax(d, -MATE, MATE, turn);
-
-        cout << "Depth: " << d << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
+        cout << "Depth: " << searchDepth << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
         if (searchFinished) {
             // Report UCI info for completed depth
@@ -86,11 +87,11 @@ void Engine::findBestMove(int t) {
                 // Convert score to side-to-move perspective
                 int scoreCp = board.turn ? boardEval : -boardEval;
                 
-                uciInfoCallback(d, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
+                uciInfoCallback(searchDepth, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
             }
-            d += 1;
+            searchDepth += 1;
         } else {
-            d -= 1;
+            searchDepth -= 1;
             break;
         }
     }
@@ -121,6 +122,9 @@ void Engine::findBestMove(int t) {
 
     cout << endl;
 
+    cout << fixed << setprecision(2);
+
+    cout << "Table Capacity: " << (float) TT->getNumFilledEntries() / (1 << 22) * 100 << "%" << endl;
     cout << "Table Accesses Normal: " << tableAccesses << endl;
     cout << "Hit Rate Normal: " << (double) tableAccesses / (normalNodesSearched) * 100 << "%" << endl;
     cout << "Table Accesses Quiescence: " << tableAccessesQuiescence << endl;
@@ -129,17 +133,23 @@ void Engine::findBestMove(int t) {
     cout << endl;
 }
 
-int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
+int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bool isRoot) {
     if (isTimeUp()) {
         return 7777;
     }
 
+    // Check for threefold
+    if (board.repetitionCount[board.zobristHash] >= 3) {
+        return 0;
+    }
+
     normalNodesSearched++;
 
-    // Transposition Table Query
+    // Initialise variables
     int16_t searchBestEval = -MATE;
     Move searchBestMove = Move();   // Set to default move
     uint16_t bestMoveValue = 0;
+    int16_t oldAlpha = alpha;
 
     // Transposition Table Query
     TTEntry entry;
@@ -148,6 +158,35 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     if (entryExists) {
         tableAccesses++;
         bestMoveValue = entry.bestMove;
+        if (entry.depth >= depth) {
+
+            // unpack score
+            int16_t unpackedScore = entry.score;
+            if (abs(entry.score) == MATE) {
+                if (entry.score > 0) {
+                    unpackedScore = MATE - entry.plyToMate;
+                } else {
+                    unpackedScore = -MATE + entry.plyToMate;
+                }
+            }
+
+            if (entry.flag == EXACT) {
+                searchBestEval = unpackedScore;
+                searchBestMove = Move(entry.bestMove);
+    
+                if (isRoot) {
+                    setFinalResult(searchBestEval, searchBestMove);
+                }
+    
+                return searchBestEval;
+            } else if (entry.flag == LOWERBOUND) {
+                if (unpackedScore >= beta) return unpackedScore;
+                alpha = max(alpha, unpackedScore);
+            } else if (entry.flag == UPPERBOUND) {
+                if (unpackedScore <= alpha) return unpackedScore;
+                beta = min(beta, unpackedScore);
+            }
+        }
     }
     
     // Quiescence search at leaf nodes
@@ -155,20 +194,21 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         return quiescenceSearch(alpha, beta, turn); 
     }
 
-    // Null move pruning guards, no checks + has pieces
-    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+    // Null move pruning guards, no checks + has pieces    
     uint64_t pieces = board.turn ? 
     board.pieceBitboards[WBISHOP] | board.pieceBitboards[WKNIGHT] | board.pieceBitboards[WROOK] | board.pieceBitboards[WQUEEN] :
     board.pieceBitboards[BBISHOP] | board.pieceBitboards[BKNIGHT] | board.pieceBitboards[BROOK] | board.pieceBitboards[BQUEEN];
 
-    constexpr int r = 4; // reduced depth
+    constexpr int r = 2; // reduced depth
 
-    if (!currKingInCheck && depth >= r + 1 && pieces != 0) {
+    bool currentKingInCheck = board.kingInCheck(true);
+
+    if (!currentKingInCheck && depth >= r + 1 && pieces != 0) {
         // Make the null move
         board.swapTurn();
 
         // find null move eval by searching to reduced depth
-        int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, -turn);
+        int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, -turn); // no extensions for null move
 
         // unmake the null move
         board.swapTurn();
@@ -189,9 +229,15 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
         board.makeMove(move);
 
         // Continue with valid positions
-        if (!board.kingInCheck()) {
+        if (!board.kingInCheck(false)) {
+            // Check extension with SEE guard
+            int childDepth = depth - 1;
+            if (board.kingInCheck(true) && recursiveSEE(board, move.getTarget()) >= 0) {
+                childDepth += 1;
+            }
+
             // Evaluate child board from opponent POV
-            int16_t eval = -negaMax(depth - 1, -beta, -alpha, -turn);
+            int16_t eval = -negaMax(childDepth, -beta, -alpha, -turn);
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 return 7777;
@@ -218,7 +264,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     if (!existsValidMove) {
-        if (!currKingInCheck) {
+        if (!currentKingInCheck) {
             searchBestEval = 0;
         } else {
             // this means checkmate. punish checkmates that occur sooner.
@@ -227,19 +273,18 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     // Update class if correct depth
-    if (depth == searchDepth) {
-        bestMove = searchBestMove;
-        boardEval = searchBestEval;
-        searchFinished = true;
-        
-        // Update principal variation (simple version - just the best move)
-        principalVariation.clear();
-        if (searchBestMove.getSource() != 0 || searchBestMove.getTarget() != 0) { // Valid move
-            principalVariation.push_back(searchBestMove);
-        }
+    if (isRoot) {
+        setFinalResult(searchBestEval, searchBestMove);
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, searchBestEval, depth, EXACT);
+    uint8_t flag = EXACT;
+    if (searchBestEval <= oldAlpha) {
+        flag = UPPERBOUND;
+    } else if (searchBestEval >= beta) {
+        flag = LOWERBOUND;
+    }
+
+    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
 
     return searchBestEval;
 }
@@ -251,19 +296,42 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
     quiescenceNodesSearched++;
 
-    // Transposition Table Query
+
     int16_t bestSoFar = staticEvaluation(board) * turn;
+    uint16_t bestMoveValue = 0;
+    int16_t oldAlpha = alpha;
+
+    // Transposition Table Query
     TTEntry entry;
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
-
-    uint16_t bestMoveValue = 0;
 
     if (entryExists) {
         tableAccessesQuiescence++;
         bestMoveValue = entry.bestMove;
+
+        // unpack score
+        int16_t unpackedScore = entry.score;
+        if (abs(entry.score) == MATE) {
+            if (entry.score > 0) {
+                unpackedScore = MATE - entry.plyToMate;
+            } else {
+                unpackedScore = -MATE + entry.plyToMate;
+            }
+        }
+
+        if (entry.flag == EXACT) {
+            bestSoFar = unpackedScore;
+            return bestSoFar;
+        } else if (entry.flag == LOWERBOUND) {
+            if (unpackedScore >= beta) return unpackedScore;
+            alpha = max(alpha, unpackedScore);
+        } else if (entry.flag == UPPERBOUND) {
+            if (unpackedScore <= alpha) return unpackedScore;
+            beta = min(beta, unpackedScore);
+        }
     }
 
-    bool currKingInCheck = board.pieceBitboards[board.turn ? WKING : BKING] & (board.turn ? board.getBlackAttacks() : board.getWhiteAttacks());
+    bool currKingInCheck = board.kingInCheck(true);
 
     // Standing Pat for non-check positions
     if (!currKingInCheck) {
@@ -286,7 +354,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         board.makeMove(move);
 
         // Continue with valid positions
-        if (!board.kingInCheck()) {
+        if (!board.kingInCheck(false)) {
             // Evaluate child board from opponent POV
             int16_t eval = -quiescenceSearch(-beta, -alpha, -turn);
             if (isTimeUp()) {
@@ -310,7 +378,26 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         board.unmakeMove(move);
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, EXACT);
+    uint8_t flag = EXACT;
+    if (bestSoFar <= oldAlpha) {
+        flag = UPPERBOUND;
+    } else if (bestSoFar >= beta) {
+        flag = LOWERBOUND;
+    }
+
+    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
 
     return bestSoFar;
+}
+
+void Engine::setFinalResult(int16_t score, Move& move) {
+    bestMove = move;
+    boardEval = score;
+    searchFinished = true;
+    
+    // Update principal variation (simple version - just the best move)
+    principalVariation.clear();
+    if (move.getSource() != 0 || move.getTarget() != 0) { // Valid move
+        principalVariation.push_back(move);
+    }
 }

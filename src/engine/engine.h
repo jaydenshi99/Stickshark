@@ -48,12 +48,13 @@ class Engine {
     void setPosition(Board b);  // Set position without clearing TT
 
     void findBestMove(int y);   // Calls negaMax to find the best move and debugs.
-    int16_t negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn);    // Sets bestMove to the best move and sets moveEval to the eva
+    int16_t negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bool isRoot = false);    // Sets bestMove to the best move and sets moveEval to the eva
     int16_t quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn);
     
     // UCI interface
     void setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback);
     const std::vector<Move>& getPrincipalVariation() const { return principalVariation; }
+    void resetSearchStats();
 
     // Helper
     inline bool isTimeUp() const {
@@ -63,6 +64,5 @@ class Engine {
     }
 
 private:
-    // Helper method to reset search statistics
-    void resetSearchStats();
+    void setFinalResult(int16_t score, Move& move);
 };

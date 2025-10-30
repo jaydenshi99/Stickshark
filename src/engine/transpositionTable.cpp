@@ -22,11 +22,14 @@ void TranspositionTable::incrementGeneration() {
     generation++;
 }
 
-void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t evaluation, uint8_t depth, uint8_t flag) {
+void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag) {
     uint64_t slotIndex = (uint64_t)((zobristHash >> 42) & (TABLE_SIZE - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
     TTEntry currentEntry = table[slotIndex];
+
+    uint8_t plyToMate = abs(score) > MATE - 100 ? MATE - abs(score) : 0;
+    int16_t packedScore = score > MATE - 100 ? MATE : score < -MATE + 100 ? -MATE : score; // 32000 means mate
 
     // Replace if:
     // 1) Empty slot
@@ -44,7 +47,9 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
                         (generation == currentEntry.generation && depth >= currentEntry.depth)));
 
     if (replace) {
-        table[slotIndex] = TTEntry(key32, bestMove, evaluation, generation, depth, flag);
+        table[slotIndex] = TTEntry(key32, bestMove, packedScore, generation, depth, flag, plyToMate);
+
+        if (empty) numFilledEntries++;
     }
 }
 
@@ -58,4 +63,8 @@ bool TranspositionTable::retrieveEntry(uint64_t zobristHash, TTEntry& entry) {
     }
 
     return false;
+}
+
+int TranspositionTable::getNumFilledEntries() {
+    return numFilledEntries;
 }

@@ -27,7 +27,6 @@ Board::Board() : pieceBitboards{0ULL} {
 
     // Set repetition count
     repetitionCount.clear();
-    numThreefoldStates = 0;
 }
 
 void Board::setBlockers() {
@@ -36,7 +35,7 @@ void Board::setBlockers() {
 
 // moved inline to board.h for performance
 
-void Board::setFEN(string FEN) {
+void Board::setFEN(string FEN, bool clearRepetitionHistory) {
     for (int i = 0; i < NUM_PIECES; i++) {
         pieceBitboards[i] = 0ULL;
     }
@@ -98,8 +97,9 @@ void Board::setFEN(string FEN) {
 
     history.push(gState);
 
-    repetitionCount.clear();
-    numThreefoldStates = 0;
+    if (clearRepetitionHistory) {
+        repetitionCount.clear();
+    }
 
     setZobristHash();
     setPieceSquareEvaluation();
@@ -306,9 +306,6 @@ void Board::makeMove(const Move& move) {
     // Update repetition count after all zobrist updates.
     int &repCount = repetitionCount[zobristHash];
     repCount++;
-    if (repCount == 3) {
-        numThreefoldStates++;
-    }
 }
 
 void Board::unmakeMove(const Move& move) {
@@ -322,9 +319,6 @@ void Board::unmakeMove(const Move& move) {
     // Update repetition count with current position (before restoring).
     int &repCount = repetitionCount[zobristHash];
     repCount--;
-    if (repCount == 2) {
-        numThreefoldStates--;
-    }
     if (repCount == 0) {
         repetitionCount.erase(zobristHash);
     }

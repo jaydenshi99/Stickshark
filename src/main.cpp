@@ -18,6 +18,9 @@ int main (int argc, char* argv[]) {
         uciMode = false;
     } else if (argc > 1 && string(argv[1]) == "--uci") {
         uciMode = true;
+    } else if (argc > 1 && string(argv[1]) == "--default") {
+        uciMode = false;
+        serverMode = false;
     }
     
     // Suppress initialization output in cliMode and uciMode
@@ -59,7 +62,7 @@ int main (int argc, char* argv[]) {
         // Original chess game mode
         // playEngine(STARTING_FEN, 1000);
 
-        perft(5, STARTING_FEN);
+        perft(6, "r3k2r/pppbqppp/2np1n2/2b1p1B1/2B1P3/2NP1N2/PPPQ1PPP/R3K2R w KQkq - 0 1");
     }
 
     return 0;

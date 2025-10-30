@@ -10,16 +10,11 @@ static constexpr int ATTACK_UNIT_Q = 7;
 
 // Returns eval, positive means white is doing better
 int staticEvaluation(const Board& board) {
-    // Threefold repetition
-    if (board.numThreefoldStates > 0) {
-        return 0; 
-    }
-
     int phase = getEndgamePhase(board);
     int evalMG = staticEvaluationMG(board);
     int evalEG = staticEvaluationEG(board);
 
-    // Material eval
+    // interpolate between mg and eg
     int eval = (evalMG * phase + evalEG * (MAX_PHASE - phase)) / MAX_PHASE;
 
     return eval;
@@ -132,4 +127,83 @@ int getEndgamePhase(const Board& board) {
 
     phase = min(phase, MAX_PHASE);
     return phase;
+}
+
+// positive is good for the side to move
+int staticExchangeEval(Board& board, const Move& move) {
+    int targetSquare = move.getTarget();
+    int defender = board.squares[move.getTarget()];
+
+    if (defender == EMPTY) return 0; // set to 0 for non attacking moves
+
+    int value = moveScoreMaterialEvaluations[defender];
+
+    // handle promotions
+    if (move.getFlag() == PROMOTEKNIGHT) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WKNIGHT];
+    } else if (move.getFlag() == PROMOTEBISHOP) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WBISHOP];
+    } else if (move.getFlag() == PROMOTEROOK) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WROOK];
+    } else if (move.getFlag() == PROMOTEQUEEN) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WQUEEN];
+    }
+
+    // make the attack
+    board.makeMove(move);
+
+    // subtract opponent move
+    value -= recursiveSEE(board, targetSquare);
+
+    board.unmakeMove(move);
+
+    return value;
+}
+
+int recursiveSEE(Board& board, int targetSquare) {
+    MoveGen moveGen = MoveGen();
+    Move leastValuableAttack = moveGen.getLeastValuableAttack(board, targetSquare);
+
+    // no moves, so SEE is 0.
+    if (leastValuableAttack.moveValue == 0) {
+        return 0;
+    }
+
+    int defender = board.squares[leastValuableAttack.getTarget()];
+
+    if (defender == EMPTY) return 0; // safeguard for invalid moves
+
+    int value = moveScoreMaterialEvaluations[defender];
+
+    // handle promotions
+    if (leastValuableAttack.getFlag() == PROMOTEKNIGHT) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WKNIGHT];
+    } else if (leastValuableAttack.getFlag() == PROMOTEBISHOP) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WBISHOP];
+    } else if (leastValuableAttack.getFlag() == PROMOTEROOK) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WROOK];
+    } else if (leastValuableAttack.getFlag() == PROMOTEQUEEN) {
+        value -= moveScoreMaterialEvaluations[WPAWN];
+        value += moveScoreMaterialEvaluations[WQUEEN];
+    }
+
+    board.makeMove(leastValuableAttack);
+
+    value -= recursiveSEE(board, targetSquare); // subtract opponent move
+
+    board.unmakeMove(leastValuableAttack);
+
+    // means we were better off not attacking
+    if (value <= 0) {
+        return 0;
+    }
+
+    return value;
 }

@@ -24,6 +24,8 @@ class MoveGen {
     void generateSlidingMoves(const Board& b);
     void generateKingMoves(const Board& b);
 
+    bool findLegalMoveToTarget(Board& b, int targetSquare, Move& out);
+
     public:
     
     bool onlyGenerateForcing;
@@ -36,7 +38,8 @@ class MoveGen {
 
     void generatePseudoMoves(const Board& b);
     void generateLegalMoves(Board& b); // Does not have to be optimised as not used in search
-    void orderMoves(const Board& b, uint16_t bestMoveValue);
+    Move getLeastValuableAttack(Board& b, int targetSquare);
+    void orderMoves(Board& b, uint16_t bestMoveValue);
 
     void clearMoves();
 

@@ -28,7 +28,7 @@ void MoveGen::generateLegalMoves(Board& b) {
 
     for (Move &move : pseudoMoves) {
         b.makeMove(move);
-        if (!b.kingInCheck()) {
+        if (!b.kingInCheck(false)) {
             legalMoves.emplace_back(move);
         }
         b.unmakeMove(move);
@@ -256,7 +256,75 @@ void MoveGen::generateKingMoves(const Board& b) {
     }
 }
 
-void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
+/**
+ * Finds the least valuable attack to some target square
+ */
+Move MoveGen::getLeastValuableAttack(Board& b, int targetSquare) {
+    clearMoves();
+    onlyGenerateForcing = true;
+
+    Move leastValuableAttack = Move();
+
+    generatePawnMoves(b);
+
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    generateKnightMoves(b);
+
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    generateSlidingMoves(b);
+    
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    generateKingMoves(b);
+    
+    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+        return leastValuableAttack;
+    } else {
+        pseudoMoves.clear();
+    }
+
+    return leastValuableAttack;
+}
+
+bool MoveGen::findLegalMoveToTarget(Board& b, int targetSquare, Move& out) {
+    for (Move& move : pseudoMoves) {
+        // only care about attacks on the target square
+        if (move.getTarget() != targetSquare) {
+            continue;
+        }
+
+        b.makeMove(move);
+        if (b.kingInCheck(false)) {
+            b.unmakeMove(move);
+            continue;
+        }
+        b.unmakeMove(move);
+
+        // is legal move
+        out = move;
+        return true;
+    }
+
+    return false;
+}
+
+
+
+void MoveGen::orderMoves(Board& b, uint16_t bestMoveValue) {
     // Assign score to each move
     for (Move& move : pseudoMoves) {
         int attackedPiece = b.squares[move.getTarget()];
@@ -266,8 +334,7 @@ void MoveGen::orderMoves(const Board& b, uint16_t bestMoveValue) {
             move.moveScore = 100000;
         }
 
-        // If attacked calcluate move score using MVV - LVA heuristic otherwise keep move score as 0
-        // Higher score, better move is and thus should be searched earlier
+        // Higher score, better move is and thus should be searched earlier. Ordered with MVV - LVA heuristic
         else if (attackedPiece != EMPTY) {
             int movedPiece = b.squares[move.getSource()];
             move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;

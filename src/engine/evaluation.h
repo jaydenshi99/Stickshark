@@ -3,6 +3,7 @@
 #include "../chess/board/board.h"
 #include "evalConstants.h"
 #include "../bit.h"
+#include "../chess/moveGeneration/moveGen.h"
 
 static const int PHASE_P=0, PHASE_N=1, PHASE_B=1, PHASE_R=2, PHASE_Q=4;
 static const int MAX_PHASE = 24;
@@ -18,3 +19,6 @@ int pawnShieldEval(const Board& board);
 int kingZoneEval(const Board& board);
 
 int getEndgamePhase(const Board& board);
+
+int staticExchangeEval(Board& board, const Move& move);
+int recursiveSEE(Board& board, int targetSquare);
