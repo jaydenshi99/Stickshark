@@ -139,7 +139,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     }
 
     // Check for threefold
-    if (board.repetitionCount[board.zobristHash] >= 3) {
+    if (board.isThreeFoldRepetition()) {
         return 0;
     }
 
@@ -296,6 +296,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
     quiescenceNodesSearched++;
 
+    // Check for threefold
+    if (board.isThreeFoldRepetition()) {
+        return 0;
+    }
 
     int16_t bestSoFar = staticEvaluation(board) * turn;
     uint16_t bestMoveValue = 0;

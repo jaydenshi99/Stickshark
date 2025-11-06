@@ -7,6 +7,9 @@ Board::Board() : pieceBitboards{0ULL} {
     // Set turn
     turn = true;
 
+    // Set ply
+    ply = 0;
+
     // Set squares
     for (int i = 0; i < 64; i++) {
         squares[i] = EMPTY;
@@ -25,8 +28,11 @@ Board::Board() : pieceBitboards{0ULL} {
     setAttackMethods[2] = &Board::setKnightAttacks;
     setAttackMethods[5] = &Board::setKingAttacks;
 
-    // Set repetition count
-    repetitionCount.clear();
+    // Initialise zobrist history
+    for (int i = 0; i < 4096; i++) {
+        zobristHistory[i] = 0ULL;
+        lastIrreversiblePly[i] = 0;
+    }
 }
 
 void Board::setBlockers() {
@@ -97,12 +103,20 @@ void Board::setFEN(string FEN, bool clearRepetitionHistory) {
 
     history.push(gState);
 
-    if (clearRepetitionHistory) {
-        repetitionCount.clear();
-    }
-
     setZobristHash();
     setPieceSquareEvaluation();
+
+    if (clearRepetitionHistory) {
+        for (int i = 0; i < 4096; i++) {
+            zobristHistory[i] = 0ULL;
+            lastIrreversiblePly[i] = 0;
+        }
+        ply = 0;
+        lastIrreversiblePly[ply] = ply;
+    } else {
+        zobristHistory[ply++] = zobristHash;
+        lastIrreversiblePly[ply] = lastIrreversiblePly[ply - 1];
+    }
 }
 
 void Board::setStartingPosition() {
@@ -303,9 +317,16 @@ void Board::makeMove(const Move& move) {
     // Toggle turn
     swapTurn();
 
-    // Update repetition count after all zobrist updates.
-    int &repCount = repetitionCount[zobristHash];
-    repCount++;
+    // Update zobrist history
+    zobristHistory[++ply] = zobristHash;
+
+    // Update last irreversible ply
+    if (moveFlag != NONE || capturedPiece != EMPTY || movedPiece == WPAWN || movedPiece == BPAWN) {
+        lastIrreversiblePly[ply] = ply;
+    } else {
+        // keep the same last irreversible ply
+        lastIrreversiblePly[ply] = lastIrreversiblePly[ply - 1];
+    }
 }
 
 void Board::unmakeMove(const Move& move) {
@@ -316,12 +337,8 @@ void Board::unmakeMove(const Move& move) {
     uint64_t oldSquareMask = 1ULL << oldSquare;
     uint64_t currSquareMask = 1ULL << currSquare;
 
-    // Update repetition count with current position (before restoring).
-    int &repCount = repetitionCount[zobristHash];
-    repCount--;
-    if (repCount == 0) {
-        repetitionCount.erase(zobristHash);
-    }
+    // Update ply and last irreversible ply
+    --ply;
 
     // Get old gamestate
     Gamestate gState = history.top();
@@ -530,6 +547,20 @@ void Board::setZobristHash() {
             zobristHash ^= zobristBitstrings[769 + i];
         }
     }
+}
+
+bool Board::isThreeFoldRepetition() const {
+    int count = 0;
+    int end = lastIrreversiblePly[ply];
+    for (int i = ply - 2; i >= end; i -= 2) {
+        if (zobristHistory[i] == zobristHash) {
+            count += 1;
+            if (count >= 2) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void Board::setPieceSquareEvaluation() {

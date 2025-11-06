@@ -24,11 +24,14 @@ class Board {
 
     bool turn; // true - white | false - black
 
+    int ply;
+
     // Gamestate History
     stack<Gamestate> history;
 
-    // Repetition Tracking
-    unordered_map<uint64_t, int> repetitionCount;
+    // Zobrist History
+    uint64_t zobristHistory[4096];
+    int lastIrreversiblePly[4096];
 
     // Zobrist Hash
     uint64_t zobristHash;
@@ -73,6 +76,8 @@ class Board {
         const Gamestate& gamestate = history.top();
         return gamestate.attackBitboards[piece];
     }
+
+    bool isThreeFoldRepetition() const;
 
     // Set methods
     void setFEN(std::string FEN, bool clearRepetitionHistory = true);

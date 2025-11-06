@@ -28,7 +28,6 @@ Before building the project, ensure the following dependencies are installed:
    make
    ```
 
-
 ## Web Interface
 
 Stickshark includes a web-based GUI for visual chess gameplay.
@@ -55,6 +54,9 @@ Stickshark includes a web-based GUI for visual chess gameplay.
    - **Raw JSON View**: http://localhost:8000/web/json_viewer.html
 
 ## Versions
+
+### 1.3
+
 
 ### 1.2
 - 1.2.0: Transposition exact queries for normal search
