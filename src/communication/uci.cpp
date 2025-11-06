@@ -27,17 +27,17 @@ UCI::UCI() {
              << " nodes " << nodes 
              << " nps " << nps;
         
-        // Check if this is a mate score
-        // Winning line: score = +MATE - ply, so ply = MATE - score
-        // Losing line: score = -MATE + ply, so ply = score + MATE
-        if (scoreCp > 31900) {
-            // Winning mate: score = +MATE - ply
-            int plyToMate = 32000 - scoreCp;
-            cout << " score mate " << plyToMate;
-        } else if (scoreCp < -31900) {
-            // Losing mate: score = -MATE + ply
-            int plyToMate = scoreCp + 32000;
-            cout << " score mate " << plyToMate;
+        // UCI mate reporting: score mate N, where N is in MOVES (not plies),
+        // from side-to-move perspective (positive = mate for STM, negative = STM is mated)
+        const int M = MATE;
+        if (scoreCp >= M - 100) {
+            int plies = M - scoreCp;              // internal is mate-in-plies
+            int moves = (plies + 1) / 2;          // convert to moves
+            cout << " score mate " << moves;
+        } else if (scoreCp <= -M + 100) {
+            int plies = M + scoreCp;              // scoreCp is negative
+            int moves = (plies + 1) / 2;
+            cout << " score mate " << -moves;    // negative: STM is mated
         } else {
             cout << " score cp " << scoreCp;
         }

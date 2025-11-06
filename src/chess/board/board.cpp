@@ -112,9 +112,10 @@ void Board::setFEN(string FEN, bool clearRepetitionHistory) {
             lastIrreversiblePly[i] = 0;
         }
         ply = 0;
+        zobristHistory[ply] = zobristHash;
         lastIrreversiblePly[ply] = ply;
     } else {
-        zobristHistory[ply++] = zobristHash;
+        zobristHistory[ply] = zobristHash;
         lastIrreversiblePly[ply] = lastIrreversiblePly[ply - 1];
     }
 }
@@ -552,6 +553,8 @@ void Board::setZobristHash() {
 bool Board::isThreeFoldRepetition() const {
     int count = 0;
     int end = lastIrreversiblePly[ply];
+
+    if (ply - end < 4) return false;
     for (int i = ply - 2; i >= end; i -= 2) {
         if (zobristHistory[i] == zobristHash) {
             count += 1;
