@@ -56,7 +56,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 1.3
-
+- 1.3.0: Replaced hashmap repetition tracking with Zobrist history backward scan. 12Mn/s -> 26Mn/s
 
 ### 1.2
 - 1.2.0: Transposition exact queries for normal search
