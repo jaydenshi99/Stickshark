@@ -22,23 +22,23 @@ void displayBitboard(uint64_t bb) {
 
 void simulateRandomMoves() {
     Board board;
-    MoveGen moveGen;
+    MoveGen& moveGen = MoveGen::getInstance();
 
     cout << "Starting Position: " << endl;
     board.setStartingPosition();
     board.displayBoard();
 
-    moveGen.generatePseudoMoves(board);
+    MoveList pseudoMoves = moveGen.generatePseudoMoves(board, true);
 
     int move = 1;
-    while (moveGen.pseudoMoves.size() != 0 && move <= 1) {
+    while (pseudoMoves.count != 0 && move <= 1) {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dist(0, moveGen.pseudoMoves.size() - 1);
+        std::uniform_int_distribution<> dist(0, pseudoMoves.count - 1);
 
         int randIndex = dist(gen);
 
-        board.makeMove(moveGen.pseudoMoves[randIndex]);
+        board.makeMove(pseudoMoves.moves[randIndex]);
 
         cout << move++ << ". ";
         if (board.turn) {
@@ -50,8 +50,8 @@ void simulateRandomMoves() {
 
         board.displayBoard();
 
-        moveGen.clearMoves();
-        moveGen.generatePseudoMoves(board);
+        moveGen.freePseudoMoves(pseudoMoves);
+        pseudoMoves = moveGen.generatePseudoMoves(board, true);
     }
 
     for (int i = 0; i < 12; i++) {
@@ -62,19 +62,22 @@ void simulateRandomMoves() {
 
 void displayPossibleMoves(string FEN) {
     Board board;
-    MoveGen moveGen;
+    MoveGen& moveGen = MoveGen::getInstance();
 
     board.setFEN(FEN);
     board.displayBoard();
 
-    moveGen.generatePseudoMoves(board);
-    for (Move move : moveGen.pseudoMoves) {
+    MoveList pseudoMoves = moveGen.generatePseudoMoves(board, true);
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
         board.displayBoard();
         board.unmakeMove(move);
     }
 
-    cout << "Total Moves: " << moveGen.pseudoMoves.size() << "\n\n";
+    cout << "Total Moves: " << pseudoMoves.count << "\n\n";
+
+    moveGen.freePseudoMoves(pseudoMoves);
 }
 
 void perft(int depth, string FEN) {
@@ -114,17 +117,20 @@ long perftRecursive(Board& b, int depth) {
         return 1;
     }
 
-    MoveGen mg;
-    mg.generatePseudoMoves(b);
+    MoveGen& mg = MoveGen::getInstance();
+    MoveList pseudoMoves = mg.generatePseudoMoves(b, true);
 
     long totalMoves = 0;
-    for (Move m : mg.pseudoMoves) {
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &m = pseudoMoves.moves[i];
         b.makeMove(m);
         if (!b.kingInCheck(false)) {
             totalMoves += perftRecursive(b, depth - 1);
         }
         b.unmakeMove(m);
     }
+
+    mg.freePseudoMoves(pseudoMoves);
 
     return totalMoves;
 }
@@ -149,7 +155,7 @@ void playEngine(string startingFEN, int time) {
     cout << endl << moveNum << "." << endl;
     engine.board.displayBoard();
 
-    // Get terminating position after implementing checkmates n shi
+    // Get terminating position after implementing checkmates
     while (true) {
         if (playerTurn) {
             string playerMove; 

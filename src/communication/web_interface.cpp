@@ -1,8 +1,11 @@
 #include "web_interface.h"
+#include "chess/moveGeneration/moveGen.h"
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <ctime>
+#include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -88,13 +91,17 @@ string WebInterface::handleValidatedMove(const string& body) {
         idStr.erase(0, idStr.find_first_not_of(" \t\n\r"));
         if (!idStr.empty() && idStr.back() == ' ') idStr.pop_back();
     }
-    MoveGen gen;
-    vector<MoveGen::LegalMoveDTO> dtos;
-    gen.getLegalMovesDTO(engine->board, dtos);
+    MoveGen& gen = MoveGen::getInstance();
+    MoveList legalMoves = gen.generateLegalMoves(engine->board);
     const Move* chosen = nullptr;
     if (!idStr.empty()) {
         uint16_t id = static_cast<uint16_t>(stoi(idStr));
-        for (const Move& m : gen.legalMoves) { if (m.moveValue == id) { chosen = &m; break; } }
+        for (ptrdiff_t i = 0; i < legalMoves.count; i++) {
+            if (legalMoves.moves[i].moveValue == id) {
+                chosen = &legalMoves.moves[i];
+                break;
+            }
+        }
     } else {
         auto extractStr = [&](const char* key) -> string {
             string k = string("\"") + key + "\"";
@@ -117,16 +124,22 @@ string WebInterface::handleValidatedMove(const string& body) {
         string from = extractStr("from");
         string to = extractStr("to");
         int flag = extractInt("flag");
-        for (const Move& m : gen.legalMoves) {
-            char ff = static_cast<char>('a' + (7 - (m.getSource() % 8)));
-            char fr = static_cast<char>('1' + (m.getSource() / 8));
-            char tf = static_cast<char>('a' + (7 - (m.getTarget() % 8)));
-            char tr = static_cast<char>('1' + (m.getTarget() / 8));
-            if (from.size() == 2 && to.size() == 2 && from[0] == ff && from[1] == fr && to[0] == tf && to[1] == tr && (flag == 0 || flag == (int)m.getFlag())) { chosen = &m; break; }
+        for (ptrdiff_t i = 0; i < legalMoves.count; i++) {
+            const Move& m = legalMoves.moves[i];
+            string moveFrom = squareToNotation(m.getSource());
+            string moveTo = squareToNotation(m.getTarget());
+            if (from == moveFrom && to == moveTo && (flag == 0 || flag == (int)m.getFlag())) {
+                chosen = &m;
+                break;
+            }
         }
     }
-    if (!chosen) return errorResponse("Illegal move");
+    if (!chosen) {
+        gen.freeLegalMoves(legalMoves);
+        return errorResponse("Illegal move");
+    }
     engine->board.makeMove(*chosen);
+    gen.freeLegalMoves(legalMoves);
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
@@ -183,7 +196,8 @@ string WebInterface::handleGetBoard() {
 
 string WebInterface::handleGetLegal() {
     debug("handleGetLegal");
-    MoveGen gen; vector<MoveGen::LegalMoveDTO> dtos; gen.getLegalMovesDTO(engine->board, dtos);
+    vector<LegalMoveDTO> dtos;
+    getLegalMovesDTO(engine->board, dtos);
     std::stringstream json; json << "{";
     json << "\"status\": \"success\",";
     json << "\"action\": \"getlegal\",";
@@ -243,6 +257,32 @@ string WebInterface::errorResponse(const string& message) const {
 void WebInterface::writeStateToFile(const string& filename, const stringstream& state) const {
     ofstream file(filename);
     if (file.is_open()) { file << state.str() << endl; file.close(); }
+}
+
+string WebInterface::squareToNotation(int sq) {
+    // indexing: a8=63 ... h1=0
+    int fileIdx = 7 - (sq % 8); // 0..7 -> a..h
+    int rankIdx = (sq / 8);     // 0..7 -> rank 1..8 minus 1
+    char fileChar = static_cast<char>('a' + fileIdx);
+    char rankChar = static_cast<char>('1' + rankIdx);
+    return string() + fileChar + rankChar;
+}
+
+void WebInterface::getLegalMovesDTO(Board& b, vector<LegalMoveDTO>& out) {
+    out.clear();
+    MoveGen& gen = MoveGen::getInstance();
+    MoveList legalMoves = gen.generateLegalMoves(b);
+    out.reserve(legalMoves.count);
+    for (ptrdiff_t i = 0; i < legalMoves.count; i++) {
+        const Move& m = legalMoves.moves[i];
+        LegalMoveDTO dto;
+        dto.id = m.moveValue;
+        dto.from = squareToNotation(m.getSource());
+        dto.to = squareToNotation(m.getTarget());
+        dto.flag = static_cast<int>(m.getFlag());
+        out.emplace_back(std::move(dto));
+    }
+    gen.freeLegalMoves(legalMoves);
 }
 
 

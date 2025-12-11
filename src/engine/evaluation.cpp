@@ -130,80 +130,80 @@ int getEndgamePhase(const Board& board) {
 }
 
 // positive is good for the side to move
-int staticExchangeEval(Board& board, const Move& move) {
-    int targetSquare = move.getTarget();
-    int defender = board.squares[move.getTarget()];
+// int staticExchangeEval(Board& board, const Move& move) {
+//     int targetSquare = move.getTarget();
+//     int defender = board.squares[move.getTarget()];
 
-    if (defender == EMPTY) return 0; // set to 0 for non attacking moves
+//     if (defender == EMPTY) return 0; // set to 0 for non attacking moves
 
-    int value = moveScoreMaterialEvaluations[defender];
+//     int value = moveScoreMaterialEvaluations[defender];
 
-    // handle promotions
-    if (move.getFlag() == PROMOTEKNIGHT) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WKNIGHT];
-    } else if (move.getFlag() == PROMOTEBISHOP) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WBISHOP];
-    } else if (move.getFlag() == PROMOTEROOK) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WROOK];
-    } else if (move.getFlag() == PROMOTEQUEEN) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WQUEEN];
-    }
+//     // handle promotions
+//     if (move.getFlag() == PROMOTEKNIGHT) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WKNIGHT];
+//     } else if (move.getFlag() == PROMOTEBISHOP) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WBISHOP];
+//     } else if (move.getFlag() == PROMOTEROOK) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WROOK];
+//     } else if (move.getFlag() == PROMOTEQUEEN) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WQUEEN];
+//     }
 
-    // make the attack
-    board.makeMove(move);
+//     // make the attack
+//     board.makeMove(move);
 
-    // subtract opponent move
-    value -= recursiveSEE(board, targetSquare);
+//     // subtract opponent move
+//     value -= recursiveSEE(board, targetSquare);
 
-    board.unmakeMove(move);
+//     board.unmakeMove(move);
 
-    return value;
-}
+//     return value;
+// }
 
-int recursiveSEE(Board& board, int targetSquare) {
-    MoveGen moveGen = MoveGen();
-    Move leastValuableAttack = moveGen.getLeastValuableAttack(board, targetSquare);
+// int recursiveSEE(Board& board, int targetSquare) {
+//     MoveGen& moveGen = MoveGen::getInstance();
+//     Move leastValuableAttack = moveGen.getLeastValuableAttack(board, targetSquare);
 
-    // no moves, so SEE is 0.
-    if (leastValuableAttack.moveValue == 0) {
-        return 0;
-    }
+//     // no moves, so SEE is 0.
+//     if (leastValuableAttack.moveValue == 0) {
+//         return 0;
+//     }
 
-    int defender = board.squares[leastValuableAttack.getTarget()];
+//     int defender = board.squares[leastValuableAttack.getTarget()];
 
-    if (defender == EMPTY) return 0; // safeguard for invalid moves
+//     if (defender == EMPTY) return 0; // safeguard for invalid moves
 
-    int value = moveScoreMaterialEvaluations[defender];
+//     int value = moveScoreMaterialEvaluations[defender];
 
-    // handle promotions
-    if (leastValuableAttack.getFlag() == PROMOTEKNIGHT) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WKNIGHT];
-    } else if (leastValuableAttack.getFlag() == PROMOTEBISHOP) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WBISHOP];
-    } else if (leastValuableAttack.getFlag() == PROMOTEROOK) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WROOK];
-    } else if (leastValuableAttack.getFlag() == PROMOTEQUEEN) {
-        value -= moveScoreMaterialEvaluations[WPAWN];
-        value += moveScoreMaterialEvaluations[WQUEEN];
-    }
+//     // handle promotions
+//     if (leastValuableAttack.getFlag() == PROMOTEKNIGHT) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WKNIGHT];
+//     } else if (leastValuableAttack.getFlag() == PROMOTEBISHOP) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WBISHOP];
+//     } else if (leastValuableAttack.getFlag() == PROMOTEROOK) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WROOK];
+//     } else if (leastValuableAttack.getFlag() == PROMOTEQUEEN) {
+//         value -= moveScoreMaterialEvaluations[WPAWN];
+//         value += moveScoreMaterialEvaluations[WQUEEN];
+//     }
 
-    board.makeMove(leastValuableAttack);
+//     board.makeMove(leastValuableAttack);
 
-    value -= recursiveSEE(board, targetSquare); // subtract opponent move
+//     value -= recursiveSEE(board, targetSquare); // subtract opponent move
 
-    board.unmakeMove(leastValuableAttack);
+//     board.unmakeMove(leastValuableAttack);
 
-    // means we were better off not attacking
-    if (value <= 0) {
-        return 0;
-    }
+//     // means we were better off not attacking
+//     if (value <= 0) {
+//         return 0;
+//     }
 
-    return value;
-}
+//     return value;
+// }
