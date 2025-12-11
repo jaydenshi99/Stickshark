@@ -324,10 +324,11 @@ bool UCI::parseUciMoveToken(const string& token, int& src, int& dst, int& promoF
 }
 
 bool UCI::findLegalMoveBySquares(const Board& board, int src, int dst, int promoFlag, Move& out) {
-    MoveGen gen;
+    MoveGen& gen = MoveGen::getInstance();
     Board copy = board; // generate on a copy so we don't disturb state
-    gen.generatePseudoMoves(copy);
-    for (const Move& m : gen.pseudoMoves) {
+    MoveList pseudoMoves = gen.generatePseudoMoves(copy, false);
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &m = pseudoMoves.moves[i];
         if ((int)m.getSource() != src || (int)m.getTarget() != dst) continue;
         // Filter by promotion flag if needed
         if (promoFlag != 0 && (int)m.getFlag() != promoFlag) continue;
@@ -337,6 +338,7 @@ bool UCI::findLegalMoveBySquares(const Board& board, int src, int dst, int promo
         copy.unmakeMove(m);
         if (legal) { out = m; return true; }
     }
+    gen.freePseudoMoves(pseudoMoves);
     return false;
 }
 
