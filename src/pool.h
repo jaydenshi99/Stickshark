@@ -12,7 +12,6 @@ class Pool {
               buffer(chunkSize * capacity), freeList(nullptr), used(0) {}
     
         void* alloc() {
-            printf("%zu\n", used);
             if (freeList) {
                 void* p = freeList;
                 freeList = *reinterpret_cast<void**>(freeList);

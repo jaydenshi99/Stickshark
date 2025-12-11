@@ -28,7 +28,7 @@ void simulateRandomMoves() {
     board.setStartingPosition();
     board.displayBoard();
 
-    MoveList pseudoMoves = moveGen.generatePseudoMoves(board, true);
+    MoveList pseudoMoves = moveGen.generatePseudoMoves(board, false);
 
     int move = 1;
     while (pseudoMoves.count != 0 && move <= 1) {
@@ -51,7 +51,7 @@ void simulateRandomMoves() {
         board.displayBoard();
 
         moveGen.freePseudoMoves(pseudoMoves);
-        pseudoMoves = moveGen.generatePseudoMoves(board, true);
+        pseudoMoves = moveGen.generatePseudoMoves(board, false);
     }
 
     for (int i = 0; i < 12; i++) {
@@ -67,7 +67,7 @@ void displayPossibleMoves(string FEN) {
     board.setFEN(FEN);
     board.displayBoard();
 
-    MoveList pseudoMoves = moveGen.generatePseudoMoves(board, true);
+    MoveList pseudoMoves = moveGen.generatePseudoMoves(board, false);
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
@@ -118,7 +118,7 @@ long perftRecursive(Board& b, int depth) {
     }
 
     MoveGen& mg = MoveGen::getInstance();
-    MoveList pseudoMoves = mg.generatePseudoMoves(b, true);
+    MoveList pseudoMoves = mg.generatePseudoMoves(b, false);
 
     long totalMoves = 0;
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {

@@ -40,7 +40,7 @@ MoveList MoveGen::generatePseudoMoves(const Board& b, bool onlyGenerateForcing) 
 }
 
 MoveList MoveGen::generateLegalMoves(Board& b) {
-    MoveList pseudoMoves = generatePseudoMoves(b, true);
+    MoveList pseudoMoves = generatePseudoMoves(b, false);
     Move* start = static_cast<Move*>(legalMovesPool->alloc());
     if (!start) {
         throw std::runtime_error("Failed to allocate memory for legal moves");
