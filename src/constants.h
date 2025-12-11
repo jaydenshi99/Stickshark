@@ -33,7 +33,7 @@
 #define NUM_PIECES 12
 #define NUM_SQUARES 64
 
-#define MAX_MOVES 250 // Arbitrary
+#define MOVES_PER_CHUNK 250 // Arbitrary
 
 #define MATE 32000
 

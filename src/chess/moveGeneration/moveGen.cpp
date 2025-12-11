@@ -2,40 +2,68 @@
 
 using namespace std;
 
+MoveGen& MoveGen::getInstance() {
+    static MoveGen instance;
+    return instance;
+}
+
 MoveGen::MoveGen() {
-    pseudoMoves.reserve(MAX_MOVES);
-    legalMoves.reserve(MAX_MOVES);
-    onlyGenerateForcing = false;
+    pseudoMovesPool = new Pool(sizeof(Move) * MOVES_PER_CHUNK, MAX_POOL_CAPACITY);
+    legalMovesPool = new Pool(sizeof(Move) * MOVES_PER_CHUNK, MAX_POOL_CAPACITY);
 };
 
-void MoveGen::generatePseudoMoves(const Board& b) {
-    clearMoves();
+MoveGen::~MoveGen() {
+    delete pseudoMovesPool;
+    delete legalMovesPool;
+}
+
+MoveList MoveGen::generatePseudoMoves(const Board& b, bool onlyGenerateForcing) {
+    this->onlyGenerateForcing = onlyGenerateForcing;
+
+    Move* start = static_cast<Move*>(pseudoMovesPool->alloc());
+    if (!start) {
+        throw std::runtime_error("Failed to allocate memory for pseudo moves");
+    }
+
+    Move* curr = start;
 
     friendly = b.turn ? b.getWhitePositions() : b.getBlackPositions();
     enemyOrEmpty = ~friendly;
 
-    generatePawnMoves(b);
-    generateKnightMoves(b);
-    generateSlidingMoves(b);
-    generateKingMoves(b);
+    generatePawnMoves(b, curr);
+    generateKnightMoves(b, curr);
+    generateSlidingMoves(b, curr);
+    generateKingMoves(b, curr);
+
+    std::ptrdiff_t count = curr - start;
+    return { start, count };
 }
 
-void MoveGen::generateLegalMoves(Board& b) {
-    pseudoMoves.clear();
-    legalMoves.clear();
+MoveList MoveGen::generateLegalMoves(Board& b) {
+    MoveList pseudoMoves = generatePseudoMoves(b, false);
+    Move* start = static_cast<Move*>(legalMovesPool->alloc());
+    if (!start) {
+        throw std::runtime_error("Failed to allocate memory for legal moves");
+    }
+    Move* curr = start;
 
-    generatePseudoMoves(b);
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &move = pseudoMoves.moves[i];
 
-    for (Move &move : pseudoMoves) {
         b.makeMove(move);
         if (!b.kingInCheck(false)) {
-            legalMoves.emplace_back(move);
+            new (curr++) Move(move);
         }
         b.unmakeMove(move);
     }
+
+    pseudoMovesPool->free(pseudoMoves.moves);
+
+    std::ptrdiff_t count = curr - start;
+    return { start, count };
 }
 
-void MoveGen::generatePawnMoves(const Board& b) {
+void MoveGen::generatePawnMoves(const Board& b, Move* &pseudoMoves) {
     uint64_t pawnBitboard = b.turn ? b.pieceBitboards[WPAWN] : b.pieceBitboards[BPAWN];
     uint64_t doublePushRank = b.turn ? rankBitboards[3] : rankBitboards[4];
     uint64_t enemy = b.turn ? b.getBlackPositions() : b.getWhitePositions();
@@ -58,21 +86,21 @@ void MoveGen::generatePawnMoves(const Board& b) {
         int singlePushOffset = b.turn ? -8 : 8;
         while (singlePushes) {
             int target = popLSB(singlePushes);
-            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, NONE));
+            new (pseudoMoves++) Move(target + singlePushOffset, target, NONE);
         }
 
         while (promotions) {
             int target = popLSB(promotions);
-            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEBISHOP));
-            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEKNIGHT));
-            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEROOK));
-            pseudoMoves.emplace_back(Move(target + singlePushOffset, target, PROMOTEQUEEN));
+            new (pseudoMoves++) Move(target + singlePushOffset, target, PROMOTEBISHOP);
+            new (pseudoMoves++) Move(target + singlePushOffset, target, PROMOTEKNIGHT);
+            new (pseudoMoves++) Move(target + singlePushOffset, target, PROMOTEROOK);
+            new (pseudoMoves++) Move(target + singlePushOffset, target, PROMOTEQUEEN);
         }
 
         int doublePushOffset = b.turn ? -16 : 16;
         while (doublePushes) {
             int target = popLSB(doublePushes);
-            pseudoMoves.emplace_back(Move(target + doublePushOffset, target, PAWNTWOFORWARD));
+            new (pseudoMoves++) Move(target + doublePushOffset, target, PAWNTWOFORWARD);
         }
     }
 
@@ -97,33 +125,33 @@ void MoveGen::generatePawnMoves(const Board& b) {
     int leftDiagonalAttackOffset = b.turn ? -9 : 7;
     while (leftDiagonalAttacks) {
         int target = popLSB(leftDiagonalAttacks);
-        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, NONE));
+        new (pseudoMoves++) Move(target + leftDiagonalAttackOffset, target, NONE);
     }
 
     while (leftDiagonalAttackPromotions) {
         int target = popLSB(leftDiagonalAttackPromotions);
-        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEBISHOP));
-        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEKNIGHT));
-        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEROOK));
-        pseudoMoves.emplace_back(Move(target + leftDiagonalAttackOffset, target, PROMOTEQUEEN));
+        new (pseudoMoves++) Move(target + leftDiagonalAttackOffset, target, PROMOTEBISHOP);
+        new (pseudoMoves++) Move(target + leftDiagonalAttackOffset, target, PROMOTEKNIGHT);
+        new (pseudoMoves++) Move(target + leftDiagonalAttackOffset, target, PROMOTEROOK);
+        new (pseudoMoves++) Move(target + leftDiagonalAttackOffset, target, PROMOTEQUEEN);
     }
 
     int rightDiagonalAttackOffset = b.turn ? -7 : 9;
     while (rightDiagonalAttacks) {
         int target = popLSB(rightDiagonalAttacks);
-        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, NONE));
+        new (pseudoMoves++) Move(target + rightDiagonalAttackOffset, target, NONE);
     }
 
     while (rightDiagonalAttackPromotions) {
         int target = popLSB(rightDiagonalAttackPromotions);
-        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEBISHOP));
-        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEKNIGHT));
-        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEROOK));
-        pseudoMoves.emplace_back(Move(target + rightDiagonalAttackOffset, target, PROMOTEQUEEN));
+        new (pseudoMoves++) Move(target + rightDiagonalAttackOffset, target, PROMOTEBISHOP);
+        new (pseudoMoves++) Move(target + rightDiagonalAttackOffset, target, PROMOTEKNIGHT);
+        new (pseudoMoves++) Move(target + rightDiagonalAttackOffset, target, PROMOTEROOK);
+        new (pseudoMoves++) Move(target + rightDiagonalAttackOffset, target, PROMOTEQUEEN);
     }
 }
 
-void MoveGen::generateKnightMoves(const Board& b) {
+void MoveGen::generateKnightMoves(const Board& b, Move* &pseudoMoves) {
     uint64_t knightBitboard = b.turn ? b.pieceBitboards[WKNIGHT] : b.pieceBitboards[BKNIGHT];
     uint64_t enemyOrEmpty = b.turn ? ~b.getWhitePositions() : ~b.getBlackPositions();
     uint64_t forcingMask = onlyGenerateForcing ? b.blockers : ~0ULL;
@@ -134,12 +162,12 @@ void MoveGen::generateKnightMoves(const Board& b) {
 
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            pseudoMoves.emplace_back(Move(source, target, NONE));
+            new (pseudoMoves++) Move(source, target, NONE);
         }
     }
 }
 
-void MoveGen::generateSlidingMoves(const Board& b) {
+void MoveGen::generateSlidingMoves(const Board& b, Move* &pseudoMoves) {
     uint64_t bishopBitboard = b.turn ? b.pieceBitboards[WBISHOP] : b.pieceBitboards[BBISHOP];
     uint64_t rookBitboard = b.turn ? b.pieceBitboards[WROOK] : b.pieceBitboards[BROOK];
     uint64_t queenBitboard = b.turn ? b.pieceBitboards[WQUEEN] : b.pieceBitboards[BQUEEN];
@@ -154,7 +182,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = bishopAttackBitboards[index] & ~friendly & forcingMask;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            pseudoMoves.emplace_back(Move(source, target, NONE));
+            new (pseudoMoves++) Move(source, target, NONE);
         }
     }
 
@@ -167,7 +195,7 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = rookAttackBitboards[index] & ~friendly & forcingMask;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            pseudoMoves.emplace_back(Move(source, target, NONE));
+            new (pseudoMoves++) Move(source, target, NONE);
         }
     }
 
@@ -184,12 +212,12 @@ void MoveGen::generateSlidingMoves(const Board& b) {
         uint64_t movesBitboard = (bishopAttackBitboards[bishopIndex] | rookAttackBitboards[rookIndex]) & ~friendly & forcingMask;
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            pseudoMoves.emplace_back(Move(source, target, NONE));
+            new (pseudoMoves++) Move(source, target, NONE);
         }
     }
 }
 
-void MoveGen::generateKingMoves(const Board& b) {
+void MoveGen::generateKingMoves(const Board& b, Move* &pseudoMoves) {
     uint64_t kingBitboard = b.turn ? b.pieceBitboards[WKING] : b.pieceBitboards[BKING];
     uint64_t forcingMask = onlyGenerateForcing ? b.blockers : ~0ULL;
 
@@ -199,7 +227,7 @@ void MoveGen::generateKingMoves(const Board& b) {
 
         while (movesBitboard) {
             int target = popLSB(movesBitboard);
-            pseudoMoves.emplace_back(Move(source, target, NONE));
+            new (pseudoMoves++) Move(source, target, NONE);
         }
     }
 
@@ -233,75 +261,74 @@ void MoveGen::generateKingMoves(const Board& b) {
         if ((b.history.top().castlingRights & W_K) &&
             !(blockers & W_K_EMPTY_MASK) &&
             !(attackedByOpp & W_K_SAFE_MASK)) {
-            pseudoMoves.emplace_back(Move(E1, G1, CASTLING));
+            new (pseudoMoves++) Move(E1, G1, CASTLING);
         }
 
         if ((b.history.top().castlingRights & W_Q) &&
             !(blockers & W_Q_EMPTY_MASK) &&
             !(attackedByOpp & W_Q_SAFE_MASK)) {
-            pseudoMoves.emplace_back(Move(E1, C1, CASTLING));
+            new (pseudoMoves++) Move(E1, C1, CASTLING);
         }
     } else {
         // Black to move
         if ((b.history.top().castlingRights & B_K) &&
             !(blockers & B_K_EMPTY_MASK) &&
             !(attackedByOpp & B_K_SAFE_MASK)) {
-            pseudoMoves.emplace_back(Move(E8, G8, CASTLING));
+            new (pseudoMoves++) Move(E8, G8, CASTLING);
         }
         if ((b.history.top().castlingRights & B_Q) &&
             !(blockers & B_Q_EMPTY_MASK) &&
             !(attackedByOpp & B_Q_SAFE_MASK)) {
-            pseudoMoves.emplace_back(Move(E8, C8, CASTLING));
+            new (pseudoMoves++) Move(E8, C8, CASTLING);
         }
     }
 }
 
-/**
- * Finds the least valuable attack to some target square
- */
-Move MoveGen::getLeastValuableAttack(Board& b, int targetSquare) {
-    clearMoves();
-    onlyGenerateForcing = true;
 
-    Move leastValuableAttack = Move();
 
-    generatePawnMoves(b);
+void MoveGen::orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue) {
+    // Assign score to each move
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &move = pseudoMoves.moves[i];
+        int attackedPiece = b.squares[move.getTarget()];
 
-    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
-        return leastValuableAttack;
-    } else {
-        pseudoMoves.clear();
+        // Big bonus if the move is the best move from pervious depths. Guaruntees that the move will be searched first.
+        if (move.moveValue == bestMoveValue) {
+            move.moveScore = 100000;
+        }
+
+        // Higher score, better move is and thus should be searched earlier. Ordered with MVV - LVA heuristic
+        else if (attackedPiece != EMPTY) {
+            int movedPiece = b.squares[move.getSource()];
+            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
+        }
     }
 
-    generateKnightMoves(b);
-
-    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
-        return leastValuableAttack;
-    } else {
-        pseudoMoves.clear();
-    }
-
-    generateSlidingMoves(b);
-    
-    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
-        return leastValuableAttack;
-    } else {
-        pseudoMoves.clear();
-    }
-
-    generateKingMoves(b);
-    
-    if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
-        return leastValuableAttack;
-    } else {
-        pseudoMoves.clear();
-    }
-
-    return leastValuableAttack;
+    // Sort the moves in order of descending moveScore
+    sort(
+        pseudoMoves.moves,
+        pseudoMoves.moves + pseudoMoves.count,
+        [](const Move &a, const Move &b) {
+            return a.moveScore > b.moveScore;
+        }
+    );
 }
 
-bool MoveGen::findLegalMoveToTarget(Board& b, int targetSquare, Move& out) {
-    for (Move& move : pseudoMoves) {
+void MoveGen::freePseudoMoves(MoveList& pseudoMoves) {
+    pseudoMovesPool->free(pseudoMoves.moves);
+    pseudoMoves.moves = nullptr;
+    pseudoMoves.count = 0;
+}
+
+void MoveGen::freeLegalMoves(MoveList& legalMoves) {
+    legalMovesPool->free(legalMoves.moves);
+    legalMoves.moves = nullptr;
+    legalMoves.count = 0;
+}
+
+bool MoveGen::findLegalMoveToTarget(Board& b, int targetSquare, MoveList& pseudoMoves, Move& out) {
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &move = pseudoMoves.moves[i];
         // only care about attacks on the target square
         if (move.getTarget() != targetSquare) {
             continue;
@@ -322,60 +349,53 @@ bool MoveGen::findLegalMoveToTarget(Board& b, int targetSquare, Move& out) {
     return false;
 }
 
+/**
+ * Finds the least valuable attack to some target square
+ */
+// Move MoveGen::getLeastValuableAttack(Board& b, int targetSquare) {
+//     Move* start = static_cast<Move*>(pseudoMovesPool->alloc());
+//     if (!start) {
+//         throw std::runtime_error("Failed to allocate memory for pseudo moves");
+//     }
 
+//     Move* pieceStart = start;
+//     Move* curr = start;
 
-void MoveGen::orderMoves(Board& b, uint16_t bestMoveValue) {
-    // Assign score to each move
-    for (Move& move : pseudoMoves) {
-        int attackedPiece = b.squares[move.getTarget()];
+//     onlyGenerateForcing = true;
 
-        // Big bonus if the move is the best move from pervious depths. Guaruntees that the move will be searched first.
-        if (move.moveValue == bestMoveValue) {
-            move.moveScore = 100000;
-        }
+//     Move leastValuableAttack = Move();
 
-        // Higher score, better move is and thus should be searched earlier. Ordered with MVV - LVA heuristic
-        else if (attackedPiece != EMPTY) {
-            int movedPiece = b.squares[move.getSource()];
-            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
-        }
-    }
+//     generatePawnMoves(b, curr);
 
-    // Sort the moves in order of descending moveScore
-    sort(pseudoMoves.begin(), pseudoMoves.end(), [](const Move &a, const Move &b) {
-        return a.moveScore > b.moveScore; 
-    });
+//     if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+//         return leastValuableAttack;
+//     } else {
+//         pseudoMoves.clear();
+//     }
 
-    // b.displayBoard();
-    // for (Move move : moves) {
-    //     cout << move << " | " << move.moveScore << " | " << bestMoveValue << endl;
-    // }
-}
+//     generateKnightMoves(b);
 
-void MoveGen::clearMoves() {
-    pseudoMoves.clear();
-}
+//     if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+//         return leastValuableAttack;
+//     } else {
+//         pseudoMoves.clear();
+//     }
 
-static inline string squareToNotation(int sq) {
-    // Your indexing: a8=63 ... h1=0
-    int fileIdx = 7 - (sq % 8); // 0..7 -> a..h
-    int rankIdx = (sq / 8);     // 0..7 -> rank 1..8 minus 1
-    char fileChar = static_cast<char>('a' + fileIdx);
-    char rankChar = static_cast<char>('1' + rankIdx);
-    return string() + fileChar + rankChar;
-}
+//     generateSlidingMoves(b);
+    
+//     if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+//         return leastValuableAttack;
+//     } else {
+//         pseudoMoves.clear();
+//     }
 
-void MoveGen::getLegalMovesDTO(Board& b, vector<LegalMoveDTO>& out) {
-    out.clear();
-    generateLegalMoves(b);
-    out.reserve(legalMoves.size());
-    for (const Move& m : legalMoves) {
-        LegalMoveDTO dto;
-        dto.id = m.moveValue;
-        dto.from = squareToNotation(m.getSource());
-        dto.to = squareToNotation(m.getTarget());
-        dto.flag = static_cast<int>(m.getFlag());
-        // Ignore promotions for now; flags will reflect NONE/CASTLING/ENPASSANT/PAWNTWOFORWARD
-        out.emplace_back(std::move(dto));
-    }
-}
+//     generateKingMoves(b);
+    
+//     if (findLegalMoveToTarget(b, targetSquare, leastValuableAttack)) {
+//         return leastValuableAttack;
+//     } else {
+//         pseudoMoves.clear();
+//     }
+
+//     return leastValuableAttack;
+// }

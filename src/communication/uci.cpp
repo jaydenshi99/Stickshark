@@ -27,17 +27,17 @@ UCI::UCI() {
              << " nodes " << nodes 
              << " nps " << nps;
         
-        // Check if this is a mate score
-        // Winning line: score = +MATE - ply, so ply = MATE - score
-        // Losing line: score = -MATE + ply, so ply = score + MATE
-        if (scoreCp > 31900) {
-            // Winning mate: score = +MATE - ply
-            int plyToMate = 32000 - scoreCp;
-            cout << " score mate " << plyToMate;
-        } else if (scoreCp < -31900) {
-            // Losing mate: score = -MATE + ply
-            int plyToMate = scoreCp + 32000;
-            cout << " score mate " << plyToMate;
+        // UCI mate reporting: score mate N, where N is in MOVES (not plies),
+        // from side-to-move perspective (positive = mate for STM, negative = STM is mated)
+        const int M = MATE;
+        if (scoreCp >= M - 100) {
+            int plies = M - scoreCp;              // internal is mate-in-plies
+            int moves = (plies + 1) / 2;          // convert to moves
+            cout << " score mate " << moves;
+        } else if (scoreCp <= -M + 100) {
+            int plies = M + scoreCp;              // scoreCp is negative
+            int moves = (plies + 1) / 2;
+            cout << " score mate " << -moves;    // negative: STM is mated
         } else {
             cout << " score cp " << scoreCp;
         }
@@ -324,10 +324,11 @@ bool UCI::parseUciMoveToken(const string& token, int& src, int& dst, int& promoF
 }
 
 bool UCI::findLegalMoveBySquares(const Board& board, int src, int dst, int promoFlag, Move& out) {
-    MoveGen gen;
+    MoveGen& gen = MoveGen::getInstance();
     Board copy = board; // generate on a copy so we don't disturb state
-    gen.generatePseudoMoves(copy);
-    for (const Move& m : gen.pseudoMoves) {
+    MoveList pseudoMoves = gen.generatePseudoMoves(copy, false);
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &m = pseudoMoves.moves[i];
         if ((int)m.getSource() != src || (int)m.getTarget() != dst) continue;
         // Filter by promotion flag if needed
         if (promoFlag != 0 && (int)m.getFlag() != promoFlag) continue;
@@ -337,6 +338,7 @@ bool UCI::findLegalMoveBySquares(const Board& board, int src, int dst, int promo
         copy.unmakeMove(m);
         if (legal) { out = m; return true; }
     }
+    gen.freePseudoMoves(pseudoMoves);
     return false;
 }
 

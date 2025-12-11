@@ -139,7 +139,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     }
 
     // Check for threefold
-    if (board.repetitionCount[board.zobristHash] >= 3) {
+    if (board.isThreeFoldRepetition()) {
         return 0;
     }
 
@@ -220,19 +220,20 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     }
 
     // Generate posible moves
-    MoveGen mg;
-    mg.generatePseudoMoves(board);
-    mg.orderMoves(board, bestMoveValue);
+    MoveGen& mg = MoveGen::getInstance();
+    MoveList pseudoMoves = mg.generatePseudoMoves(board, false);
+    mg.orderMoves(board, pseudoMoves, bestMoveValue);
 
     bool existsValidMove = false;
-    for (Move move : mg.pseudoMoves) {
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
 
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
-            // Check extension with SEE guard
+            // Check extension with SEE guard (currently removed)
             int childDepth = depth - 1;
-            if (board.kingInCheck(true) && recursiveSEE(board, move.getTarget()) >= 0) {
+            if (board.kingInCheck(true)) {
                 childDepth += 1;
             }
 
@@ -240,6 +241,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             int16_t eval = -negaMax(childDepth, -beta, -alpha, -turn);
             if (isTimeUp()) {
                 board.unmakeMove(move);
+                mg.freePseudoMoves(pseudoMoves);
                 return 7777;
             }
 
@@ -262,6 +264,8 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         
         board.unmakeMove(move);
     }
+
+    mg.freePseudoMoves(pseudoMoves);
 
     if (!existsValidMove) {
         if (!currentKingInCheck) {
@@ -296,6 +300,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
     quiescenceNodesSearched++;
 
+    // Check for threefold
+    if (board.isThreeFoldRepetition()) {
+        return 0;
+    }
 
     int16_t bestSoFar = staticEvaluation(board) * turn;
     uint16_t bestMoveValue = 0;
@@ -343,14 +351,12 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     }
 
     // Generate forcing moves
-    MoveGen mg;
-    mg.onlyGenerateForcing = !currKingInCheck; // force generating if own king is not in check. otherwise evasive moves
-    mg.generatePseudoMoves(board);
+    MoveGen& mg = MoveGen::getInstance();
+    MoveList pseudoMoves = mg.generatePseudoMoves(board, !currKingInCheck); // force generating if own king is not in check. otherwise evasive moves
+    mg.orderMoves(board, pseudoMoves, bestMoveValue); // only helps when the best move is a forcing move.
 
-
-    mg.orderMoves(board, bestMoveValue); // only helps when the best move is a forcing move.
-
-    for (Move move : mg.pseudoMoves) {
+    for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
+        Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
 
         // Continue with valid positions
@@ -359,11 +365,13 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
             int16_t eval = -quiescenceSearch(-beta, -alpha, -turn);
             if (isTimeUp()) {
                 board.unmakeMove(move);
+                mg.freePseudoMoves(pseudoMoves);
                 return 7777;
             }
 
             if (eval >= beta) {
                 board.unmakeMove(move);
+                mg.freePseudoMoves(pseudoMoves);
                 return eval;
             }
 
@@ -377,6 +385,8 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         
         board.unmakeMove(move);
     }
+
+    mg.freePseudoMoves(pseudoMoves);
 
     uint8_t flag = EXACT;
     if (bestSoFar <= oldAlpha) {

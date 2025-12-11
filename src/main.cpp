@@ -62,7 +62,7 @@ int main (int argc, char* argv[]) {
         // Original chess game mode
         // playEngine(STARTING_FEN, 1000);
 
-        perft(6, "r3k2r/pppbqppp/2np1n2/2b1p1B1/2B1P3/2NP1N2/PPPQ1PPP/R3K2R w KQkq - 0 1");
+        perft(6, STARTING_FEN);
     }
 
     return 0;
