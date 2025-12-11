@@ -10,23 +10,36 @@ Before building the project, ensure the following dependencies are installed:
 - GCC 10+ or Clang 10+ with C++20 support.
 
 ### Build Tools
-- `make`: The Makefile requires a compatible `make` utility.
+- `cmake` (3.15+)
 
 ### Additional Libraries
 - None required.
 
-## Installation Steps
+## Build (CMake)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/jaydenshi99/Stickshark.git
-   cd Stickshark
-   ```
+1) Clone:
+```bash
+git clone https://github.com/jaydenshi99/Stickshark.git
+cd Stickshark
+```
 
-2. Build the project:
-   ```bash
-   make
-   ```
+2) Configure:
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+```
+
+3) Build:
+```bash
+cmake --build build
+```
+
+4) Run (UCI mode by default; it waits for UCI commands):
+- macOS/Linux: `./build/stickshark`
+- Windows: `build\stickshark.exe`
+
+Clean: remove the `build` directory to force a fresh configure/build:
+- macOS/Linux: `rm -rf build`
+- Windows: `rmdir /s /q build`
 
 ## Web Interface
 
@@ -34,9 +47,10 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 
 ### Launching the Web Interface
 
-1. **Build the web version** (if not already built):
+1. **Build the engine** (if not already built):
    ```bash
-   make
+   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+   cmake --build build
    ```
 
 2. **Start the HTTP server**:
@@ -45,9 +59,14 @@ Stickshark includes a web-based GUI for visual chess gameplay.
    ```
 
 3. **Start the chess engine in web mode** (in another terminal):
-   ```bash
-   ./build/bin/main --server
-   ```
+   - macOS/Linux:
+     ```bash
+     ./build/stickshark --server
+     ```
+   - Windows:
+     ```powershell
+     build\stickshark.exe --server
+     ```
 
 4. **Open your web browser** and navigate to:
    - **Visual Board**: http://localhost:8000/web/chess_board.html
@@ -56,7 +75,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 1.3
-- 1.3.1: Use singleton pattern in move gen to optimise memory allocation. 26Mn/s -> 28Mn/s
+- 1.3.1: Use singleton pattern in move gen to optimise memory allocation. 26Mn/s -> 28Mn/s. Compile with cmake.
 - 1.3.0: Replaced hashmap repetition tracking with Zobrist history backward scan. 12Mn/s -> 26Mn/s
 
 ### 1.2
