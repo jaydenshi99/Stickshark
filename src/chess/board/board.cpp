@@ -101,6 +101,19 @@ void Board::setFEN(string FEN, bool clearRepetitionHistory) {
 
     gState.castlingRights = castlingRights;
 
+    index++; // skip space after castling
+
+    // Set en passant
+    if (FEN[index] == '-') {
+        gState.enpassantColumn = -1;
+        index += 2; // skip '-' and space
+    } else {
+        // Parse square (e.g., "e3" -> file 4, column 4)
+        char file = FEN[index++];
+        gState.enpassantColumn = 7 - (file - 'a'); // 'a' = 0, 'b' = 1, ..., 'h' = 7
+        index++; // skip space
+    }
+
     history.push(gState);
 
     setZobristHash();
@@ -164,15 +177,18 @@ void Board::displayBoard() const {
 }
 
 void Board::makeMove(const Move& move) {
+    int moveFlag = move.getFlag();
     uint64_t sourceSquare = move.getSource();
     uint64_t targetSquare = move.getTarget();
-    int moveFlag = move.getFlag();
+    uint64_t capturedSquare = (moveFlag == ENPASSANT) ? (turn ? targetSquare - 8 : targetSquare + 8) : targetSquare;
+
 
     uint64_t sourceSquareMask = 1ULL << sourceSquare;
     uint64_t targetSquareMask = 1ULL << targetSquare;
+    uint64_t captureSquareMask = 1ULL << capturedSquare;
 
     int movedPiece = squares[sourceSquare];
-    int capturedPiece = squares[targetSquare];
+    int capturedPiece = squares[capturedSquare];
 
     // Set new gamestate
     Gamestate gState = Gamestate(capturedPiece);
@@ -187,7 +203,11 @@ void Board::makeMove(const Move& move) {
     gState.attackBitboards[BKING] = oldGamestate.attackBitboards[BKING];
 
     // Clear old enpassant column
-    zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
+    if (oldGamestate.enpassantColumn == -1) {
+        zobristHash ^= zobristBitstrings[774]; // no enpassant column
+    } else {
+        zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
+    }
 
     // Empty moved piece
     squares[sourceSquare] = EMPTY;
@@ -199,23 +219,23 @@ void Board::makeMove(const Move& move) {
 
     // Remove captured piece
     if (capturedPiece != EMPTY) {
-        pieceBitboards[capturedPiece] ^= targetSquareMask;
-        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + targetSquare];
-        pieceSquareEvalMG -= pieceSquareTablesMG[capturedPiece][targetSquare];
-        pieceSquareEvalEG -= pieceSquareTablesEG[capturedPiece][targetSquare];
-    } else {
-        // If no captured piece, then add the new blocker on the empty square
-        blockers ^= targetSquareMask;
+        pieceBitboards[capturedPiece] ^= captureSquareMask;
+        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + capturedSquare];
+        pieceSquareEvalMG -= pieceSquareTablesMG[capturedPiece][capturedSquare];
+        pieceSquareEvalEG -= pieceSquareTablesEG[capturedPiece][capturedSquare];
+        squares[capturedSquare] = EMPTY;
+        blockers ^= captureSquareMask;
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == CASTLING) {
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == ENPASSANT ||moveFlag == CASTLING) {
         // Add moved piece to new square
         squares[targetSquare] = movedPiece;
         pieceBitboards[movedPiece] ^= targetSquareMask;
         zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + targetSquare];
         pieceSquareEvalMG += pieceSquareTablesMG[movedPiece][targetSquare];
         pieceSquareEvalEG += pieceSquareTablesEG[movedPiece][targetSquare];
+        blockers ^= targetSquareMask;
 
         if (moveFlag == PAWNTWOFORWARD) {
             gState.enpassantColumn = targetSquare % 8;
@@ -231,6 +251,7 @@ void Board::makeMove(const Move& move) {
         zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + targetSquare];
         pieceSquareEvalMG += pieceSquareTablesMG[promotedPiece][targetSquare];
         pieceSquareEvalEG += pieceSquareTablesEG[promotedPiece][targetSquare];
+        blockers ^= targetSquareMask;
 
         // Update piece attacks of promoted piece
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
@@ -343,9 +364,11 @@ void Board::unmakeMove(const Move& move) {
     uint64_t oldSquare = move.getSource();
     uint64_t currSquare = move.getTarget();
     int moveFlag = move.getFlag();
+    uint64_t capturedSquare = (moveFlag == ENPASSANT) ? (turn ? currSquare + 8 : currSquare - 8) : currSquare;
 
     uint64_t oldSquareMask = 1ULL << oldSquare;
     uint64_t currSquareMask = 1ULL << currSquare;
+    uint64_t captureSquareMask = 1ULL << capturedSquare;
 
     // Update ply and last irreversible ply
     --ply;
@@ -358,9 +381,17 @@ void Board::unmakeMove(const Move& move) {
     int movedPiece = isPromotion[moveFlag] ? (turn ? BPAWN : WPAWN) : squares[currSquare];
     int capturedPiece = gState.capturedPiece;
 
-    // Revert zobrist hash
-    zobristHash ^= zobristBitstrings[775 + gState.enpassantColumn];
-    zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
+    // Revert zobrist hash for en passant
+    if (gState.enpassantColumn == -1) {
+        zobristHash ^= zobristBitstrings[774]; // no enpassant column
+    } else {
+        zobristHash ^= zobristBitstrings[775 + gState.enpassantColumn];
+    }
+    if (oldGamestate.enpassantColumn == -1) {
+        zobristHash ^= zobristBitstrings[774]; // no enpassant column
+    } else {
+        zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
+    }
 
     // Bring back moved piece to old square
     squares[oldSquare] = movedPiece;
@@ -368,27 +399,30 @@ void Board::unmakeMove(const Move& move) {
     zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + oldSquare];
     pieceSquareEvalMG += pieceSquareTablesMG[movedPiece][oldSquare];
     pieceSquareEvalEG += pieceSquareTablesEG[movedPiece][oldSquare];
+    blockers ^= oldSquareMask;
 
     // Bring back captured piece
-    squares[currSquare] = capturedPiece;
-    blockers ^= oldSquareMask;
+    squares[capturedSquare] = capturedPiece;
     if (capturedPiece != EMPTY) {
-        pieceBitboards[capturedPiece] |= currSquareMask; 
-        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + currSquare];
-        pieceSquareEvalMG += pieceSquareTablesMG[capturedPiece][currSquare];
-        pieceSquareEvalEG += pieceSquareTablesEG[capturedPiece][currSquare];
-    } else {
-        // If no piece was captured then remove the blocker
-        blockers ^= currSquareMask;
+        pieceBitboards[capturedPiece] |= captureSquareMask; 
+        zobristHash ^= zobristBitstrings[capturedPiece * NUM_SQUARES + capturedSquare];
+        pieceSquareEvalMG += pieceSquareTablesMG[capturedPiece][capturedSquare];
+        pieceSquareEvalEG += pieceSquareTablesEG[capturedPiece][capturedSquare];
+        blockers ^= captureSquareMask;
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == CASTLING) {
+    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == ENPASSANT || moveFlag == CASTLING) {
         // Remove moved piece from square that it was moved to
         pieceBitboards[movedPiece] ^= currSquareMask;
         zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + currSquare];
         pieceSquareEvalMG -= pieceSquareTablesMG[movedPiece][currSquare];
         pieceSquareEvalEG -= pieceSquareTablesEG[movedPiece][currSquare];
+        blockers ^= currSquareMask;
+
+        if (moveFlag == ENPASSANT) {
+            squares[currSquare] = EMPTY;
+        }
     } else if (isPromotion[moveFlag]) {
         // Remove promoted piece from square that it was promoted
         int promotedPiece = moveFlag - 2 + (turn ? 6 : 0);
@@ -397,6 +431,7 @@ void Board::unmakeMove(const Move& move) {
         zobristHash ^= zobristBitstrings[promotedPiece * NUM_SQUARES + currSquare];
         pieceSquareEvalMG -= pieceSquareTablesMG[promotedPiece][currSquare];
         pieceSquareEvalEG -= pieceSquareTablesEG[promotedPiece][currSquare];
+        blockers ^= currSquareMask;
     }
 
     // In castling moves, the rook is moved along with the king
@@ -563,7 +598,12 @@ void Board::setZobristHash() {
         }
     }
 
-    zobristHash ^= zobristBitstrings[774]; // no enpassant column
+    // 773-782: en passant column (774 = no en passant, 775-782 = columns 0-7)
+    if (history.top().enpassantColumn == -1) {
+        zobristHash ^= zobristBitstrings[774]; // no enpassant column
+    } else {
+        zobristHash ^= zobristBitstrings[775 + history.top().enpassantColumn];
+    }
 }
 
 bool Board::isThreeFoldRepetition() const {

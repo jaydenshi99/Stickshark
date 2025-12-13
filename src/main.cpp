@@ -63,6 +63,8 @@ int main (int argc, char* argv[]) {
         // playEngine(STARTING_FEN, 1000);
 
         perft(6, STARTING_FEN);
+
+        // displayPossibleMoves("rnbqkb1r/ppp1pppp/7n/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1");
     }
 
     return 0;

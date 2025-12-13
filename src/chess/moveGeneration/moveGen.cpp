@@ -149,6 +149,19 @@ void MoveGen::generatePawnMoves(const Board& b, Move* &pseudoMoves) {
         new (pseudoMoves++) Move(target + rightDiagonalAttackOffset, target, PROMOTEROOK);
         new (pseudoMoves++) Move(target + rightDiagonalAttackOffset, target, PROMOTEQUEEN);
     }
+
+    // enpassant
+    if (b.history.top().enpassantColumn != -1) {
+        int enpassantColumn = b.history.top().enpassantColumn;
+        int targetSquare = b.turn ? enpassantColumn + 40 : enpassantColumn + 16;
+        uint64_t leftAttack = b.turn ? (enpassantColumn > 0 ? (1ULL << (targetSquare - 9)) : 0ULL) : (enpassantColumn > 0 ? (1ULL << (targetSquare + 7)) : 0ULL);
+        uint64_t rightAttack = b.turn ? (enpassantColumn < 7 ? (1ULL << (targetSquare - 7)) : 0ULL) : (enpassantColumn < 7 ? (1ULL << (targetSquare + 9)) : 0ULL);
+        uint64_t enpassantPawns = pawnBitboard & (leftAttack | rightAttack);
+        while (enpassantPawns) {
+            int source = popLSB(enpassantPawns);
+            new (pseudoMoves++) Move(source, targetSquare, ENPASSANT);
+        }
+    }
 }
 
 void MoveGen::generateKnightMoves(const Board& b, Move* &pseudoMoves) {
