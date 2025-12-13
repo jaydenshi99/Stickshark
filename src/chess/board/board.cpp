@@ -186,6 +186,9 @@ void Board::makeMove(const Move& move) {
     gState.attackBitboards[WKING] = oldGamestate.attackBitboards[WKING];
     gState.attackBitboards[BKING] = oldGamestate.attackBitboards[BKING];
 
+    // Clear old enpassant column
+    zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
+
     // Empty moved piece
     squares[sourceSquare] = EMPTY;
     pieceBitboards[movedPiece] ^= sourceSquareMask;
@@ -213,6 +216,12 @@ void Board::makeMove(const Move& move) {
         zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + targetSquare];
         pieceSquareEvalMG += pieceSquareTablesMG[movedPiece][targetSquare];
         pieceSquareEvalEG += pieceSquareTablesEG[movedPiece][targetSquare];
+
+        if (moveFlag == PAWNTWOFORWARD) {
+            gState.enpassantColumn = targetSquare % 8;
+            zobristHash ^= zobristBitstrings[775 + gState.enpassantColumn]; // update zobrist hash for enpassant column
+        }
+
     } else if (isPromotion[moveFlag]) {
         // Add promoted piece to new square
         int promotedPiece = moveFlag - 2 + (turn ? 0 : 6);
@@ -344,9 +353,14 @@ void Board::unmakeMove(const Move& move) {
     // Get old gamestate
     Gamestate gState = history.top();
     history.pop();
+    Gamestate oldGamestate = history.top();
 
     int movedPiece = isPromotion[moveFlag] ? (turn ? BPAWN : WPAWN) : squares[currSquare];
     int capturedPiece = gState.capturedPiece;
+
+    // Revert zobrist hash
+    zobristHash ^= zobristBitstrings[775 + gState.enpassantColumn];
+    zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
 
     // Bring back moved piece to old square
     squares[oldSquare] = movedPiece;
@@ -419,7 +433,7 @@ void Board::unmakeMove(const Move& move) {
 
     // Update castling right zobrists
     uint8_t currRights = gState.castlingRights;
-    uint8_t oldRights = history.top().castlingRights;
+    uint8_t oldRights = oldGamestate.castlingRights;
 
     uint8_t changed = oldRights ^ currRights;
     if (changed) {
@@ -548,6 +562,8 @@ void Board::setZobristHash() {
             zobristHash ^= zobristBitstrings[769 + i];
         }
     }
+
+    zobristHash ^= zobristBitstrings[774]; // no enpassant column
 }
 
 bool Board::isThreeFoldRepetition() const {
