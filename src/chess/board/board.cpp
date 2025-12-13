@@ -240,6 +240,8 @@ void Board::makeMove(const Move& move) {
         if (moveFlag == PAWNTWOFORWARD) {
             gState.enpassantColumn = targetSquare % 8;
             zobristHash ^= zobristBitstrings[775 + gState.enpassantColumn]; // update zobrist hash for enpassant column
+        } else {
+            zobristHash ^= zobristBitstrings[774]; // no enpassant column
         }
 
     } else if (isPromotion[moveFlag]) {
