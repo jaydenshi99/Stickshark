@@ -54,6 +54,8 @@ void simulateRandomMoves() {
         pseudoMoves = moveGen.generatePseudoMoves(board, false);
     }
 
+    moveGen.freePseudoMoves(pseudoMoves);
+
     for (int i = 0; i < 12; i++) {
         cout << i << endl;
         displayBitboard(board.history.top().attackBitboards[i]);
