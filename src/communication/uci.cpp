@@ -327,6 +327,7 @@ bool UCI::findLegalMoveBySquares(const Board& board, int src, int dst, int promo
     MoveGen& gen = MoveGen::getInstance();
     Board copy = board; // generate on a copy so we don't disturb state
     MoveList pseudoMoves = gen.generatePseudoMoves(copy, false);
+    bool found = false;
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &m = pseudoMoves.moves[i];
         if ((int)m.getSource() != src || (int)m.getTarget() != dst) continue;
@@ -336,10 +337,14 @@ bool UCI::findLegalMoveBySquares(const Board& board, int src, int dst, int promo
         copy.makeMove(m);
         bool legal = !copy.kingInCheck(false);
         copy.unmakeMove(m);
-        if (legal) { out = m; return true; }
+        if (legal) { 
+            out = m; 
+            found = true;
+            break;
+        }
     }
     gen.freePseudoMoves(pseudoMoves);
-    return false;
+    return found;
 }
 
 

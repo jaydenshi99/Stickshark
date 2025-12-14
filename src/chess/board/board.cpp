@@ -257,6 +257,8 @@ void Board::makeMove(const Move& move) {
 
         // Update piece attacks of promoted piece
         if (isNonSliding[promotedPiece]) updatePieceAttacks(gState, promotedPiece);
+        
+        zobristHash ^= zobristBitstrings[774]; // no enpassant column
     }
     
     // In castling moves, the rook is moved along with the king

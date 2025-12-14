@@ -80,17 +80,21 @@ void displayPossibleMoves(string FEN) {
     moveGen.freePseudoMoves(pseudoMoves);
 }
 
-void perft(int depth, string FEN) {
-    cout << "Performance testing move generation for board: " << endl;
+long perft(int depth, string FEN, bool debug) {
+    if (debug) {
+        cout << "Performance testing move generation for board: " << endl;
+    }
 
     Board board;
     board.setFEN(FEN);
 
-    board.displayBoard();
+    if (debug) {
+        board.displayBoard();
 
-    cout << "Zobrist before: " << board.zobristHash << endl;
+        cout << "Zobrist before: " << board.zobristHash << endl;
     
-    cout << "Searching to depth " << depth << "..." << endl;
+        cout << "Searching to depth " << depth << "..." << endl;
+    }
 
     auto start = chrono::high_resolution_clock::now();
 
@@ -100,23 +104,25 @@ void perft(int depth, string FEN) {
 
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-    cout << "Time taken: " << duration.count() << " ms" << endl;
+    if (debug) {
+        cout << "Time taken: " << duration.count() << " ms" << endl;
 
-    cout << "Total Moves: " << totalMoves << endl;
+        cout << "Total Moves: " << totalMoves << endl;
+    }
 
     double movesPerSecond = totalMoves / (static_cast<double>(duration.count()) / 1000);
 
-    cout << fixed << setprecision(0);
-    cout << "Moves / Second: " << movesPerSecond << endl;
+    if (debug) {
+        cout << fixed << setprecision(0);
+        cout << "Moves / Second: " << movesPerSecond << endl;
 
-    cout << "Zobrist after: " << board.zobristHash << endl;
+        cout << "Zobrist after: " << board.zobristHash << endl;
+    }
+
+    return totalMoves;
 }
 
 long perftRecursive(Board& b, int depth) {
-    if (depth == 0) {
-        return 1;
-    }
-
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(b, false);
 
@@ -125,7 +131,7 @@ long perftRecursive(Board& b, int depth) {
         Move &m = pseudoMoves.moves[i];
         b.makeMove(m);
         if (!b.kingInCheck(false)) {
-            totalMoves += perftRecursive(b, depth - 1);
+            totalMoves += depth == 1 ? 1 : perftRecursive(b, depth - 1);
         }
         b.unmakeMove(m);
     }
