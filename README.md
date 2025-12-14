@@ -74,6 +74,9 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 
 ## Versions
 
+### 2.0
+- 2.0.0: Add enpassant. And move generation tests.
+
 ### 1.3
 - 1.3.1: Use singleton pattern in move gen to optimise memory allocation. 26Mn/s -> 28Mn/s. Compile with cmake.
 - 1.3.0: Replaced hashmap repetition tracking with Zobrist history backward scan. 12Mn/s -> 26Mn/s
