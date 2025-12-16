@@ -56,7 +56,7 @@ uint64_t kingPawnShieldMasks[NUM_SQUARES * 2];
 uint64_t kingZoneMasks[NUM_SQUARES * 2];
 
 
-uint64_t zobristBitstrings[774];
+uint64_t zobristBitstrings[783];
 
 void computeAllTables() {
     auto start = chrono::high_resolution_clock::now();
@@ -428,7 +428,7 @@ void saveMagics() {
 }
 
 void computeZobristBitstrings() {
-    for (int i = 0; i < 774; i++) {
+    for (int i = 0; i < 783; i++) {
         zobristBitstrings[i] = random_uint64();
     }
 }

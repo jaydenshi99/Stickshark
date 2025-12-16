@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <cstdint>
 
 using namespace std;
 
@@ -9,7 +10,7 @@ class Pool {
     public:
         Pool(size_t chunkSize, size_t capacity)
             : chunkSize(chunkSize), capacity(capacity),
-              buffer(chunkSize * capacity), freeList(nullptr), used(0) {}
+              buffer((chunkSize * capacity + sizeof(std::max_align_t) - 1) / sizeof(std::max_align_t)), freeList(nullptr), used(0) {}
     
         void* alloc() {
             if (freeList) {
@@ -18,12 +19,13 @@ class Pool {
                 return p;
             }
             if (used >= capacity) return nullptr; // out of memory
-            void* p = buffer.data() + used * chunkSize;
+            void* p = reinterpret_cast<char*>(buffer.data()) + used * chunkSize;
             ++used;
             return p;
         }
     
         void free(void* p) {
+            if (p == nullptr) return;  // Safety check
             void** nextPtr = reinterpret_cast<void**>(p);
             *nextPtr = freeList;
             freeList = p;
@@ -32,7 +34,7 @@ class Pool {
     private:
         size_t chunkSize;
         size_t capacity;
-        std::vector<std::max_align_t> buffer;
+        std::vector<std::max_align_t> buffer;  // Use max_align_t for proper alignment
     
         void* freeList;  // singly linked list of free blocks, stored inside blocks
         size_t used;

@@ -13,7 +13,7 @@
 
 #define ATTACK_MODIFIER 1000
 
-#define MAX_POOL_CAPACITY 100
+#define MAX_POOL_CAPACITY 128
 
 struct MoveList {
     Move* moves;          // start of chunk
