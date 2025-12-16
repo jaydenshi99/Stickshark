@@ -1,4 +1,5 @@
 #include "board.h"
+#include <cassert>
 
 using namespace std;
 
@@ -228,7 +229,7 @@ void Board::makeMove(const Move& move) {
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == ENPASSANT ||moveFlag == CASTLING) {
+    if (!isPromotion[moveFlag]) {
         // Add moved piece to new square
         squares[targetSquare] = movedPiece;
         pieceBitboards[movedPiece] ^= targetSquareMask;
@@ -244,7 +245,7 @@ void Board::makeMove(const Move& move) {
             zobristHash ^= zobristBitstrings[774]; // no enpassant column
         }
 
-    } else if (isPromotion[moveFlag]) {
+    } else {
         // Add promoted piece to new square
         int promotedPiece = moveFlag - 2 + (turn ? 0 : 6);
 
@@ -416,7 +417,7 @@ void Board::unmakeMove(const Move& move) {
     }
 
     // Flag specific cases
-    if (moveFlag == NONE || moveFlag == PAWNTWOFORWARD || moveFlag == ENPASSANT || moveFlag == CASTLING) {
+    if (!isPromotion[moveFlag]) {
         // Remove moved piece from square that it was moved to
         pieceBitboards[movedPiece] ^= currSquareMask;
         zobristHash ^= zobristBitstrings[movedPiece * NUM_SQUARES + currSquare];
@@ -427,7 +428,7 @@ void Board::unmakeMove(const Move& move) {
         if (moveFlag == ENPASSANT) {
             squares[currSquare] = EMPTY;
         }
-    } else if (isPromotion[moveFlag]) {
+    } else {
         // Remove promoted piece from square that it was promoted
         int promotedPiece = moveFlag - 2 + (turn ? 6 : 0);
 

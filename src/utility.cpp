@@ -1,4 +1,5 @@
 #include "utility.h"
+#include <cassert>
 
 using namespace std;
 
