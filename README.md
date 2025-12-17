@@ -1,6 +1,8 @@
 # Stickshark
 
-Stickshark is a C++ chess engine designed for high efficiency, featuring advanced move generation through bit manipulation and selects best moves utilising negamax with alpha-beta pruning and other techniques.
+Version 2.0.1 of Stickshark, a C++ chess engine. 
+
+Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! Currently rated ~2000 for bullet and ~1950 for blitz time controls.
 
 ## Prerequisites
 
@@ -75,6 +77,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.0
+- 2.0.1: Time management, and connect to lichess servers.
 - 2.0.0: Add enpassant. And move generation tests.
 
 ### 1.3

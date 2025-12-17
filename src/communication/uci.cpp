@@ -258,7 +258,7 @@ void UCI::handleGo(const string& line) {
             } else {
                 // Sudden death time control (no movestogo specified)
                 // Use a smaller portion of remaining time (e.g., 1/30th)
-                int timePerMove = currentTime / 30;
+                int timePerMove = (currentTime - 10000) / 50;
                 movetime = timePerMove + increment;
             }
         }
