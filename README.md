@@ -74,6 +74,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.0
+- 2.0.2: Fix three fold repetition bug with transposition tables.
 - 2.0.1: Time management, and connect to lichess servers.
 - 2.0.0: Add enpassant. And move generation tests.
 
