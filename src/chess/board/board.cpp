@@ -617,8 +617,8 @@ bool Board::isThreeFoldRepetition() const {
 
     if (ply - end < 4) return false;
     for (int i = ply - 2; i >= end; i -= 2) {
-        if (zobristHistory[i] == zobristHash) {
-            count += 1;
+        if (zobristHistory[i] == zobristHistory[ply]) {
+            count++;
             if (count >= 2) {
                 return true;
             }

@@ -157,34 +157,46 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
 
     if (entryExists) {
         tableAccesses++;
-        bestMoveValue = entry.bestMove;
-        if (entry.depth >= depth) {
+        Move storedBestMove = Move(entry.bestMove);
 
-            // unpack score
-            int16_t unpackedScore = entry.score;
-            if (abs(entry.score) == MATE) {
-                if (entry.score > 0) {
-                    unpackedScore = MATE - entry.plyToMate;
-                } else {
-                    unpackedScore = -MATE + entry.plyToMate;
-                }
-            }
+        // test stored move for threefold repetition
+        bool isThreeFoldRepetition = false;
+        if (entry.bestMove != 0) {
+            board.makeMove(storedBestMove);
+            isThreeFoldRepetition = board.isThreeFoldRepetition();
+            board.unmakeMove(storedBestMove);
+        }
+        
+        if (!isThreeFoldRepetition) {
+            bestMoveValue = entry.bestMove;
+            if (entry.depth >= depth) {
 
-            if (entry.flag == EXACT) {
-                searchBestEval = unpackedScore;
-                searchBestMove = Move(entry.bestMove);
-    
-                if (isRoot) {
-                    setFinalResult(searchBestEval, searchBestMove);
+                // unpack score
+                int16_t unpackedScore = entry.score;
+                if (abs(entry.score) == MATE) {
+                    if (entry.score > 0) {
+                        unpackedScore = MATE - entry.plyToMate;
+                    } else {
+                        unpackedScore = -MATE + entry.plyToMate;
+                    }
                 }
-    
-                return searchBestEval;
-            } else if (entry.flag == LOWERBOUND) {
-                if (unpackedScore >= beta) return unpackedScore;
-                alpha = max(alpha, unpackedScore);
-            } else if (entry.flag == UPPERBOUND) {
-                if (unpackedScore <= alpha) return unpackedScore;
-                beta = min(beta, unpackedScore);
+
+                if (entry.flag == EXACT) {
+                    searchBestEval = unpackedScore;
+                    searchBestMove = storedBestMove;
+        
+                    if (isRoot) {
+                        setFinalResult(searchBestEval, searchBestMove);
+                    }
+        
+                    return searchBestEval;
+                } else if (entry.flag == LOWERBOUND) {
+                    if (unpackedScore >= beta) return unpackedScore;
+                    alpha = max(alpha, unpackedScore);
+                } else if (entry.flag == UPPERBOUND) {
+                    if (unpackedScore <= alpha) return unpackedScore;
+                    beta = min(beta, unpackedScore);
+                }
             }
         }
     }
@@ -315,27 +327,40 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
     if (entryExists) {
         tableAccessesQuiescence++;
-        bestMoveValue = entry.bestMove;
 
-        // unpack score
-        int16_t unpackedScore = entry.score;
-        if (abs(entry.score) == MATE) {
-            if (entry.score > 0) {
-                unpackedScore = MATE - entry.plyToMate;
-            } else {
-                unpackedScore = -MATE + entry.plyToMate;
-            }
+        Move storedBestMove = Move(entry.bestMove);
+
+        bool isThreeFoldRepetition = false;
+        if (entry.bestMove != 0) {
+            board.makeMove(storedBestMove);
+            isThreeFoldRepetition = board.isThreeFoldRepetition();
+            board.unmakeMove(storedBestMove);
         }
 
-        if (entry.flag == EXACT) {
-            bestSoFar = unpackedScore;
-            return bestSoFar;
-        } else if (entry.flag == LOWERBOUND) {
-            if (unpackedScore >= beta) return unpackedScore;
-            alpha = max(alpha, unpackedScore);
-        } else if (entry.flag == UPPERBOUND) {
-            if (unpackedScore <= alpha) return unpackedScore;
-            beta = min(beta, unpackedScore);
+        // dont trust three fold results
+        if (!isThreeFoldRepetition) {
+            bestMoveValue = entry.bestMove;
+
+            // unpack score
+            int16_t unpackedScore = entry.score;
+            if (abs(entry.score) == MATE) {
+                if (entry.score > 0) {
+                    unpackedScore = MATE - entry.plyToMate;
+                } else {
+                    unpackedScore = -MATE + entry.plyToMate;
+                }
+            }
+
+            if (entry.flag == EXACT) {
+                bestSoFar = unpackedScore;
+                return bestSoFar;
+            } else if (entry.flag == LOWERBOUND) {
+                if (unpackedScore >= beta) return unpackedScore;
+                alpha = max(alpha, unpackedScore);
+            } else if (entry.flag == UPPERBOUND) {
+                if (unpackedScore <= alpha) return unpackedScore;
+                beta = min(beta, unpackedScore);
+            }
         }
     }
 

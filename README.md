@@ -1,6 +1,6 @@
 # Stickshark
 
-Version 2.0.1 of Stickshark, a C++ chess engine. 
+Version 2.0.2 of Stickshark, a C++ chess engine. 
 
 Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! Currently rated ~2000 for bullet and ~1950 for blitz time controls.
 
@@ -14,10 +14,7 @@ Before building the project, ensure the following dependencies are installed:
 ### Build Tools
 - `cmake` (3.15+)
 
-### Additional Libraries
-- None required.
-
-## Build (CMake)
+## Build
 
 1) Clone:
 ```bash
@@ -77,6 +74,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.0
+- 2.0.2: Fix three fold repetition bug with transposition tables.
 - 2.0.1: Time management, and connect to lichess servers.
 - 2.0.0: Add enpassant. And move generation tests.
 
