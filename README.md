@@ -14,10 +14,7 @@ Before building the project, ensure the following dependencies are installed:
 ### Build Tools
 - `cmake` (3.15+)
 
-### Additional Libraries
-- None required.
-
-## Build (CMake)
+## Build
 
 1) Clone:
 ```bash
