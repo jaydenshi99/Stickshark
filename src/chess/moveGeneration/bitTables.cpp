@@ -56,6 +56,7 @@ uint64_t kingPawnShieldMasks[NUM_SQUARES * 2];
 uint64_t kingZoneMasks[NUM_SQUARES * 2];
 
 uint64_t passedPawnMasks[NUM_SQUARES * 2];
+uint64_t isolatedPawnMasks[NUM_SQUARES];
 
 uint64_t zobristBitstrings[783];
 
@@ -517,5 +518,22 @@ void computePassedPawnMasks() {
         // white and black bitboards
         passedPawnMasks[i] = adjCols & frontRows;
         passedPawnMasks[i + NUM_SQUARES] = adjCols & behindRows;
+    }
+}
+
+void computeIsolatedPawnMasks() {
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        uint64_t mask = 0ULL;
+        int col = i % 8;
+
+        if (col > 0) {
+            mask |= fileBitboards[col - 1];
+        }
+
+        if (col < 7) {
+            mask |= fileBitboards[col + 1];
+        }
+
+        isolatedPawnMasks[i] = mask;
     }
 }

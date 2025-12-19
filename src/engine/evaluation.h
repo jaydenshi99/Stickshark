@@ -22,6 +22,7 @@ int getEndgamePhase(const Board& board);
 
 int passedPawnEval(const Board& board, int phase);
 int doubledPawnEval(const Board& board, int phase);
+int isolatedPawnEval(const Board& board, int phase);
 
 // int staticExchangeEval(Board& board, const Move& move);
 // int recursiveSEE(Board& board, int targetSquare);

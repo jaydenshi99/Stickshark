@@ -11,6 +11,9 @@ static constexpr int ATTACK_UNIT_Q = 7;
 static constexpr int DOUBLED_PAWN_PENALTY_MG = 10;
 static constexpr int DOUBLED_PAWN_PENALTY_EG = 5;
 
+static constexpr int ISOLATED_PAWN_PENALTY_MG = 12;
+static constexpr int ISOLATED_PAWN_PENALTY_EG = 7;
+
 // Returns eval, positive means white is doing better
 int staticEvaluation(const Board& board) {
     int phase = getEndgamePhase(board);
@@ -20,9 +23,10 @@ int staticEvaluation(const Board& board) {
     // interpolate between mg and eg
     int eval = (evalMG * phase + evalEG * (MAX_PHASE - phase)) / MAX_PHASE;
 
-    // pawn evaluation
+    // pawn structure evaluation
     eval += passedPawnEval(board, phase);
     eval += doubledPawnEval(board, phase);
+    eval += isolatedPawnEval(board, phase);
 
     return eval;
 }
@@ -188,6 +192,32 @@ int doubledPawnEval(const Board& board, int phase) {
         }
     }
     
+    return (evalMG * phase + evalEG * (MAX_PHASE - phase)) / MAX_PHASE;
+}
+
+int isolatedPawnEval(const Board& board, int phase) {
+    int evalMG = 0;
+    int evalEG = 0;
+
+    uint64_t wPawns = board.pieceBitboards[WPAWN];
+    uint64_t bPawns = board.pieceBitboards[BPAWN];
+    
+    while (wPawns) {
+        int pawn = popLSB(wPawns);
+        if ((isolatedPawnMasks[pawn] & board.pieceBitboards[WPAWN]) == 0ULL) {
+            evalMG -= ISOLATED_PAWN_PENALTY_MG;
+            evalEG -= ISOLATED_PAWN_PENALTY_EG;
+        }
+    }
+
+    while (bPawns) {
+        int pawn = popLSB(bPawns);
+        if ((isolatedPawnMasks[pawn] & board.pieceBitboards[BPAWN]) == 0ULL) {
+            evalMG += ISOLATED_PAWN_PENALTY_MG;
+            evalEG += ISOLATED_PAWN_PENALTY_EG;
+        }
+    }
+
     return (evalMG * phase + evalEG * (MAX_PHASE - phase)) / MAX_PHASE;
 }
 
