@@ -15,6 +15,9 @@ extern int pieceSquareTablesMG[NUM_PIECES][NUM_SQUARES];
 
 extern int pieceSquareTablesEG[NUM_PIECES][NUM_SQUARES];
 
+extern const int passedPawnBonusMG[8];
+extern const int passedPawnBonusEG[8];
+
 void calculatePieceSquareTables();
 
 void calculateKingZoneAttackPenalty();

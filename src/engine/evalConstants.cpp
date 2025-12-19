@@ -155,6 +155,14 @@ const int eg_king_table[64] = {
 int pieceSquareTablesMG[NUM_PIECES][NUM_SQUARES];
 int pieceSquareTablesEG[NUM_PIECES][NUM_SQUARES];
 
+const int passedPawnBonusMG[8] = {
+  0, 0, 5, 10, 20, 30, 60, 0
+};
+
+const int passedPawnBonusEG[8] = {
+  0, 0, 10, 20, 40, 60, 120, 0
+};
+
 void calculatePieceSquareTables() {
     for (int i = 0; i < 64; i++) {
         int row = i / 8;
