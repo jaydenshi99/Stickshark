@@ -1,8 +1,8 @@
 # Stickshark
 
-Version 2.0.2 of Stickshark, a C++ chess engine. 
+Version 2.0.3 of Stickshark, a C++ chess engine. 
 
-Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! Currently rated ~2000 for bullet and ~1950 for blitz time controls.
+Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! Currently rated ~2000 for bullet and ~2000 for blitz time controls.
 
 ## Prerequisites
 
@@ -74,6 +74,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.0
+- 2.0.3: Pawn structure evaluation: Passed, doubled and isolated pawns.
 - 2.0.2: Fix three fold repetition bug with transposition tables.
 - 2.0.1: Time management, and connect to lichess servers.
 - 2.0.0: Add enpassant. And move generation tests.

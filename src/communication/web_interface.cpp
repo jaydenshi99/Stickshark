@@ -46,7 +46,7 @@ string WebInterface::processCommand(const string& input) {
 string WebInterface::handleNewGame() {
     debug("handleNewGame");
     Board b; 
-    b.setFEN("r7/5p1k/r1pp4/2p1pN1P/P1P1P1PK/1PQP1q2/8/3RR3 b - - 1 46"); 
+    b.setFEN(STARTING_FEN); 
     engine->resetEngine(b);
     stringstream response;
     response << "{";

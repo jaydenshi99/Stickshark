@@ -55,6 +55,8 @@ int centralManhattanDistances[NUM_SQUARES];
 uint64_t kingPawnShieldMasks[NUM_SQUARES * 2];
 uint64_t kingZoneMasks[NUM_SQUARES * 2];
 
+uint64_t passedPawnMasks[NUM_SQUARES * 2];
+uint64_t isolatedPawnMasks[NUM_SQUARES];
 
 uint64_t zobristBitstrings[783];
 
@@ -93,6 +95,9 @@ void computeAllTables() {
 
     computeKingZoneMasks();
     cout << "King zone masks computed" << endl;
+
+    computePassedPawnMasks();
+    cout << "Passed pawn masks computed" << endl;
 
     auto end = chrono::high_resolution_clock::now();
 
@@ -482,5 +487,53 @@ void computeKingZoneMasks() {
         if (i - 8 >= 0) {
             kingZoneMasks[i + 64] |= kingAttackBitboards[i - 8];
         }
+    }
+}
+
+void computePassedPawnMasks() {
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        int col = i % 8;
+        int row = i / 8;
+
+        uint64_t adjCols = fileBitboards[col];
+        if (col != 0) {
+            adjCols |= fileBitboards[col - 1];
+        }
+
+        if (col != 7) {
+            adjCols |= fileBitboards[col + 1];
+        }
+
+        uint64_t frontRows = 0ULL;
+        uint64_t behindRows = 0ULL;
+
+        for (int r = 0; r < 8; r++) {
+            if (r < row) {
+                behindRows |= rankBitboards[r];
+            } else if (r > row) {
+                frontRows |= rankBitboards[r];
+            }
+        }
+
+        // white and black bitboards
+        passedPawnMasks[i] = adjCols & frontRows;
+        passedPawnMasks[i + NUM_SQUARES] = adjCols & behindRows;
+    }
+}
+
+void computeIsolatedPawnMasks() {
+    for (int i = 0; i < NUM_SQUARES; i++) {
+        uint64_t mask = 0ULL;
+        int col = i % 8;
+
+        if (col > 0) {
+            mask |= fileBitboards[col - 1];
+        }
+
+        if (col < 7) {
+            mask |= fileBitboards[col + 1];
+        }
+
+        isolatedPawnMasks[i] = mask;
     }
 }
