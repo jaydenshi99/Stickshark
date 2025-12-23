@@ -21,6 +21,7 @@ private:
     Engine* engine;
     bool quiet = false; // suppress engine stdout when true
     void debug(const std::string& msg) const;
+    void printRepetitionDebug(const Board& board) const;
     static std::string squareToNotation(int sq);
     void getLegalMovesDTO(Board& b, std::vector<LegalMoveDTO>& out);
 public:

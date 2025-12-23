@@ -1,4 +1,5 @@
 #include "bitTables.h"
+#include <chrono>
 
 using namespace std;
 
@@ -365,7 +366,7 @@ bool testMagic(uint64_t magic, uint64_t mask, bool isBishop) {
 vector<uint64_t> generateAllOccupancies(uint64_t mask) {
     vector<uint64_t> occupancies;
 
-    int numBits = __libcpp_popcount(mask);
+    int numBits = __builtin_popcountll(mask);
     
     vector<int> setBits;
     while (mask != 0) {
