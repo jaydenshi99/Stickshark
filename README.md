@@ -2,7 +2,9 @@
 
 Version 2.0.3 of Stickshark, a C++ chess engine. 
 
-Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! Currently rated ~2000 for bullet and ~2000 for blitz time controls.
+Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! (The bot is currently not accepting unlimited time controls.)
+
+Currently rated ~2000 for bullet and ~2000 for blitz time controls.
 
 ## Prerequisites
 
