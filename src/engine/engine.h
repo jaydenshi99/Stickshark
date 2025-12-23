@@ -3,6 +3,7 @@
 #include <climits>
 #include <algorithm>
 #include <functional>
+#include <chrono>
 
 #include "../chess/board/board.h"
 #include "../chess/moveGeneration/moveGen.h"
