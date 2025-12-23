@@ -158,17 +158,21 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
 
     if (entryExists) {
         tableAccesses++;
+
         Move storedBestMove = Move(entry.bestMove);
 
         // test stored move for threefold repetition
-        board.makeMove(storedBestMove);
-        bool isThreeFoldRepetition = board.isThreeFoldRepetition();
-        board.unmakeMove(storedBestMove);
-        
+        bool isThreeFoldRepetition = false;
+        if (entry.bestMove != 0) {
+            board.makeMove(storedBestMove);
+            isThreeFoldRepetition = board.isThreeFoldRepetition();
+            board.unmakeMove(storedBestMove);
+        }
+
         if (!isThreeFoldRepetition) {
             bestMoveValue = entry.bestMove;
-            if (entry.depth >= depth) {
 
+            if (entry.depth >= depth) {
                 // unpack score
                 int16_t unpackedScore = entry.score;
                 if (abs(entry.score) == MATE) {
@@ -182,11 +186,11 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
                 if (entry.flag == EXACT) {
                     searchBestEval = unpackedScore;
                     searchBestMove = storedBestMove;
-        
+
                     if (isRoot) {
                         setFinalResult(searchBestEval, searchBestMove);
                     }
-        
+
                     return searchBestEval;
                 } else if (entry.flag == LOWERBOUND) {
                     if (unpackedScore >= beta) return unpackedScore;
@@ -328,12 +332,13 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
         Move storedBestMove = Move(entry.bestMove);
 
-        // test stored move for threefold repetition
-        board.makeMove(storedBestMove);
-        bool isThreeFoldRepetition = board.isThreeFoldRepetition();
-        board.unmakeMove(storedBestMove);
+        bool isThreeFoldRepetition = false;
+        if (entry.bestMove != 0) {
+            board.makeMove(storedBestMove);
+            isThreeFoldRepetition = board.isThreeFoldRepetition();
+            board.unmakeMove(storedBestMove);
+        }
 
-        // dont trust three fold results
         if (!isThreeFoldRepetition) {
             bestMoveValue = entry.bestMove;
 

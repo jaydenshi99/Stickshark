@@ -25,15 +25,6 @@ void WebInterface::debug(const string& msg) const {
     }
 }
 
-void WebInterface::printRepetitionDebug(const Board& board) const {
-    cout << "ply: " << board.ply << ", lastIrreversiblePly: " << board.lastIrreversiblePly[board.ply] << endl;
-    cout << "isThreeFoldRepetition: " << (board.isThreeFoldRepetition() ? "true" : "false") << endl;
-    cout << "zobristHistory:" << endl;
-    for (int i = 0; i < 20; i++) {
-        cout << "  [" << i << "] " << board.zobristHistory[i] << " (lastIrreversiblePly[" << i << "]=" << board.lastIrreversiblePly[i] << ")" << endl;
-    }
-}
-
 string WebInterface::processCommand(const string& input) {
     debug(string("processCommand: ") + input);
     size_t colonPos = input.find(':');
@@ -55,8 +46,7 @@ string WebInterface::processCommand(const string& input) {
 string WebInterface::handleNewGame() {
     debug("handleNewGame");
     Board b; 
-    b.setFEN("r7/5p1k/r1pp4/2p1pN1P/P1P1P1PK/1PQP1q2/8/3RR3 b - - 1 46"); 
-    printRepetitionDebug(b);
+    b.setFEN(STARTING_FEN); 
     engine->resetEngine(b);
     stringstream response;
     response << "{";
@@ -77,7 +67,6 @@ string WebInterface::handleMove(const string& moveStr) {
     }
     Move move = notationToMove(moveStr, engine->board.turn);
     engine->board.makeMove(move);
-    printRepetitionDebug(engine->board);
     stringstream response;
     response << "{";
     response << "\"status\": \"success\",";
@@ -150,7 +139,6 @@ string WebInterface::handleValidatedMove(const string& body) {
         return errorResponse("Illegal move");
     }
     engine->board.makeMove(*chosen);
-    printRepetitionDebug(engine->board);
     gen.freeLegalMoves(legalMoves);
     stringstream response;
     response << "{";
@@ -170,8 +158,7 @@ string WebInterface::handleEngineMove(int timeMs) {
     if (quiet) { orig = cout.rdbuf(); cout.rdbuf(devnull.rdbuf()); }
     engine->findBestMove(timeMs);
     Move bestMove = engine->bestMove;
-    engine->board.makeMove(bestMove);
-    printRepetitionDebug(engine->board);
+    engine->board.makeMove(bestMove);   
     if (quiet && orig) { cout.rdbuf(orig); }
     char fromFile = 'a' + (bestMove.getSource() % 8);
     char fromRank = '1' + (bestMove.getSource() / 8);
