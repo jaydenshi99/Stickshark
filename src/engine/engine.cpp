@@ -160,12 +160,9 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         Move storedBestMove = Move(entry.bestMove);
 
         // test stored move for threefold repetition
-        bool isThreeFoldRepetition = false;
-        if (entry.bestMove != 0) {
-            board.makeMove(storedBestMove);
-            isThreeFoldRepetition = board.isThreeFoldRepetition();
-            board.unmakeMove(storedBestMove);
-        }
+        board.makeMove(storedBestMove);
+        bool isThreeFoldRepetition = board.isThreeFoldRepetition();
+        board.unmakeMove(storedBestMove);
         
         if (!isThreeFoldRepetition) {
             bestMoveValue = entry.bestMove;
@@ -330,12 +327,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
         Move storedBestMove = Move(entry.bestMove);
 
-        bool isThreeFoldRepetition = false;
-        if (entry.bestMove != 0) {
-            board.makeMove(storedBestMove);
-            isThreeFoldRepetition = board.isThreeFoldRepetition();
-            board.unmakeMove(storedBestMove);
-        }
+        // test stored move for threefold repetition
+        board.makeMove(storedBestMove);
+        bool isThreeFoldRepetition = board.isThreeFoldRepetition();
+        board.unmakeMove(storedBestMove);
 
         // dont trust three fold results
         if (!isThreeFoldRepetition) {
