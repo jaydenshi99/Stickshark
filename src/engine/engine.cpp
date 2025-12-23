@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "transpositionTable.h"
+#include <iomanip>
 
 using namespace std;
 
@@ -63,10 +64,10 @@ void Engine::findBestMove(int t) {
 
     cout << "Calculating best move... " << endl;
     
-    auto start = chrono::high_resolution_clock::now();
+    auto start = chrono::steady_clock::now();
 
     // Search
-    startTime = chrono::high_resolution_clock::now();
+    startTime = chrono::steady_clock::now();
 
     searchDepth = 1;
 
@@ -79,7 +80,7 @@ void Engine::findBestMove(int t) {
         if (searchFinished) {
             // Report UCI info for completed depth
             if (uciInfoCallback) {
-                auto currentTime = chrono::high_resolution_clock::now();
+                auto currentTime = chrono::steady_clock::now();
                 auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(currentTime - startTime).count();
                 int totalNodes = normalNodesSearched + quiescenceNodesSearched;
                 int nps = elapsedTime > 0 ? (totalNodes * 1000) / elapsedTime : 0;
@@ -96,7 +97,7 @@ void Engine::findBestMove(int t) {
         }
     }
 
-    auto end = chrono::high_resolution_clock::now();
+    auto end = chrono::steady_clock::now();
 
     // Debug
     cout << endl << "Best move: " << bestMove << endl;
