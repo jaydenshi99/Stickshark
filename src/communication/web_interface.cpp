@@ -241,7 +241,8 @@ string WebInterface::handleGetLegal() {
 string WebInterface::boardToJson() const {
     stringstream json; json << "[";
     for (int rank = 7; rank >= 0; rank--) {
-        if (rank < 7) json << ","; json << "[";
+        if (rank < 7) json << ",";
+        json << "[";
         for (int file = 0; file < 8; file++) {
             if (file > 0) json << ",";
             int square = rank * 8 + file; int piece = engine->board.squares[square];
