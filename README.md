@@ -1,6 +1,6 @@
 # Stickshark
 
-Version 2.0.3 of Stickshark, a C++ chess engine. 
+Version 2.0.4 of Stickshark, a C++ chess engine. 
 
 Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! (The bot is currently not accepting unlimited time controls.)
 
@@ -76,6 +76,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.0
+- 2.0.4: Fix null move pruning. Add PVS.
 - 2.0.3: Pawn structure evaluation: Passed, doubled and isolated pawns.
 - 2.0.2: Fix three fold repetition bug with transposition tables.
 - 2.0.1: Time management, and connect to lichess servers.
