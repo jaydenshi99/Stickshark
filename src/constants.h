@@ -37,6 +37,6 @@
 
 #define MATE 32000
 
-#define MAX_DEPTH 50
+#define MAX_PLY 50
 
 #define BEST_MOVE_TABLE_MAX_SIZE 2000000000

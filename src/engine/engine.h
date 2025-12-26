@@ -29,6 +29,8 @@ class Engine {
     bool searchFinished;
 
     TranspositionTable* TT;
+
+    uint16_t killerMoves[2][MAX_PLY];
     
     // UCI info reporting
     std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> uciInfoCallback;

@@ -8,7 +8,7 @@ Engine::Engine(Board b) {
     board = b;
     bestMove = Move();
     TT = new TranspositionTable();
-    
+
     // Initialize all member variables
     searchDepth = 0;
     normalNodesSearched = 0;
@@ -21,6 +21,12 @@ Engine::Engine(Board b) {
     searchFinished = true;
     boardEval = 0;
     principalVariation.clear();
+
+    // Initialize killer moves table
+    for (int i = 0; i < MAX_PLY; i++) {
+        killerMoves[0][i] = 0;
+        killerMoves[1][i] = 0;
+    }
 }
 
 Engine::~Engine() {
@@ -73,9 +79,15 @@ void Engine::findBestMove(int t) {
     // Search
     startTime = chrono::steady_clock::now();
 
+    // Clear killer table
+    for (int i = 0; i < MAX_PLY; i++) {
+        killerMoves[0][i] = 0;
+        killerMoves[1][i] = 0;
+    }
+
     searchDepth = 1;
 
-    while (searchDepth <= MAX_DEPTH) {
+    while (searchDepth <= MAX_PLY) {
         searchFinished = false;
         negaMax(searchDepth, 0, -MATE, MATE, turn, true);
 
@@ -244,7 +256,9 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     // Generate posible moves
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, false);
-    mg.orderMoves(board, pseudoMoves, bestMoveValue);
+
+    uint32_t killers = (killerMoves[0][ply] << 16) | killerMoves[1][ply];
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, killers);
 
     bool existsValidMove = false;
     bool first = true;
@@ -289,6 +303,14 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
 
             // Update existsValidMove
             existsValidMove = true;
+
+            // add beta cutoff quiet moves to killer table
+            if (score >= beta && board.history.top().capturedPiece == NONE && !isPromotion[move.getFlag()]) {
+                if (killerMoves[0][ply] != move.moveValue) {
+                    killerMoves[1][ply] = killerMoves[0][ply];
+                    killerMoves[0][ply] = move.moveValue;
+                }
+            }
 
             // Alpha-beta pruning
             alpha = max(alpha, searchBestEval);
@@ -420,7 +442,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     // Generate forcing moves
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, !currKingInCheck); // force generating if own king is not in check. otherwise evasive moves
-    mg.orderMoves(board, pseudoMoves, bestMoveValue); // only helps when the best move is a forcing move.
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, 0); // only helps when the best move is a forcing move.
 
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
