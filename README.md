@@ -76,7 +76,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.0
-- 2.0.4: Fix null move pruning. Add PVS.
+- 2.0.4: Fix null move pruning. Add PVS. 4x TT size and upgrade from single entry to 2-way.
 - 2.0.3: Pawn structure evaluation: Passed, doubled and isolated pawns.
 - 2.0.2: Fix three fold repetition bug with transposition tables.
 - 2.0.1: Time management, and connect to lichess servers.
