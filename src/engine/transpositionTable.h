@@ -23,7 +23,8 @@ struct TTEntry {
 
 class TranspositionTable {
     private:
-    const static uint64_t TABLE_SIZE = (1ull << 22); // fixed 2^22 entries (~50MB)
+    const static uint64_t NUM_BUCKETS = (1ull << 23); // 2^23 buckets, 2 entries each = 2^24 total entries (256MB)
+    const static int BUCKET_SIZE = 2;
     uint16_t generation = 1;
     int numFilledEntries = 0;
 

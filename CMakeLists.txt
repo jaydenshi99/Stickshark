@@ -1,9 +1,26 @@
 cmake_minimum_required(VERSION 3.15)
-project(Stickshark LANGUAGES CXX)
+project(Stickshark VERSION 2.0.4 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # Generate compile_commands.json for IDE
+
+# Generate version header (without timestamp)
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+    @ONLY
+)
+
+# Add custom target to regenerate VERSION.txt on every build
+add_custom_target(generate_version ALL
+    COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_VERSION=${PROJECT_VERSION}
+        -DVERSION_FILE=${CMAKE_CURRENT_BINARY_DIR}/VERSION.txt
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersion.cmake
+    COMMENT "Generating VERSION.txt with current timestamp"
+    VERBATIM
+)
 
 if(MSVC)
     add_compile_options(/W4)
@@ -18,6 +35,7 @@ file(GLOB_RECURSE STICKSHARK_SOURCES CONFIGURE_DEPENDS
 # Main executable
 add_executable(stickshark ${STICKSHARK_SOURCES})
 target_include_directories(stickshark PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(stickshark PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Test executables (optional - build manually if needed)
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
@@ -35,6 +53,7 @@ if(TEST_SOURCES)
         add_executable(test_${TEST_NAME} ${TEST_FILE} ${TEST_LIB_SOURCES})
         target_include_directories(test_${TEST_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
         target_include_directories(test_${TEST_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+        target_include_directories(test_${TEST_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
     endforeach()
 endif()
 

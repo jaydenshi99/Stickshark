@@ -18,8 +18,10 @@ class Engine {
 
     int normalNodesSearched;
     int quiescenceNodesSearched;
-    int tableAccesses;
-    int tableAccessesQuiescence;
+    int tableProbes;
+    int tableProbesQuiescence;
+    int tableUsefulHits;
+    int tableUsefulHitsQuiescence;
     
     std::chrono::time_point<std::chrono::steady_clock> startTime;
     int timeLimit;

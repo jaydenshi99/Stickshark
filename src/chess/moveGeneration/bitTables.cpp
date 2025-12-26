@@ -100,6 +100,9 @@ void computeAllTables() {
     computePassedPawnMasks();
     cout << "Passed pawn masks computed" << endl;
 
+    computeIsolatedPawnMasks();
+    cout << "Isolated pawn masks computed" << endl;
+
     auto end = chrono::high_resolution_clock::now();
 
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
