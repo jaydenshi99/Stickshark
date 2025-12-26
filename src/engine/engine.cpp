@@ -77,7 +77,7 @@ void Engine::findBestMove(int t) {
 
     while (searchDepth <= MAX_DEPTH) {
         searchFinished = false;
-        negaMax(searchDepth, -MATE, MATE, turn, true);
+        negaMax(searchDepth, 0, -MATE, MATE, turn, true);
 
         cout << "Depth: " << searchDepth << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
@@ -139,7 +139,7 @@ void Engine::findBestMove(int t) {
     cout << endl;
 }
 
-int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bool isRoot) {
+int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t turn, bool isRoot) {
     if (isTimeUp()) {
         return 7777;
     }
@@ -180,9 +180,10 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             if (entry.depth >= depth) {
                 tableUsefulHits++;  // Count hits that can be used for cutoffs
 
-                // unpack score
+                // unpack score: reconstruct mate score from stored distance
                 int16_t unpackedScore = entry.score;
                 if (abs(entry.score) == MATE) {
+                    // entry.plyToMate stores distance to mate (number of moves)
                     if (entry.score > 0) {
                         unpackedScore = MATE - entry.plyToMate;
                     } else {
@@ -231,7 +232,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         board.makeNullMove();
 
         // find null move eval by searching to reduced depth
-        int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, -turn); // no extensions for null move
+        int16_t nullEval = -negaMax(depth - r - 1, ply + 1, -beta, -beta + 1, -turn); // no extensions for null move
 
         // unmake the null move
         board.unmakeNullMove();
@@ -264,15 +265,15 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             // Evaluate child board from opponent POV
             int16_t score;
             if (first) {
-                score = -negaMax(childDepth, -beta, -alpha, -turn);
+                score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 first = false;
             } else {
                 // limited search to see if the next move beats our current one
-                score = -negaMax(childDepth, -alpha - 1, -alpha, -turn);
+                score = -negaMax(childDepth, ply + 1, -alpha - 1, -alpha, -turn);
 
                 // if it does, we search again to full depth
                 if (score > alpha && score < beta) {
-                    score = -negaMax(childDepth, -beta, -alpha, -turn);
+                    score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 }
             }
 
@@ -308,8 +309,8 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         if (!currentKingInCheck) {
             searchBestEval = 0;
         } else {
-            // this means checkmate. punish checkmates that occur sooner.
-            searchBestEval = -MATE + (searchDepth - depth);
+            // this means checkmate. Use ply to prefer shorter mates
+            searchBestEval = -MATE + ply;
         }
     }
 
@@ -325,7 +326,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
+    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag, ply);
 
     return searchBestEval;
 }
@@ -365,9 +366,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         if (!isThreeFoldRepetition) {
             bestMoveValue = entry.bestMove;
 
-            // unpack score
+            // unpack score: reconstruct mate score from stored distance
             int16_t unpackedScore = entry.score;
             if (abs(entry.score) == MATE) {
+                // entry.plyToMate stores distance to mate (number of moves)
                 if (entry.score > 0) {
                     unpackedScore = MATE - entry.plyToMate;
                 } else {
@@ -462,7 +464,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
+    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag, board.ply);
 
     return bestSoFar;
 }

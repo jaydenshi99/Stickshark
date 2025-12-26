@@ -24,12 +24,22 @@ void TranspositionTable::incrementGeneration() {
     generation++;
 }
 
-void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag) {
+void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag, int ply) {
     uint64_t bucketIndex = (uint64_t)((zobristHash >> 41) & (NUM_BUCKETS - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
-    uint8_t plyToMate = abs(score) > MATE - 100 ? MATE - abs(score) : 0;
-    int16_t packedScore = score > MATE - 100 ? MATE : score < -MATE + 100 ? -MATE : score; // 32000 means mate
+    // Pack mate scores: store as distance from current position (ply-independent)
+    uint8_t plyToMate = 0;
+    int16_t packedScore = score;
+    if (score > MATE - 100) {
+        // Winning mate: score = MATE - distance_from_here
+        plyToMate = (MATE - score);
+        packedScore = MATE;
+    } else if (score < -MATE + 100) {
+        // Losing mate: score = -MATE + distance_from_here
+        plyToMate = (MATE + score);
+        packedScore = -MATE;
+    }
 
     TTEntry newEntry = TTEntry(key32, bestMove, packedScore, generation, depth, flag, plyToMate);
 
