@@ -158,8 +158,6 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
 
     if (entryExists) {
-        tableAccesses++;
-
         Move storedBestMove = Move(entry.bestMove);
 
         // test stored move for threefold repetition
@@ -171,6 +169,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         }
 
         if (!isThreeFoldRepetition) {
+            tableAccesses++;
             bestMoveValue = entry.bestMove;
 
             if (entry.depth >= depth) {
@@ -242,6 +241,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     mg.orderMoves(board, pseudoMoves, bestMoveValue);
 
     bool existsValidMove = false;
+    bool first = true;
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
@@ -255,7 +255,20 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             }
 
             // Evaluate child board from opponent POV
-            int16_t eval = -negaMax(childDepth, -beta, -alpha, -turn);
+            int16_t score;
+            if (first) {
+                score = -negaMax(childDepth, -beta, -alpha, -turn);
+                first = false;
+            } else {
+                // limited search to see if the next move beats our current one
+                score = -negaMax(childDepth, -alpha - 1, -alpha, -turn);
+
+                // if it does, we search again to full depth
+                if (score > alpha && score < beta) {
+                    score = -negaMax(childDepth, -beta, -alpha, -turn);
+                }
+            }
+
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 mg.freePseudoMoves(pseudoMoves);
@@ -263,8 +276,8 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             }
 
             // Update best evals and best moves
-            if (eval > searchBestEval) {
-                searchBestEval = eval;
+            if (score > searchBestEval) {
+                searchBestEval = score;
                 searchBestMove = move;
             }
 
@@ -332,8 +345,6 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
 
     if (entryExists) {
-        tableAccessesQuiescence++;
-
         Move storedBestMove = Move(entry.bestMove);
 
         bool isThreeFoldRepetition = false;
@@ -344,6 +355,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         }
 
         if (!isThreeFoldRepetition) {
+            tableAccessesQuiescence++;
             bestMoveValue = entry.bestMove;
 
             // unpack score
@@ -394,22 +406,22 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
             // Evaluate child board from opponent POV
-            int16_t eval = -quiescenceSearch(-beta, -alpha, -turn);
+            int16_t score = -quiescenceSearch(-beta, -alpha, -turn);
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 mg.freePseudoMoves(pseudoMoves);
                 return 7777;
             }
 
-            if (eval >= beta) {
+            if (score >= beta) {
                 board.unmakeMove(move);
                 mg.freePseudoMoves(pseudoMoves);
-                return eval;
+                return score;
             }
 
-            if (eval > bestSoFar) {
+            if (score > bestSoFar) {
                 bestMoveValue = move.moveValue;
-                bestSoFar = eval;
+                bestSoFar = score;
             }
 
             alpha = max(alpha, bestSoFar);
