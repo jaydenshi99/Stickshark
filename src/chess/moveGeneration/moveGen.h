@@ -13,6 +13,8 @@
 
 #define ATTACK_MODIFIER 1000
 
+#define KILLER_BONUS 300
+
 #define MAX_POOL_CAPACITY 128
 
 struct MoveList {
@@ -54,7 +56,7 @@ class MoveGen {
 
     MoveList generatePseudoMoves(const Board& b, bool onlyGenerateForcing);
     MoveList generateLegalMoves(Board& b);
-    void orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue);
+    void orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue, uint32_t killers);
     void freePseudoMoves(MoveList& pseudoMoves);
     void freeLegalMoves(MoveList& legalMoves);
 

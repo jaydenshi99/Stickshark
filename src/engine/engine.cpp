@@ -8,7 +8,7 @@ Engine::Engine(Board b) {
     board = b;
     bestMove = Move();
     TT = new TranspositionTable();
-    
+
     // Initialize all member variables
     searchDepth = 0;
     normalNodesSearched = 0;
@@ -21,6 +21,12 @@ Engine::Engine(Board b) {
     searchFinished = true;
     boardEval = 0;
     principalVariation.clear();
+
+    // Initialize killer moves table
+    for (int i = 0; i < MAX_PLY; i++) {
+        killerMoves[0][i] = 0;
+        killerMoves[1][i] = 0;
+    }
 }
 
 Engine::~Engine() {
@@ -73,11 +79,17 @@ void Engine::findBestMove(int t) {
     // Search
     startTime = chrono::steady_clock::now();
 
+    // Clear killer table
+    for (int i = 0; i < MAX_PLY; i++) {
+        killerMoves[0][i] = 0;
+        killerMoves[1][i] = 0;
+    }
+
     searchDepth = 1;
 
-    while (searchDepth <= MAX_DEPTH) {
+    while (searchDepth <= MAX_PLY) {
         searchFinished = false;
-        negaMax(searchDepth, -MATE, MATE, turn, true);
+        negaMax(searchDepth, 0, -MATE, MATE, turn, true);
 
         cout << "Depth: " << searchDepth << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
@@ -139,7 +151,7 @@ void Engine::findBestMove(int t) {
     cout << endl;
 }
 
-int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bool isRoot) {
+int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t turn, bool isRoot) {
     if (isTimeUp()) {
         return 7777;
     }
@@ -180,7 +192,6 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             if (entry.depth >= depth) {
                 tableUsefulHits++;  // Count hits that can be used for cutoffs
 
-                // unpack score
                 int16_t unpackedScore = entry.score;
                 if (abs(entry.score) == MATE) {
                     if (entry.score > 0) {
@@ -231,7 +242,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         board.makeNullMove();
 
         // find null move eval by searching to reduced depth
-        int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, -turn); // no extensions for null move
+        int16_t nullEval = -negaMax(depth - r - 1, ply + 1, -beta, -beta + 1, -turn); // no extensions for null move
 
         // unmake the null move
         board.unmakeNullMove();
@@ -245,7 +256,9 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     // Generate posible moves
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, false);
-    mg.orderMoves(board, pseudoMoves, bestMoveValue);
+
+    uint32_t killers = (killerMoves[0][ply] << 16) | killerMoves[1][ply];
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, killers);
 
     bool existsValidMove = false;
     bool first = true;
@@ -264,15 +277,15 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             // Evaluate child board from opponent POV
             int16_t score;
             if (first) {
-                score = -negaMax(childDepth, -beta, -alpha, -turn);
+                score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 first = false;
             } else {
                 // limited search to see if the next move beats our current one
-                score = -negaMax(childDepth, -alpha - 1, -alpha, -turn);
+                score = -negaMax(childDepth, ply + 1, -alpha - 1, -alpha, -turn);
 
                 // if it does, we search again to full depth
                 if (score > alpha && score < beta) {
-                    score = -negaMax(childDepth, -beta, -alpha, -turn);
+                    score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 }
             }
 
@@ -291,6 +304,14 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
             // Update existsValidMove
             existsValidMove = true;
 
+            // add beta cutoff quiet moves to killer table
+            if (score >= beta && board.history.top().capturedPiece == NONE && !isPromotion[move.getFlag()]) {
+                if (killerMoves[0][ply] != move.moveValue) {
+                    killerMoves[1][ply] = killerMoves[0][ply];
+                    killerMoves[0][ply] = move.moveValue;
+                }
+            }
+
             // Alpha-beta pruning
             alpha = max(alpha, searchBestEval);
             if (alpha >= beta) {
@@ -308,8 +329,8 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         if (!currentKingInCheck) {
             searchBestEval = 0;
         } else {
-            // this means checkmate. punish checkmates that occur sooner.
-            searchBestEval = -MATE + (searchDepth - depth);
+            // this means checkmate. Use ply to prefer shorter mates
+            searchBestEval = -MATE + ply;
         }
     }
 
@@ -365,9 +386,10 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         if (!isThreeFoldRepetition) {
             bestMoveValue = entry.bestMove;
 
-            // unpack score
+            // unpack score: reconstruct mate score from stored distance
             int16_t unpackedScore = entry.score;
             if (abs(entry.score) == MATE) {
+                // entry.plyToMate stores distance to mate (number of moves)
                 if (entry.score > 0) {
                     unpackedScore = MATE - entry.plyToMate;
                 } else {
@@ -420,7 +442,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     // Generate forcing moves
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, !currKingInCheck); // force generating if own king is not in check. otherwise evasive moves
-    mg.orderMoves(board, pseudoMoves, bestMoveValue); // only helps when the best move is a forcing move.
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, 0); // only helps when the best move is a forcing move.
 
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
