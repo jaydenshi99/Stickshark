@@ -24,7 +24,7 @@ void TranspositionTable::incrementGeneration() {
     generation++;
 }
 
-void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag, int ply) {
+void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag) {
     uint64_t bucketIndex = (uint64_t)((zobristHash >> 41) & (NUM_BUCKETS - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
@@ -32,11 +32,9 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
     uint8_t plyToMate = 0;
     int16_t packedScore = score;
     if (score > MATE - 100) {
-        // Winning mate: score = MATE - distance_from_here
         plyToMate = (MATE - score);
         packedScore = MATE;
     } else if (score < -MATE + 100) {
-        // Losing mate: score = -MATE + distance_from_here
         plyToMate = (MATE + score);
         packedScore = -MATE;
     }

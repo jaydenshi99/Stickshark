@@ -40,7 +40,7 @@ class TranspositionTable {
 
     void clear();
     void incrementGeneration();
-    void addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag, int ply);
+    void addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag);
     bool retrieveEntry(uint64_t zobristHash, TTEntry& entry);
 
     int getNumFilledEntries();

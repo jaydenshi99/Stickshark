@@ -180,10 +180,8 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
             if (entry.depth >= depth) {
                 tableUsefulHits++;  // Count hits that can be used for cutoffs
 
-                // unpack score: reconstruct mate score from stored distance
                 int16_t unpackedScore = entry.score;
                 if (abs(entry.score) == MATE) {
-                    // entry.plyToMate stores distance to mate (number of moves)
                     if (entry.score > 0) {
                         unpackedScore = MATE - entry.plyToMate;
                     } else {
@@ -326,7 +324,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag, ply);
+    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
 
     return searchBestEval;
 }
@@ -464,7 +462,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag, board.ply);
+    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
 
     return bestSoFar;
 }
