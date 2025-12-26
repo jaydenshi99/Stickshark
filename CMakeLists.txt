@@ -5,19 +5,22 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # Generate compile_commands.json for IDE
 
-# Get current timestamp
-string(TIMESTAMP CMAKE_BUILD_DATE "%Y-%m-%d %H:%M:%S UTC" UTC)
-
-# Generate version header
+# Generate version header (without timestamp)
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
     "${CMAKE_CURRENT_BINARY_DIR}/version.h"
     @ONLY
 )
 
-# Generate VERSION.txt file in build directory
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/VERSION.txt"
-    "Stickshark Chess Engine\nVersion ${PROJECT_VERSION}\nBuild Date: ${CMAKE_BUILD_DATE}\n")
+# Add custom target to regenerate VERSION.txt on every build
+add_custom_target(generate_version ALL
+    COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_VERSION=${PROJECT_VERSION}
+        -DVERSION_FILE=${CMAKE_CURRENT_BINARY_DIR}/VERSION.txt
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersion.cmake
+    COMMENT "Generating VERSION.txt with current timestamp"
+    VERBATIM
+)
 
 if(MSVC)
     add_compile_options(/W4)
