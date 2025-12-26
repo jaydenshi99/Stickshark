@@ -13,8 +13,10 @@ Engine::Engine(Board b) {
     searchDepth = 0;
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
-    tableAccesses = 0;
-    tableAccessesQuiescence = 0;
+    tableProbes = 0;
+    tableProbesQuiescence = 0;
+    tableUsefulHits = 0;
+    tableUsefulHitsQuiescence = 0;
     timeLimit = 1000;
     searchFinished = true;
     boardEval = 0;
@@ -47,8 +49,10 @@ void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int no
 void Engine::resetSearchStats() {
     normalNodesSearched = 0;
     quiescenceNodesSearched = 0;
-    tableAccesses = 0;
-    tableAccessesQuiescence = 0;
+    tableProbes = 0;
+    tableProbesQuiescence = 0;
+    tableUsefulHits = 0;
+    tableUsefulHitsQuiescence = 0;
     principalVariation.clear();
 }
 
@@ -125,11 +129,12 @@ void Engine::findBestMove(int t) {
 
     cout << fixed << setprecision(2);
 
-    cout << "Table Capacity: " << (float) TT->getNumFilledEntries() / (1 << 22) * 100 << "%" << endl;
-    cout << "Table Accesses Normal: " << tableAccesses << endl;
-    cout << "Hit Rate Normal: " << (double) tableAccesses / (normalNodesSearched) * 100 << "%" << endl;
-    cout << "Table Accesses Quiescence: " << tableAccessesQuiescence << endl;
-    cout << "Hit Rate Quiescence: " << (double) tableAccessesQuiescence / quiescenceNodesSearched * 100 << "%" << endl;
+    cout << "Table Capacity: " << (float) TT->getNumFilledEntries() / (1 << 24) * 100 << "%" << endl;
+
+    cout << "Probe Hit Rate Normal: " << (double) tableProbes / (normalNodesSearched) * 100 << "%" << endl;
+    cout << "Useful Hit Rate Normal: " << (double) tableUsefulHits / (normalNodesSearched) * 100 << "%" << endl;
+    cout << "Probe Hit Rate Quiescence: " << (double) tableProbesQuiescence / quiescenceNodesSearched * 100 << "%" << endl;
+    cout << "Useful Hit Rate Quiescence: " << (double) tableUsefulHitsQuiescence / quiescenceNodesSearched * 100 << "%" << endl;
 
     cout << endl;
 }
@@ -158,6 +163,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
 
     if (entryExists) {
+        tableProbes++;  // Count every probe that finds an entry
         Move storedBestMove = Move(entry.bestMove);
 
         // test stored move for threefold repetition
@@ -169,10 +175,11 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
         }
 
         if (!isThreeFoldRepetition) {
-            tableAccesses++;
             bestMoveValue = entry.bestMove;
 
             if (entry.depth >= depth) {
+                tableUsefulHits++;  // Count hits that can be used for cutoffs
+
                 // unpack score
                 int16_t unpackedScore = entry.score;
                 if (abs(entry.score) == MATE) {
@@ -345,6 +352,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     bool entryExists = TT->retrieveEntry(board.zobristHash, entry);
 
     if (entryExists) {
+        tableProbesQuiescence++;  // Count every probe that finds an entry
         Move storedBestMove = Move(entry.bestMove);
 
         bool isThreeFoldRepetition = false;
@@ -355,7 +363,6 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         }
 
         if (!isThreeFoldRepetition) {
-            tableAccessesQuiescence++;
             bestMoveValue = entry.bestMove;
 
             // unpack score
@@ -368,18 +375,34 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
                 }
             }
 
+            // Count as useful if it provides any value (exact, bound, or cutoff)
+            bool useful = false;
             if (entry.flag == EXACT) {
                 bestSoFar = unpackedScore;
+                tableUsefulHitsQuiescence++;
                 return bestSoFar;
             } else if (entry.flag == LOWERBOUND) {
-                if (unpackedScore >= beta) return beta;
+                if (unpackedScore >= beta) {
+                    tableUsefulHitsQuiescence++;
+                    return beta;
+                }
                 alpha = max(alpha, unpackedScore);
+                useful = true;
             } else if (entry.flag == UPPERBOUND) {
-                if (unpackedScore <= alpha) return alpha;
+                if (unpackedScore <= alpha) {
+                    tableUsefulHitsQuiescence++;
+                    return alpha;
+                }
                 beta = min(beta, unpackedScore);
+                useful = true;
             }
 
-            if (alpha >= beta) return alpha;
+            if (alpha >= beta) {
+                if (!useful) tableUsefulHitsQuiescence++;
+                return alpha;
+            } else if (useful) {
+                tableUsefulHitsQuiescence++;
+            }
         }
     }
 
