@@ -87,6 +87,9 @@ class Board {
     void makeMove(const Move& move);
     void unmakeMove(const Move& move);
 
+    void makeNullMove();
+    void unmakeNullMove();
+
     // Set attack bitboards
     void setBlockers();
 

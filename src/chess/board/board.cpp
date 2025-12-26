@@ -489,6 +489,64 @@ void Board::unmakeMove(const Move& move) {
     swapTurn();
 }
 
+void Board::makeNullMove() {
+    // Save current gamestate
+    Gamestate gState = Gamestate(EMPTY);
+    Gamestate oldGamestate = history.top();
+
+    // Copy attack bitboards (unchanged by null move)
+    for (int i = 0; i < 12; i++) {
+        gState.attackBitboards[i] = oldGamestate.attackBitboards[i];
+    }
+
+    // Clear old enpassant from zobrist
+    if (oldGamestate.enpassantColumn == -1) {
+        zobristHash ^= zobristBitstrings[774];
+    } else {
+        zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
+    }
+
+    // New state has no en passant
+    gState.enpassantColumn = -1;
+    zobristHash ^= zobristBitstrings[774];
+
+    // Copy castling rights (unchanged)
+    gState.castlingRights = oldGamestate.castlingRights;
+
+    // Push gamestate
+    history.push(gState);
+
+    // Toggle turn
+    swapTurn();
+
+    // Update zobrist history (null move is reversible)
+    zobristHistory[++ply] = zobristHash;
+    lastIrreversiblePly[ply] = lastIrreversiblePly[ply - 1];
+}
+
+void Board::unmakeNullMove() {
+    --ply;
+
+    Gamestate gState = history.top();
+    history.pop();
+    Gamestate oldGamestate = history.top();
+
+    // Revert zobrist hash for en passant
+    if (gState.enpassantColumn == -1) {
+        zobristHash ^= zobristBitstrings[774];
+    } else {
+        zobristHash ^= zobristBitstrings[775 + gState.enpassantColumn];
+    }
+    if (oldGamestate.enpassantColumn == -1) {
+        zobristHash ^= zobristBitstrings[774];
+    } else {
+        zobristHash ^= zobristBitstrings[775 + oldGamestate.enpassantColumn];
+    }
+
+    // Toggle turn back
+    swapTurn();
+}
+
 void Board::updatePieceAttacks(Gamestate& gamestate, int piece) {
     bool white = piece < 6;
     (this->*setAttackMethods[piece % 6])(gamestate, white);

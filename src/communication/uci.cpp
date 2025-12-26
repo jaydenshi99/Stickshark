@@ -1,6 +1,7 @@
 #include "uci.h"
 #include "utility.h"
 #include "chess/moveGeneration/moveGen.h"
+#include "version.h"
 #include <sstream>
 #include <fstream>
 #include <streambuf>
@@ -63,7 +64,7 @@ UCI::~UCI() {
 }
 
 static inline string idName() {
-    return string("id name Stickshark") + "\n";
+    return string("id name Stickshark ") + STICKSHARK_VERSION + "\n";
 }
 
 static inline string idAuthor() {

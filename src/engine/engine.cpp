@@ -151,6 +151,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     Move searchBestMove = Move();   // Set to default move
     uint16_t bestMoveValue = 0;
     int16_t oldAlpha = alpha;
+    int16_t oldBeta = beta;
 
     // Transposition Table Query
     TTEntry entry;
@@ -193,12 +194,14 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
 
                     return searchBestEval;
                 } else if (entry.flag == LOWERBOUND) {
-                    if (unpackedScore >= beta) return unpackedScore;
+                    if (unpackedScore >= beta) return beta;
                     alpha = max(alpha, unpackedScore);
                 } else if (entry.flag == UPPERBOUND) {
-                    if (unpackedScore <= alpha) return unpackedScore;
+                    if (unpackedScore <= alpha) return alpha;
                     beta = min(beta, unpackedScore);
                 }
+
+                if (alpha >= beta) return alpha;
             }
         }
     }
@@ -219,13 +222,13 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
 
     if (!currentKingInCheck && depth >= r + 1 && pieces != 0) {
         // Make the null move
-        board.swapTurn();
+        board.makeNullMove();
 
         // find null move eval by searching to reduced depth
         int16_t nullEval = -negaMax(depth - r - 1, -beta, -beta + 1, -turn); // no extensions for null move
 
         // unmake the null move
-        board.swapTurn();
+        board.unmakeNullMove();
 
         // if the null eval is greater than beta, we assume all moves will be greater than beta
         if (nullEval >= beta) {
@@ -298,7 +301,7 @@ int16_t Engine::negaMax(int depth, int16_t alpha, int16_t beta, int16_t turn, bo
     uint8_t flag = EXACT;
     if (searchBestEval <= oldAlpha) {
         flag = UPPERBOUND;
-    } else if (searchBestEval >= beta) {
+    } else if (searchBestEval >= oldBeta) {
         flag = LOWERBOUND;
     }
 
@@ -322,6 +325,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     int16_t bestSoFar = staticEvaluation(board) * turn;
     uint16_t bestMoveValue = 0;
     int16_t oldAlpha = alpha;
+    int16_t oldBeta = beta;
 
     // Transposition Table Query
     TTEntry entry;
@@ -356,12 +360,14 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
                 bestSoFar = unpackedScore;
                 return bestSoFar;
             } else if (entry.flag == LOWERBOUND) {
-                if (unpackedScore >= beta) return unpackedScore;
+                if (unpackedScore >= beta) return beta;
                 alpha = max(alpha, unpackedScore);
             } else if (entry.flag == UPPERBOUND) {
-                if (unpackedScore <= alpha) return unpackedScore;
+                if (unpackedScore <= alpha) return alpha;
                 beta = min(beta, unpackedScore);
             }
+
+            if (alpha >= beta) return alpha;
         }
     }
 
@@ -417,7 +423,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     uint8_t flag = EXACT;
     if (bestSoFar <= oldAlpha) {
         flag = UPPERBOUND;
-    } else if (bestSoFar >= beta) {
+    } else if (bestSoFar >= oldBeta) {
         flag = LOWERBOUND;
     }
 
