@@ -27,6 +27,9 @@ Engine::Engine(Board b) {
         killerMoves[0][i] = 0;
         killerMoves[1][i] = 0;
     }
+
+    // Initialise history heuristic table
+    memset(killerHistory, 0, sizeof(killerHistory));
 }
 
 Engine::~Engine() {
@@ -40,12 +43,15 @@ void Engine::resetEngine(Board b) {
     boardEval = 0;
     bestMove = Move();
     TT->clear();
+
+    // Clear history heuristic table
+    memset(killerHistory, 0, sizeof(killerHistory));
 }
 
 void Engine::setPosition(Board b) {
     board = b;
     resetSearchStats();
-    // Note: TT is NOT cleared - this preserves transposition table across position changes
+    // Note: TT is NOT cleared,  this preserves transposition table across position changes
 }
 
 void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback) {
@@ -258,7 +264,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     MoveList pseudoMoves = mg.generatePseudoMoves(board, false);
 
     uint32_t killers = (killerMoves[0][ply] << 16) | killerMoves[1][ply];
-    mg.orderMoves(board, pseudoMoves, bestMoveValue, killers);
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, killers, killerHistory);
 
     bool existsValidMove = false;
     bool first = true;
@@ -306,10 +312,19 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
 
             // add beta cutoff quiet moves to killer table
             if (score >= beta && board.history.top().capturedPiece == NONE && !isPromotion[move.getFlag()]) {
+                // killer moves
                 if (killerMoves[0][ply] != move.moveValue) {
                     killerMoves[1][ply] = killerMoves[0][ply];
                     killerMoves[0][ply] = move.moveValue;
                 }
+
+                // history heuristic
+                int clampedBonus = clamp(depth * depth, -MAX_HISTORY, MAX_HISTORY);
+                // board.turn is flipped after makeMove
+                int moveSide = board.turn;
+
+                killerHistory[moveSide][move.getSource()][move.getTarget()] +=
+                clampedBonus - killerHistory[moveSide][move.getSource()][move.getTarget()] * abs(clampedBonus) / MAX_HISTORY;
             }
 
             // Alpha-beta pruning
@@ -442,7 +457,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     // Generate forcing moves
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, !currKingInCheck); // force generating if own king is not in check. otherwise evasive moves
-    mg.orderMoves(board, pseudoMoves, bestMoveValue, 0); // only helps when the best move is a forcing move.
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, 0, killerHistory); // only helps when the best move is a forcing move.
 
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];

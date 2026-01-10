@@ -40,3 +40,5 @@
 #define MAX_PLY 50
 
 #define BEST_MOVE_TABLE_MAX_SIZE 2000000000
+
+#define MAX_HISTORY 10000 // history heurstic

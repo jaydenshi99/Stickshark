@@ -301,7 +301,7 @@ void MoveGen::generateKingMoves(const Board& b, Move* &pseudoMoves) {
 
 
 
-void MoveGen::orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue, uint32_t killers) {
+void MoveGen::orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue, uint32_t killers, int killerHistory[2][64][64]) {
     uint16_t killer1 = killers & 0xFFFF;
     uint16_t killer2 = killers >> 16;
 
@@ -312,18 +312,28 @@ void MoveGen::orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue
 
         // Big bonus if the move is the best move from pervious depths. Guaruntees that the move will be searched first.
         if (move.moveValue == bestMoveValue) {
-            move.moveScore = 100000;
+            move.moveScore = 1000000;
         }
 
-        // Smaller bonus if the move is a good quiet move
-        if (move.moveValue == killer1 || move.moveValue == killer2) {
-            move.moveScore = KILLER_BONUS;
-        }
-
-        // Higher score, better move is and thus should be searched earlier. Ordered with MVV - LVA heuristic
+        // Then we search good captures. Ordered with MVV - LVA heuristic
         else if (attackedPiece != EMPTY) {
             int movedPiece = b.squares[move.getSource()];
-            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + ATTACK_MODIFIER;
+            move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + 900000;
+        }
+
+        // then search killer 1
+        else if (move.moveValue == killer1) {
+            move.moveScore = 800000;
+        }
+
+        // then search killer 2
+        else if (move.moveValue == killer2) {
+            move.moveScore = 790000;
+        }
+
+        // use history heuristic to score remaining non captures
+        else {
+            move.moveScore = killerHistory[!b.turn][move.getSource()][move.getTarget()] / (MAX_HISTORY / 100);
         }
     }
 

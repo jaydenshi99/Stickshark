@@ -31,6 +31,7 @@ class Engine {
     TranspositionTable* TT;
 
     uint16_t killerMoves[2][MAX_PLY];
+    int killerHistory[2][NUM_SQUARES][NUM_SQUARES];
     
     // UCI info reporting
     std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> uciInfoCallback;
