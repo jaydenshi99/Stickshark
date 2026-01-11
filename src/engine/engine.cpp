@@ -263,7 +263,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, false);
 
-    uint32_t killers = (killerMoves[0][ply] << 16) | killerMoves[1][ply];
+    uint32_t killers = killerMoves[0][ply] | (killerMoves[1][ply] << 16);
     mg.orderMoves(board, pseudoMoves, bestMoveValue, killers, killerHistory);
 
     bool existsValidMove = false;
