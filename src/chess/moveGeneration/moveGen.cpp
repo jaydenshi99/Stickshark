@@ -315,7 +315,7 @@ void MoveGen::orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue
             move.moveScore = 1000000;
         }
 
-        // Then we search good captures. Ordered with MVV - LVA heuristic
+        // Then we search captures. Ordered with MVV - LVA heuristic
         else if (attackedPiece != EMPTY) {
             int movedPiece = b.squares[move.getSource()];
             move.moveScore = moveScoreMaterialEvaluations[attackedPiece] - moveScoreMaterialEvaluations[movedPiece] + 900000;
@@ -333,7 +333,7 @@ void MoveGen::orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue
 
         // use history heuristic to score remaining non captures
         else {
-            move.moveScore = killerHistory[!b.turn][move.getSource()][move.getTarget()] / (MAX_HISTORY / 100);
+            move.moveScore = killerHistory[!b.turn][move.getSource()][move.getTarget()] / (MAX_HISTORY / 100) + 700000;
         }
     }
 
