@@ -68,7 +68,7 @@ void Engine::resetSearchStats() {
     principalVariation.clear();
 }
 
-void Engine::findBestMove(int t) {
+void Engine::findBestMove(int t, int maxDepth) {
     resetSearchStats();
     searchFinished = false;
     boardEval = 0;
@@ -79,7 +79,7 @@ void Engine::findBestMove(int t) {
     int16_t turn = board.turn ? 1 : -1;
 
     cout << "Calculating best move... " << endl;
-    
+
     auto start = chrono::steady_clock::now();
 
     // Search
@@ -93,7 +93,7 @@ void Engine::findBestMove(int t) {
 
     searchDepth = 1;
 
-    while (searchDepth <= MAX_PLY) {
+    while (searchDepth <= maxDepth) {
         searchFinished = false;
         negaMax(searchDepth, 0, -MATE, MATE, turn, true);
 

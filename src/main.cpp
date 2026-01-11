@@ -2,6 +2,7 @@
 #include "communication/web_interface.h"
 #include "communication/http_server.h"
 #include "communication/uci.h"
+#include "benchmark.h"
 
 using namespace std;
 
@@ -10,6 +11,9 @@ int main (int argc, char* argv[]) {
     bool cliMode = false;    // stdin/stdout JSON driver
     bool serverMode = false; // embedded HTTP API
     bool uciMode = true;     // UCI protocol on stdin/stdout (default)
+    bool benchmarkMode = false; // benchmark mode
+    int benchmarkDepth = 0;
+
     if (argc > 1 && string(argv[1]) == "--cli") {
         cliMode = true;
         uciMode = false;
@@ -21,8 +25,14 @@ int main (int argc, char* argv[]) {
     } else if (argc > 1 && string(argv[1]) == "--default") {
         uciMode = false;
         serverMode = false;
+    } else if (argc > 1 && string(argv[1]) == "--benchmark") {
+        benchmarkMode = true;
+        uciMode = false;
+        if (argc > 2) {
+            benchmarkDepth = atoi(argv[2]);
+        }
     }
-    
+
     // Suppress initialization output in cliMode and uciMode
     if (cliMode || uciMode) {
         streambuf* orig_cout = cout.rdbuf();
@@ -37,7 +47,9 @@ int main (int argc, char* argv[]) {
         computeAllTables();
     }
 
-    if (uciMode) {
+    if (benchmarkMode) {
+        runBenchmark(benchmarkDepth);
+    } else if (uciMode) {
         UCI uci;
         uci.loop();
     } else if (cliMode || serverMode) {
