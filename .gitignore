@@ -9,7 +9,8 @@ build/
 *.swp
 .vscode/
 
-# Ignore LLM memory
+# Ignore LLM 
+CLAUDE.md
 /memory
 
 # Ignore Makefile intermediate files

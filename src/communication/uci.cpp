@@ -255,12 +255,12 @@ void UCI::handleGo(const string& line) {
                 int timePerMove = (currentTime + increment) / movestogo;
                 // Apply a more conservative safety factor (use 70% of calculated time)
                 // This gives more buffer for complex positions
-                movetime = (timePerMove * 70) / 100;
+                movetime = std::max((timePerMove * 70) / 100, 50);
             } else {
                 // Sudden death time control (no movestogo specified)
-                // Use a smaller portion of remaining time (e.g., 1/30th)
-                int timePerMove = (currentTime - 10000) / 50;
-                movetime = timePerMove + increment;
+                // Use a smaller portion of remaining time (e.g., 1/50th)
+                int timePerMove = currentTime / 50;
+                movetime = std::max(timePerMove + increment, 50);
             }
         }
     }
