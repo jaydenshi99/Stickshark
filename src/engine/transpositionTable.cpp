@@ -24,18 +24,19 @@ void TranspositionTable::incrementGeneration() {
     generation++;
 }
 
-void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag) {
+void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16_t score, uint8_t depth, uint8_t flag, uint8_t ply) {
     uint64_t bucketIndex = (uint64_t)((zobristHash >> 41) & (NUM_BUCKETS - 1));
     uint32_t key32 = (uint32_t)(zobristHash & 0xFFFFFFFFu);
 
-    // Pack mate scores: store as distance from current position (ply-independent)
+    // Store distance-to-mate so the score decodes correctly at any ply.
+    // plyToMate = absoluteCheckmatePly - currentPly = distanceToMate
     uint8_t plyToMate = 0;
     int16_t packedScore = score;
     if (score > MATE - 100) {
-        plyToMate = (MATE - score);
+        plyToMate = (MATE - score) - ply;
         packedScore = MATE;
     } else if (score < -MATE + 100) {
-        plyToMate = (MATE + score);
+        plyToMate = (MATE + score) - ply;
         packedScore = -MATE;
     }
 
@@ -58,15 +59,20 @@ void TranspositionTable::addEntry(uint64_t zobristHash, uint16_t bestMove, int16
     bool slot0SamePos = entry0.key32 == key32;
     bool slot1SamePos = entry1.key32 == key32;
 
-    // Always replace exact match
+    // Replace same-position entry only if new entry is at least as deep or entry is stale.
+    // Prevents a depth-0 quiescence result from erasing a deep main-search mate entry.
     if (slot0SamePos) {
-        if (slot0Empty) numFilledEntries++;
-        table[slot0] = newEntry;
+        if (newEntry.depth >= entry0.depth || entry0.generation != generation) {
+            if (slot0Empty) numFilledEntries++;
+            table[slot0] = newEntry;
+        }
         return;
     }
     if (slot1SamePos) {
-        if (slot1Empty) numFilledEntries++;
-        table[slot1] = newEntry;
+        if (newEntry.depth >= entry1.depth || entry1.generation != generation) {
+            if (slot1Empty) numFilledEntries++;
+            table[slot1] = newEntry;
+        }
         return;
     }
 

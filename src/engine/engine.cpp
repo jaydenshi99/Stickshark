@@ -200,10 +200,11 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
 
                 int16_t unpackedScore = entry.score;
                 if (abs(entry.score) == MATE) {
+                    // plyToMate stores distanceToMate; adjust back to absolute score for this ply
                     if (entry.score > 0) {
-                        unpackedScore = MATE - entry.plyToMate;
+                        unpackedScore = MATE - entry.plyToMate - ply;
                     } else {
-                        unpackedScore = -MATE + entry.plyToMate;
+                        unpackedScore = -MATE + entry.plyToMate + ply;
                     }
                 }
 
@@ -231,7 +232,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     
     // Quiescence search at leaf nodes
     if (depth == 0) {
-        return quiescenceSearch(alpha, beta, turn); 
+        return quiescenceSearch(alpha, beta, turn, ply);
     }
 
     // Null move pruning guards, no checks + has pieces    
@@ -361,12 +362,12 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
+    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag, ply);
 
     return searchBestEval;
 }
 
-int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
+int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn, int ply) {
     if (isTimeUp()) {
         return 7777;
     }
@@ -401,14 +402,12 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         if (!isThreeFoldRepetition) {
             bestMoveValue = entry.bestMove;
 
-            // unpack score: reconstruct mate score from stored distance
             int16_t unpackedScore = entry.score;
             if (abs(entry.score) == MATE) {
-                // entry.plyToMate stores distance to mate (number of moves)
                 if (entry.score > 0) {
-                    unpackedScore = MATE - entry.plyToMate;
+                    unpackedScore = MATE - entry.plyToMate - ply;
                 } else {
-                    unpackedScore = -MATE + entry.plyToMate;
+                    unpackedScore = -MATE + entry.plyToMate + ply;
                 }
             }
 
@@ -466,7 +465,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
             // Evaluate child board from opponent POV
-            int16_t score = -quiescenceSearch(-beta, -alpha, -turn);
+            int16_t score = -quiescenceSearch(-beta, -alpha, -turn, ply + 1);
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 mg.freePseudoMoves(pseudoMoves);
@@ -499,7 +498,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
+    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag, ply);
 
     return bestSoFar;
 }
