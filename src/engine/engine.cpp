@@ -462,12 +462,15 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn, int 
     MoveList pseudoMoves = mg.generatePseudoMoves(board, !currKingInCheck); // force generating if own king is not in check. otherwise evasive moves
     mg.orderMoves(board, pseudoMoves, bestMoveValue, 0, killerHistory); // only helps when the best move is a forcing move.
 
+    bool existsValidMove = false;
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
 
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
+            existsValidMove = true;
+
             // Evaluate child board from opponent POV
             int16_t score = -quiescenceSearch(-beta, -alpha, -turn, ply + 1);
             if (isTimeUp()) {
@@ -489,11 +492,15 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn, int 
 
             alpha = max(alpha, bestSoFar);
         }
-        
+
         board.unmakeMove(move);
     }
 
     mg.freePseudoMoves(pseudoMoves);
+
+    if (currKingInCheck && !existsValidMove) {
+        return -MATE + ply;
+    }
 
     uint8_t flag = EXACT;
     if (bestSoFar <= oldAlpha) {
