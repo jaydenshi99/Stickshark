@@ -76,7 +76,10 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.1
-- 2.1.0: Add history heuristic and change move ordering logic.
+- 2.1.2: Late move reduction.
+- 2.1.1: Various bug fixes with TT, null move pruning and killer moves.
+- 2.1.0: Add history heuristic and change move ordering 
+logic.
 
 ### 2.0
 - 2.0.5: Fix mate packing with ply. Add killer moves.

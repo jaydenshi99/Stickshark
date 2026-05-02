@@ -1,6 +1,7 @@
 #include "engine.h"
 #include "transpositionTable.h"
 #include <iomanip>
+#include <cmath>
 
 using namespace std;
 
@@ -30,6 +31,17 @@ Engine::Engine(Board b) {
 
     // Initialise history heuristic table
     memset(killerHistory, 0, sizeof(killerHistory));
+
+    // Precompute LMR reduction table
+    for (int depth = 0; depth < MAX_PLY; depth++) {
+        for (int moveIndex = 0; moveIndex < MAX_PLY; moveIndex++) {
+            if (depth < 2 || moveIndex < 2) {
+                lmrTable[depth][moveIndex] = 0;
+            } else {
+                lmrTable[depth][moveIndex] = std::max(1, (int)(log(depth) * log(moveIndex) / 2.0));
+            }
+        }
+    }
 }
 
 Engine::~Engine() {
@@ -271,17 +283,25 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     uint32_t killers = killerMoves[0][ply] | ((uint32_t)killerMoves[1][ply] << 16);
     mg.orderMoves(board, pseudoMoves, bestMoveValue, killers, killerHistory);
 
+    constexpr int LMR_MIN_DEPTH = 3;
+    constexpr int LMR_MIN_MOVES = 4;
+
     bool existsValidMove = false;
     bool first = true;
+    int validMoveCount = 0;
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
 
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
-            // Check extension with SEE guard (currently removed)
+            validMoveCount++;
+
+            bool givesCheck = board.kingInCheck(true);
+
+            // Check extension
             int childDepth = depth - 1;
-            if (board.kingInCheck(true)) {
+            if (givesCheck) {
                 childDepth += 1;
             }
 
@@ -291,10 +311,27 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
                 score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 first = false;
             } else {
-                // limited search to see if the next move beats our current one
-                score = -negaMax(childDepth, ply + 1, -alpha - 1, -alpha, -turn);
+                int lmrDepth = childDepth;
+                bool isCapture = board.history.top().capturedPiece != EMPTY;
 
-                // if it does, we search again to full depth
+                // LMR: reduce late quiet moves
+                if (!currentKingInCheck && !givesCheck && !isCapture && !isPromotion[move.getFlag()]
+                    && depth >= LMR_MIN_DEPTH && validMoveCount >= LMR_MIN_MOVES) {
+                    int reduction = lmrTable[depth][validMoveCount];
+                    if (reduction > 0) {
+                        lmrDepth = std::max(1, childDepth - reduction);
+                    }
+                }
+
+                // Null window search at (possibly reduced) depth
+                score = -negaMax(lmrDepth, ply + 1, -alpha - 1, -alpha, -turn);
+
+                // If LMR reduced and looks promising, re-search at full depth
+                if (lmrDepth < childDepth && score > alpha) {
+                    score = -negaMax(childDepth, ply + 1, -alpha - 1, -alpha, -turn);
+                }
+
+                // PVS full window re-search
                 if (score > alpha && score < beta) {
                     score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 }

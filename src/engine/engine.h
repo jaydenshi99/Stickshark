@@ -32,6 +32,7 @@ class Engine {
 
     uint16_t killerMoves[2][MAX_PLY];
     int killerHistory[2][NUM_SQUARES][NUM_SQUARES];
+    int lmrTable[MAX_PLY][MAX_PLY];
     
     // UCI info reporting
     std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> uciInfoCallback;
