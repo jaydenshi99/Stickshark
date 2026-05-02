@@ -248,7 +248,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
 
     bool currentKingInCheck = board.kingInCheck(true);
 
-    if (!currentKingInCheck && depth >= r + 1 && pieces != 0) {
+    if (!currentKingInCheck && depth >= r + 1 && pieces != 0 && beta < MATE - MAX_PLY) {
         // Make the null move
         board.makeNullMove();
 
