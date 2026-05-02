@@ -162,6 +162,10 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
         return 7777;
     }
 
+    if (ply >= MAX_PLY) {
+        return quiescenceSearch(alpha, beta, turn, ply);
+    }
+
     // Check for threefold
     if (board.isThreeFoldRepetition()) {
         return 0;
@@ -264,7 +268,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, false);
 
-    uint32_t killers = killerMoves[0][ply] | (killerMoves[1][ply] << 16);
+    uint32_t killers = killerMoves[0][ply] | ((uint32_t)killerMoves[1][ply] << 16);
     mg.orderMoves(board, pseudoMoves, bestMoveValue, killers, killerHistory);
 
     bool existsValidMove = false;
@@ -312,7 +316,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
             existsValidMove = true;
 
             // add beta cutoff quiet moves to killer table
-            if (score >= beta && board.history.top().capturedPiece == NONE && !isPromotion[move.getFlag()]) {
+            if (score >= beta && board.history.top().capturedPiece == EMPTY && !isPromotion[move.getFlag()]) {
                 // killer moves
                 if (killerMoves[0][ply] != move.moveValue) {
                     killerMoves[1][ply] = killerMoves[0][ply];
