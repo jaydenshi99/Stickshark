@@ -132,12 +132,17 @@ void Engine::findBestMove(int softLimit, int hardLimit, int maxDepth) {
                 uciInfoCallback(searchDepth, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
             }
 
+            if (stableDepths >= 3) {
+                timeLimit = softLimit;
+            } else {
+                timeLimit = hardLimit;
+            }
+
             searchDepth += 1;
 
-            // Stop early if best move is stable and we've hit the soft limit
             auto elapsed = chrono::duration_cast<chrono::milliseconds>(
                 chrono::steady_clock::now() - startTime).count();
-            if (elapsed >= softLimit && stableDepths >= 3) {
+            if (elapsed >= timeLimit) {
                 break;
             }
         } else {
