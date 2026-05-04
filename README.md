@@ -75,6 +75,9 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 
 ## Versions
 
+### 2.2
+- 2.2.0: Time management
+
 ### 2.1
 - 2.1.2: Late move reduction.
 - 2.1.1: Various bug fixes with TT, null move pruning and killer moves.

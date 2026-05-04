@@ -172,107 +172,57 @@ void UCI::handlePosition(const string& line) {
 }
 
 void UCI::handleGo(const string& line) {
-    // Parse UCI time controls: go wtime WT btime BT movestogo MT winc WI binc BI movetime MT
-    // Priority: movetime > time per move from wtime/btime/movestogo > default
-    
-    int movetime = 1000; // default 1s
-    
-    // Check for explicit movetime first (highest priority)
-    size_t mt = line.find("movetime");
-    if (mt != string::npos) {
-        size_t p = line.find(' ', mt + 8);
-        if (p != string::npos) {
-            size_t q = line.find(' ', p + 1);
-            string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
-            try { movetime = std::stoi(num); } catch (...) {}
-        }
+    int softLimit = 1000;
+    int hardLimit = 1000;
+
+    auto parseToken = [&](const string& key, int defaultVal) -> int {
+        size_t pos = line.find(key);
+        if (pos == string::npos) return defaultVal;
+        size_t p = line.find(' ', pos + key.size());
+        if (p == string::npos) return defaultVal;
+        size_t q = line.find(' ', p + 1);
+        string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
+        try { return std::stoi(num); } catch (...) { return defaultVal; }
+    };
+
+    int movetime = parseToken("movetime", -1);
+
+    if (movetime > 0) {
+        softLimit = hardLimit = movetime;
     } else {
-        // Parse time control parameters
-        int wtime = -1, btime = -1, movestogo = -1, winc = 0, binc = 0;
-        
-        // Extract wtime
-        size_t wt = line.find("wtime");
-        if (wt != string::npos) {
-            size_t p = line.find(' ', wt + 5);
-            if (p != string::npos) {
-                size_t q = line.find(' ', p + 1);
-                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
-                try { wtime = std::stoi(num); } catch (...) {}
-            }
-        }
-        
-        // Extract btime
-        size_t bt = line.find("btime");
-        if (bt != string::npos) {
-            size_t p = line.find(' ', bt + 5);
-            if (p != string::npos) {
-                size_t q = line.find(' ', p + 1);
-                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
-                try { btime = std::stoi(num); } catch (...) {}
-            }
-        }
-        
-        // Extract movestogo
-        size_t mtg = line.find("movestogo");
-        if (mtg != string::npos) {
-            size_t p = line.find(' ', mtg + 9);
-            if (p != string::npos) {
-                size_t q = line.find(' ', p + 1);
-                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
-                try { movestogo = std::stoi(num); } catch (...) {}
-            }
-        }
-        
-        // Extract winc and binc (increments)
-        size_t wi = line.find("winc");
-        if (wi != string::npos) {
-            size_t p = line.find(' ', wi + 4);
-            if (p != string::npos) {
-                size_t q = line.find(' ', p + 1);
-                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
-                try { winc = std::stoi(num); } catch (...) {}
-            }
-        }
-        
-        size_t bi = line.find("binc");
-        if (bi != string::npos) {
-            size_t p = line.find(' ', bi + 4);
-            if (p != string::npos) {
-                size_t q = line.find(' ', p + 1);
-                string num = q == string::npos ? line.substr(p + 1) : line.substr(p + 1, q - (p + 1));
-                try { binc = std::stoi(num); } catch (...) {}
-            }
-        }
-        
-        // Calculate time per move based on current side to move
+        int wtime = parseToken("wtime", -1);
+        int btime = parseToken("btime", -1);
+        int winc  = parseToken("winc",   0);
+        int binc  = parseToken("binc",   0);
+        int mtg   = parseToken("movestogo", -1);
+
         if (wtime > 0 && btime > 0) {
-            int currentTime = engine->board.turn ? wtime : btime;
+            int remaining = std::max((engine->board.turn ? wtime : btime) - 50, 0);
             int increment = engine->board.turn ? winc : binc;
-            
-            if (movestogo > 0) {
-                // Time control with moves remaining
-                // Allocate time proportionally, leaving some buffer
-                int timePerMove = (currentTime + increment) / movestogo;
-                // Apply a more conservative safety factor (use 70% of calculated time)
-                // This gives more buffer for complex positions
-                movetime = std::max((timePerMove * 70) / 100, 50);
+
+            int movesToGo = (mtg > 0) ? mtg : std::max(40 - engine->board.ply / 2, 20);
+
+            softLimit = (remaining * 6 / 10) / movesToGo + (increment * 8 / 10);
+            softLimit = std::min(softLimit, remaining / 5);
+            softLimit = std::max(softLimit, 50);
+
+            if (mtg > 0) {
+                hardLimit = std::min(softLimit * 2, remaining / movesToGo);
             } else {
-                // Sudden death time control (no movestogo specified)
-                // Use a smaller portion of remaining time (e.g., 1/50th)
-                int timePerMove = currentTime / 50;
-                movetime = std::max(timePerMove + increment, 50);
+                hardLimit = std::min(softLimit * 4, remaining / 2);
             }
+            hardLimit = std::max(hardLimit, softLimit);
+            hardLimit = std::max(hardLimit, 50);
         }
     }
-    
+
     // Temporarily restore cout for debug info
     std::cout.rdbuf(orig_cout);
-    cout << "info string Time per move: " << movetime << "ms\n";
+    cout << "info string soft=" << softLimit << "ms hard=" << hardLimit << "ms\n";
     cout.flush();
     std::cout.rdbuf(&nullBuffer);
-    
-    // Engine output is already silenced by the loop, so just call findBestMove
-    engine->findBestMove(movetime);
+
+    engine->findBestMove(softLimit, hardLimit);
     
     // Temporarily restore cout for bestmove response
     std::cout.rdbuf(orig_cout);

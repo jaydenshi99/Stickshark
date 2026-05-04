@@ -80,12 +80,12 @@ void Engine::resetSearchStats() {
     principalVariation.clear();
 }
 
-void Engine::findBestMove(int t, int maxDepth) {
+void Engine::findBestMove(int softLimit, int hardLimit, int maxDepth) {
     resetSearchStats();
     searchFinished = false;
     boardEval = 0;
     bestMove = Move();
-    timeLimit = t;
+    timeLimit = hardLimit;
     TT->incrementGeneration();
 
     int16_t turn = board.turn ? 1 : -1;
@@ -104,27 +104,42 @@ void Engine::findBestMove(int t, int maxDepth) {
     }
 
     searchDepth = 1;
+    Move prevBestMove;
+    int stableDepths = 0;
 
     while (searchDepth <= maxDepth) {
         searchFinished = false;
+        prevBestMove = bestMove;
         negaMax(searchDepth, 0, -MATE, MATE, turn, true);
 
         cout << "Depth: " << searchDepth << " | Best move: " << bestMove << " | eval: " << boardEval << endl;
 
         if (searchFinished) {
+            // Track best move stability
+            if (searchDepth > 1 && bestMove.moveValue == prevBestMove.moveValue) {
+                stableDepths++;
+            } else {
+                stableDepths = 0;
+            }
+
             // Report UCI info for completed depth
             if (uciInfoCallback) {
-                auto currentTime = chrono::steady_clock::now();
-                auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(currentTime - startTime).count();
+                auto now = chrono::steady_clock::now();
+                auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(now - startTime).count();
                 int totalNodes = normalNodesSearched + quiescenceNodesSearched;
                 int nps = elapsedTime > 0 ? (totalNodes * 1000) / elapsedTime : 0;
-                
-                // Convert score to side-to-move perspective
                 int scoreCp = board.turn ? boardEval : -boardEval;
-                
                 uciInfoCallback(searchDepth, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
             }
+
             searchDepth += 1;
+
+            // Stop early if best move is stable and we've hit the soft limit
+            auto elapsed = chrono::duration_cast<chrono::milliseconds>(
+                chrono::steady_clock::now() - startTime).count();
+            if (elapsed >= softLimit && stableDepths >= 3) {
+                break;
+            }
         } else {
             searchDepth -= 1;
             break;
