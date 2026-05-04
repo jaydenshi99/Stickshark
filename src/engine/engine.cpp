@@ -131,6 +131,22 @@ void Engine::findBestMove(int t, int maxDepth) {
         }
     }
 
+    // Fallback: if search timed out before depth 1 completed, pick the first legal move
+    if (bestMove.getSource() == bestMove.getTarget()) {
+        MoveGen& mg = MoveGen::getInstance();
+        MoveList moves = mg.generatePseudoMoves(board, false);
+        for (std::ptrdiff_t i = 0; i < moves.count; i++) {
+            board.makeMove(moves.moves[i]);
+            if (!board.kingInCheck(false)) {
+                board.unmakeMove(moves.moves[i]);
+                bestMove = moves.moves[i];
+                break;
+            }
+            board.unmakeMove(moves.moves[i]);
+        }
+        mg.freePseudoMoves(moves);
+    }
+
     auto end = chrono::steady_clock::now();
 
     // Debug
@@ -315,9 +331,12 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
                 bool isCapture = board.history.top().capturedPiece != EMPTY;
 
                 // LMR: reduce late quiet moves
+                int moveSide = board.turn; // turn is flipped after makeMove
+                int histScore = killerHistory[moveSide][move.getSource()][move.getTarget()];
                 if (!currentKingInCheck && !givesCheck && !isCapture && !isPromotion[move.getFlag()]
+                    && histScore <= 0
                     && depth >= LMR_MIN_DEPTH && validMoveCount >= LMR_MIN_MOVES) {
-                    int reduction = lmrTable[depth][validMoveCount];
+                    int reduction = lmrTable[std::min(depth, MAX_PLY - 1)][std::min(validMoveCount, MAX_PLY - 1)];
                     if (reduction > 0) {
                         lmrDepth = std::max(1, childDepth - reduction);
                     }
