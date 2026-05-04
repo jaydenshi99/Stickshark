@@ -1,6 +1,6 @@
 # Stickshark
 
-Version 2.0.4 of Stickshark, a C++ chess engine. 
+Version 2.2.1 of Stickshark, a C++ chess engine. 
 
 Play against Stickshark on [lichess](https://lichess.org/@/stickshark99)! (The bot is currently not accepting unlimited time controls.)
 
