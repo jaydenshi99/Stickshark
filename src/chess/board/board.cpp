@@ -669,7 +669,7 @@ void Board::setZobristHash() {
     }
 }
 
-bool Board::isThreeFoldRepetition() const {
+bool Board::isThreeFoldRepetition(int threshold) const {
     int count = 0;
     int end = lastIrreversiblePly[ply];
 
@@ -677,7 +677,7 @@ bool Board::isThreeFoldRepetition() const {
     for (int i = ply - 2; i >= end; i -= 2) {
         if (zobristHistory[i] == zobristHistory[ply]) {
             count++;
-            if (count >= 2) {
+            if (count >= threshold) {
                 return true;
             }
         }

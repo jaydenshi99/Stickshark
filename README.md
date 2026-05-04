@@ -76,6 +76,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.2
+- 2.2.1: Fix three fold detection bug
 - 2.2.0: Time management
 
 ### 2.1
