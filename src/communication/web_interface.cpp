@@ -156,7 +156,7 @@ string WebInterface::handleEngineMove(int timeMs) {
     debug(string("handleEngineMove: timeMs=") + to_string(timeMs));
     streambuf* orig = nullptr; stringstream devnull;
     if (quiet) { orig = cout.rdbuf(); cout.rdbuf(devnull.rdbuf()); }
-    engine->findBestMove(timeMs);
+    engine->findBestMove(timeMs, timeMs);
     Move bestMove = engine->bestMove;
     engine->board.makeMove(bestMove);   
     if (quiet && orig) { cout.rdbuf(orig); }

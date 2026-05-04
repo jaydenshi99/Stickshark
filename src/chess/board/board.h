@@ -77,7 +77,7 @@ class Board {
         return gamestate.attackBitboards[piece];
     }
 
-    bool isThreeFoldRepetition() const;
+    bool isThreeFoldRepetition(int threshold = 2) const;
 
     // Set methods
     void setFEN(std::string FEN, bool clearRepetitionHistory = true);

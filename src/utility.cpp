@@ -178,7 +178,7 @@ void playEngine(string startingFEN, int time) {
 
             engine.board.makeMove(notationToMove(playerMove, engine.board.turn));
         } else {
-            engine.findBestMove(time);
+            engine.findBestMove(time, time);
             engine.board.makeMove(engine.bestMove);
         }
 
@@ -200,7 +200,7 @@ void engineVSEngine(string startingFEN, int time) {
         cout << moveNum++ << "." << endl;
         engine.board.displayBoard();
 
-        engine.findBestMove(time);
+        engine.findBestMove(time, time);
         engine.board.makeMove(engine.bestMove);
     }
 }
@@ -221,7 +221,7 @@ void runEngineToDepth(string FEN, int depth) {
     cout << "================================================" << endl;
 
     // Use findBestMove with a very large time limit and specific max depth
-    engine.findBestMove(600000, depth);  // 10 minute time limit, but will stop at depth
+    engine.findBestMove(600000, 600000, depth);
 
     cout << "================================================" << endl;
 }
