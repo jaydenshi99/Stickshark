@@ -207,7 +207,7 @@ void UCI::handleGo(const string& line) {
             softLimit = std::max(softLimit, 50);
 
             hardLimit = softLimit * 3;
-            hardLimit = std::min(hardLimit, remaining / 15);
+            hardLimit = std::min(hardLimit, remaining / 8 + (increment * 8 / 10));
             if (mtg > 0) {
                 hardLimit = std::min(hardLimit, remaining / movesToGo);
             }
