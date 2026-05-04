@@ -214,7 +214,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
         return quiescenceSearch(alpha, beta, turn, ply);
     }
 
-    if (board.isThreeFoldRepetition(1)) {
+    if (board.isThreeFoldRepetition(alpha > 0 ? 1 : 2)) {
         return 0;
     }
 
@@ -453,7 +453,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn, int 
 
     quiescenceNodesSearched++;
 
-    if (board.isThreeFoldRepetition(1)) {
+    if (board.isThreeFoldRepetition(alpha > 0 ? 1 : 2)) {
         return 0;
     }
 
