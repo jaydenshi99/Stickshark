@@ -56,7 +56,7 @@ class MoveGen {
 
     MoveList generatePseudoMoves(const Board& b, bool onlyGenerateForcing);
     MoveList generateLegalMoves(Board& b);
-    void orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue, uint32_t killers);
+    void orderMoves(Board& b, MoveList& pseudoMoves, uint16_t bestMoveValue, uint32_t killers, int killerHistory[2][64][64]);
     void freePseudoMoves(MoveList& pseudoMoves);
     void freeLegalMoves(MoveList& legalMoves);
 

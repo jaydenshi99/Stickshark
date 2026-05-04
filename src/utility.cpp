@@ -205,6 +205,27 @@ void engineVSEngine(string startingFEN, int time) {
     }
 }
 
+void runEngineToDepth(string FEN, int depth) {
+    cout << "Creating engine with position: " << FEN << endl;
+
+    // Create board and engine
+    Board board;
+    board.setFEN(FEN);
+
+    cout << "Initial board position:" << endl;
+    board.displayBoard();
+
+    Engine engine(board);
+
+    cout << "\nSearching to depth " << depth << "..." << endl;
+    cout << "================================================" << endl;
+
+    // Use findBestMove with a very large time limit and specific max depth
+    engine.findBestMove(600000, depth);  // 10 minute time limit, but will stop at depth
+
+    cout << "================================================" << endl;
+}
+
 // Only covers normal moves no special moves
 Move notationToMove(string move, bool turn) {
     // Castling

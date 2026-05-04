@@ -1,6 +1,7 @@
 #include "engine.h"
 #include "transpositionTable.h"
 #include <iomanip>
+#include <cmath>
 
 using namespace std;
 
@@ -27,6 +28,20 @@ Engine::Engine(Board b) {
         killerMoves[0][i] = 0;
         killerMoves[1][i] = 0;
     }
+
+    // Initialise history heuristic table
+    memset(killerHistory, 0, sizeof(killerHistory));
+
+    // Precompute LMR reduction table
+    for (int depth = 0; depth < MAX_PLY; depth++) {
+        for (int moveIndex = 0; moveIndex < MAX_PLY; moveIndex++) {
+            if (depth < 2 || moveIndex < 2) {
+                lmrTable[depth][moveIndex] = 0;
+            } else {
+                lmrTable[depth][moveIndex] = std::max(1, (int)(log(depth) * log(moveIndex) / 2.0));
+            }
+        }
+    }
 }
 
 Engine::~Engine() {
@@ -40,12 +55,15 @@ void Engine::resetEngine(Board b) {
     boardEval = 0;
     bestMove = Move();
     TT->clear();
+
+    // Clear history heuristic table
+    memset(killerHistory, 0, sizeof(killerHistory));
 }
 
 void Engine::setPosition(Board b) {
     board = b;
     resetSearchStats();
-    // Note: TT is NOT cleared - this preserves transposition table across position changes
+    // Note: TT is NOT cleared,  this preserves transposition table across position changes
 }
 
 void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback) {
@@ -62,7 +80,7 @@ void Engine::resetSearchStats() {
     principalVariation.clear();
 }
 
-void Engine::findBestMove(int t) {
+void Engine::findBestMove(int t, int maxDepth) {
     resetSearchStats();
     searchFinished = false;
     boardEval = 0;
@@ -73,7 +91,7 @@ void Engine::findBestMove(int t) {
     int16_t turn = board.turn ? 1 : -1;
 
     cout << "Calculating best move... " << endl;
-    
+
     auto start = chrono::steady_clock::now();
 
     // Search
@@ -87,7 +105,7 @@ void Engine::findBestMove(int t) {
 
     searchDepth = 1;
 
-    while (searchDepth <= MAX_PLY) {
+    while (searchDepth <= maxDepth) {
         searchFinished = false;
         negaMax(searchDepth, 0, -MATE, MATE, turn, true);
 
@@ -111,6 +129,22 @@ void Engine::findBestMove(int t) {
             searchDepth -= 1;
             break;
         }
+    }
+
+    // Fallback: if search timed out before depth 1 completed, pick the first legal move
+    if (bestMove.getSource() == bestMove.getTarget()) {
+        MoveGen& mg = MoveGen::getInstance();
+        MoveList moves = mg.generatePseudoMoves(board, false);
+        for (std::ptrdiff_t i = 0; i < moves.count; i++) {
+            board.makeMove(moves.moves[i]);
+            if (!board.kingInCheck(false)) {
+                board.unmakeMove(moves.moves[i]);
+                bestMove = moves.moves[i];
+                break;
+            }
+            board.unmakeMove(moves.moves[i]);
+        }
+        mg.freePseudoMoves(moves);
     }
 
     auto end = chrono::steady_clock::now();
@@ -156,6 +190,10 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
         return 7777;
     }
 
+    if (ply >= MAX_PLY) {
+        return quiescenceSearch(alpha, beta, turn, ply);
+    }
+
     // Check for threefold
     if (board.isThreeFoldRepetition()) {
         return 0;
@@ -194,10 +232,11 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
 
                 int16_t unpackedScore = entry.score;
                 if (abs(entry.score) == MATE) {
+                    // plyToMate stores distanceToMate; adjust back to absolute score for this ply
                     if (entry.score > 0) {
-                        unpackedScore = MATE - entry.plyToMate;
+                        unpackedScore = MATE - entry.plyToMate - ply;
                     } else {
-                        unpackedScore = -MATE + entry.plyToMate;
+                        unpackedScore = -MATE + entry.plyToMate + ply;
                     }
                 }
 
@@ -225,7 +264,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     
     // Quiescence search at leaf nodes
     if (depth == 0) {
-        return quiescenceSearch(alpha, beta, turn); 
+        return quiescenceSearch(alpha, beta, turn, ply);
     }
 
     // Null move pruning guards, no checks + has pieces    
@@ -237,7 +276,7 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
 
     bool currentKingInCheck = board.kingInCheck(true);
 
-    if (!currentKingInCheck && depth >= r + 1 && pieces != 0) {
+    if (!currentKingInCheck && depth >= r + 1 && pieces != 0 && beta < MATE - MAX_PLY) {
         // Make the null move
         board.makeNullMove();
 
@@ -257,20 +296,28 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, false);
 
-    uint32_t killers = (killerMoves[0][ply] << 16) | killerMoves[1][ply];
-    mg.orderMoves(board, pseudoMoves, bestMoveValue, killers);
+    uint32_t killers = killerMoves[0][ply] | ((uint32_t)killerMoves[1][ply] << 16);
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, killers, killerHistory);
+
+    constexpr int LMR_MIN_DEPTH = 3;
+    constexpr int LMR_MIN_MOVES = 4;
 
     bool existsValidMove = false;
     bool first = true;
+    int validMoveCount = 0;
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
 
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
-            // Check extension with SEE guard (currently removed)
+            validMoveCount++;
+
+            bool givesCheck = board.kingInCheck(true);
+
+            // Check extension
             int childDepth = depth - 1;
-            if (board.kingInCheck(true)) {
+            if (givesCheck) {
                 childDepth += 1;
             }
 
@@ -280,10 +327,30 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
                 score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 first = false;
             } else {
-                // limited search to see if the next move beats our current one
-                score = -negaMax(childDepth, ply + 1, -alpha - 1, -alpha, -turn);
+                int lmrDepth = childDepth;
+                bool isCapture = board.history.top().capturedPiece != EMPTY;
 
-                // if it does, we search again to full depth
+                // LMR: reduce late quiet moves
+                int moveSide = board.turn; // turn is flipped after makeMove
+                int histScore = killerHistory[moveSide][move.getSource()][move.getTarget()];
+                if (!currentKingInCheck && !givesCheck && !isCapture && !isPromotion[move.getFlag()]
+                    && histScore <= 0
+                    && depth >= LMR_MIN_DEPTH && validMoveCount >= LMR_MIN_MOVES) {
+                    int reduction = lmrTable[std::min(depth, MAX_PLY - 1)][std::min(validMoveCount, MAX_PLY - 1)];
+                    if (reduction > 0) {
+                        lmrDepth = std::max(1, childDepth - reduction);
+                    }
+                }
+
+                // Null window search at (possibly reduced) depth
+                score = -negaMax(lmrDepth, ply + 1, -alpha - 1, -alpha, -turn);
+
+                // If LMR reduced and looks promising, re-search at full depth
+                if (lmrDepth < childDepth && score > alpha) {
+                    score = -negaMax(childDepth, ply + 1, -alpha - 1, -alpha, -turn);
+                }
+
+                // PVS full window re-search
                 if (score > alpha && score < beta) {
                     score = -negaMax(childDepth, ply + 1, -beta, -alpha, -turn);
                 }
@@ -305,11 +372,20 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
             existsValidMove = true;
 
             // add beta cutoff quiet moves to killer table
-            if (score >= beta && board.history.top().capturedPiece == NONE && !isPromotion[move.getFlag()]) {
+            if (score >= beta && board.history.top().capturedPiece == EMPTY && !isPromotion[move.getFlag()]) {
+                // killer moves
                 if (killerMoves[0][ply] != move.moveValue) {
                     killerMoves[1][ply] = killerMoves[0][ply];
                     killerMoves[0][ply] = move.moveValue;
                 }
+
+                // history heuristic
+                int clampedBonus = clamp(depth * depth, -MAX_HISTORY, MAX_HISTORY);
+                // board.turn is flipped after makeMove
+                int moveSide = board.turn;
+
+                killerHistory[moveSide][move.getSource()][move.getTarget()] +=
+                clampedBonus - killerHistory[moveSide][move.getSource()][move.getTarget()] * abs(clampedBonus) / MAX_HISTORY;
             }
 
             // Alpha-beta pruning
@@ -346,12 +422,12 @@ int16_t Engine::negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag);
+    TT->addEntry(board.zobristHash, searchBestMove.moveValue, searchBestEval, depth, flag, ply);
 
     return searchBestEval;
 }
 
-int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
+int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn, int ply) {
     if (isTimeUp()) {
         return 7777;
     }
@@ -386,14 +462,12 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         if (!isThreeFoldRepetition) {
             bestMoveValue = entry.bestMove;
 
-            // unpack score: reconstruct mate score from stored distance
             int16_t unpackedScore = entry.score;
             if (abs(entry.score) == MATE) {
-                // entry.plyToMate stores distance to mate (number of moves)
                 if (entry.score > 0) {
-                    unpackedScore = MATE - entry.plyToMate;
+                    unpackedScore = MATE - entry.plyToMate - ply;
                 } else {
-                    unpackedScore = -MATE + entry.plyToMate;
+                    unpackedScore = -MATE + entry.plyToMate + ply;
                 }
             }
 
@@ -442,16 +516,19 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
     // Generate forcing moves
     MoveGen& mg = MoveGen::getInstance();
     MoveList pseudoMoves = mg.generatePseudoMoves(board, !currKingInCheck); // force generating if own king is not in check. otherwise evasive moves
-    mg.orderMoves(board, pseudoMoves, bestMoveValue, 0); // only helps when the best move is a forcing move.
+    mg.orderMoves(board, pseudoMoves, bestMoveValue, 0, killerHistory); // only helps when the best move is a forcing move.
 
+    bool existsValidMove = false;
     for (std::ptrdiff_t i = 0; i < pseudoMoves.count; i++) {
         Move &move = pseudoMoves.moves[i];
         board.makeMove(move);
 
         // Continue with valid positions
         if (!board.kingInCheck(false)) {
+            existsValidMove = true;
+
             // Evaluate child board from opponent POV
-            int16_t score = -quiescenceSearch(-beta, -alpha, -turn);
+            int16_t score = -quiescenceSearch(-beta, -alpha, -turn, ply + 1);
             if (isTimeUp()) {
                 board.unmakeMove(move);
                 mg.freePseudoMoves(pseudoMoves);
@@ -471,11 +548,15 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
 
             alpha = max(alpha, bestSoFar);
         }
-        
+
         board.unmakeMove(move);
     }
 
     mg.freePseudoMoves(pseudoMoves);
+
+    if (currKingInCheck && !existsValidMove) {
+        return -MATE + ply;
+    }
 
     uint8_t flag = EXACT;
     if (bestSoFar <= oldAlpha) {
@@ -484,7 +565,7 @@ int16_t Engine::quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn) {
         flag = LOWERBOUND;
     }
 
-    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag);
+    TT->addEntry(board.zobristHash, bestMoveValue, bestSoFar, 0, flag, ply);
 
     return bestSoFar;
 }
