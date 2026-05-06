@@ -12,7 +12,7 @@ using std::cout;
 using std::cin;
 using std::endl;
 
-UCI::UCI() {
+UCI::UCI() : book("data/Perfect2023.bin") {
     Board b;
     b.setFEN(STARTING_FEN);
     engine = new Engine(b);
@@ -216,6 +216,21 @@ void UCI::handleGo(const string& line) {
         }
     }
 
+    // Try opening book first
+    auto bookMove = book.probe(engine->board);
+    if (bookMove.has_value()) {
+        auto [src, dst, promoFlag] = *bookMove;
+        Move m;
+        if (findLegalMoveBySquares(engine->board, src, dst, promoFlag, m)) {
+            std::cout.rdbuf(orig_cout);
+            cout << "info string book move\n";
+            cout << "bestmove " << moveToUci(m) << "\n";
+            cout.flush();
+            std::cout.rdbuf(&nullBuffer);
+            return;
+        }
+    }
+
     // Temporarily restore cout for debug info
     std::cout.rdbuf(orig_cout);
     cout << "info string soft=" << softLimit << "ms hard=" << hardLimit << "ms\n";
@@ -223,7 +238,7 @@ void UCI::handleGo(const string& line) {
     std::cout.rdbuf(&nullBuffer);
 
     engine->findBestMove(softLimit, hardLimit);
-    
+
     // Temporarily restore cout for bestmove response
     std::cout.rdbuf(orig_cout);
     cout << "bestmove " << moveToUci(engine->bestMove) << "\n";
