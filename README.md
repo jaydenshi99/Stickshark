@@ -76,6 +76,7 @@ Stickshark includes a web-based GUI for visual chess gameplay.
 ## Versions
 
 ### 2.2
+- 2.2.2: Add basic opening book.
 - 2.2.1: Smarter repetition detection — avoids draws when winning (alpha > 0), seeks draws when losing.
 - 2.2.0: Time management with soft/hard limits and best move stability detection.
 

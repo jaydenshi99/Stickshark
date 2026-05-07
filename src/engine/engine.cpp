@@ -133,6 +133,11 @@ void Engine::findBestMove(int softLimit, int hardLimit, int maxDepth) {
                 uciInfoCallback(searchDepth, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
             }
 
+            // Found forced mate — no point searching deeper
+            if (boardEval >= MATE - MAX_PLY) {
+                break;
+            }
+
             if (stableDepths >= 3) {
                 timeLimit = softLimit;
             } else {

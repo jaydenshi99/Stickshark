@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include "engine/engine.h"
+#include "engine/openingBook.h"
 #include "chess/board/board.h"
 
 // Minimal UCI driver separate from HTTP/Web interface.
@@ -18,6 +19,7 @@ public:
 
 private:
     Engine* engine;
+    OpeningBook book;
     std::streambuf* orig_cout;  // Store original cout streambuf for UCI responses
     
     // Custom streambuf that discards all output
