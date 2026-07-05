@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stickshark</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="board-area">
+      <div class="eval-bar" id="evalBar" aria-hidden="true">
+        <div class="eval-fill" id="evalFill"></div>
+        <span class="eval-label" id="evalLabel">0.0</span>
+      </div>
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+        <div class="promotion" id="promotion" hidden></div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <header class="brand">
+        <h1>Stickshark</h1>
+        <span class="tag" id="engineId">UCI engine</span>
+      </header>
+
+      <div class="status" id="status">Your move</div>
+
+      <div class="controls">
+        <button id="newGame" class="btn primary">New game</button>
+        <button id="flip" class="btn">Flip</button>
+        <button id="undo" class="btn">Undo</button>
+      </div>
+
+      <div class="option">
+        <label for="side">Play as</label>
+        <div class="segmented" id="side">
+          <button data-side="w" class="active">White</button>
+          <button data-side="b">Black</button>
+        </div>
+      </div>
+
+      <div class="option">
+        <label for="think">Engine time <span id="thinkVal">1.0s</span></label>
+        <input type="range" id="think" min="100" max="5000" step="100" value="1000" />
+      </div>
+
+      <div class="engine-info">
+        <div class="info-row"><span>Depth</span><b id="iDepth">–</b></div>
+        <div class="info-row"><span>Score</span><b id="iScore">–</b></div>
+        <div class="info-row"><span>Nodes</span><b id="iNodes">–</b></div>
+        <div class="info-row"><span>Speed</span><b id="iNps">–</b></div>
+        <div class="info-pv"><span>PV</span><code id="iPv">–</code></div>
+      </div>
+
+      <div class="moves-wrap">
+        <table class="moves"><tbody id="moveList"></tbody></table>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

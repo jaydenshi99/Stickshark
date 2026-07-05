@@ -18,3 +18,5 @@ Makefile~
 
 # Generated web state files
 data/board_state.json
+# Python bytecode cache
+__pycache__/
