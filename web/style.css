@@ -231,6 +231,32 @@ html, body {
 
 input[type="range"] { width: 100%; accent-color: var(--accent); }
 
+.select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fen-row { display: flex; gap: 8px; }
+.fen-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.fen-input::placeholder { color: var(--muted); }
+.fen-row .btn { flex: 0 0 auto; padding: 8px 14px; }
+
 .engine-info {
   background: var(--panel-2);
   border-radius: 8px;

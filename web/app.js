@@ -13,6 +13,7 @@ const game = new Chess();
 let humanColor = "w";
 let orientation = "w";
 let movesUci = [];
+let startFen = null;           // null = startpos; otherwise the loaded FEN
 let thinkMs = 1000;
 let engineThinking = false;
 
@@ -193,7 +194,7 @@ function doMove(from, to, promotion) {
   movesUci.push(from + to + (promotion || ""));
   lastMove = { from, to };
   clearSelection();
-  appendMoveRow(move);
+  rebuildMoveList();
   updateStatus();
 
   if (!game.isGameOver() && game.turn() !== humanColor) requestEngineMove();
@@ -220,7 +221,8 @@ function showPromotion(from, to) {
 
 // ---- engine flow --------------------------------------------------------
 function positionCommand() {
-  return "position startpos" + (movesUci.length ? " moves " + movesUci.join(" ") : "");
+  const base = startFen ? "position fen " + startFen : "position startpos";
+  return base + (movesUci.length ? " moves " + movesUci.join(" ") : "");
 }
 
 function requestEngineMove() {
@@ -242,7 +244,7 @@ function applyEngineMove(uci) {
   movesUci.push(uci);
   lastMove = { from: move.from, to: move.to };
   clearSelection();
-  appendMoveRow(move);
+  rebuildMoveList();
   updateStatus();
 }
 
@@ -322,25 +324,6 @@ function updateStatus() {
   }
 }
 
-function appendMoveRow(move) {
-  if (move.color === "w") {
-    const num = Math.floor((movesUci.length - 1) / 2) + 1;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="num">${num}.</td><td class="mv">${move.san}</td><td class="mv"></td>`;
-    moveListEl.appendChild(tr);
-  } else {
-    let tr = moveListEl.lastElementChild;
-    if (!tr) {
-      // Black moved first after an undo/setup — synthesise the row.
-      tr = document.createElement("tr");
-      tr.innerHTML = `<td class="num">${Math.floor((movesUci.length - 1) / 2) + 1}.</td><td class="mv">…</td><td class="mv"></td>`;
-      moveListEl.appendChild(tr);
-    }
-    tr.children[2].textContent = move.san;
-  }
-  moveListEl.parentElement.parentElement.scrollTop = 1e9;
-}
-
 function fmtNum(n) {
   if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
   if (n >= 1e3) return (n / 1e3).toFixed(1) + "k";
@@ -348,22 +331,54 @@ function fmtNum(n) {
 }
 
 // ---- controls -----------------------------------------------------------
-function newGame() {
-  game.reset();
+function resetInfoPanel() {
+  iDepth.textContent = iScore.textContent = iNodes.textContent = iNps.textContent = "–";
+  iPv.textContent = "–";
+  setEval(0);
+}
+
+// Shared setup for both a fresh game and a loaded FEN.
+function startSession() {
   movesUci = [];
   lastMove = null;
   engineThinking = false;
   clearSelection();
   moveListEl.innerHTML = "";
-  iDepth.textContent = iScore.textContent = iNodes.textContent = iNps.textContent = "–";
-  iPv.textContent = "–";
-  setEval(0);
+  resetInfoPanel();
   orientation = humanColor;
   send("ucinewgame");
   send("isready");
   render();
   updateStatus();
-  if (humanColor !== "w") requestEngineMove();   // engine opens as White
+}
+
+// Restart from the current setup (loaded FEN, or startpos) for the current
+// humanColor. Used by New game, Load FEN, and switching sides.
+function restartCurrent() {
+  if (startFen) game.load(startFen); else game.reset();
+  startSession();
+  if (game.turn() !== humanColor) requestEngineMove();  // engine is on move
+}
+
+function newGame() {
+  startFen = null;
+  if (presetSel) presetSel.value = "";
+  if (fenInput) fenInput.value = "";
+  restartCurrent();
+}
+
+function loadFen(fen) {
+  fen = (fen || "").trim();
+  if (!fen) { newGame(); return; }
+  try {
+    game.load(fen);              // validate before committing
+  } catch (err) {
+    alert("Invalid FEN:\n" + err.message);
+    return;
+  }
+  startFen = fen;
+  fenInput.value = fen;
+  restartCurrent();
 }
 
 document.getElementById("newGame").onclick = newGame;
@@ -388,7 +403,8 @@ document.querySelectorAll("#side button").forEach((btn) => {
     document.querySelectorAll("#side button").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     humanColor = btn.dataset.side;
-    newGame();
+    restartCurrent();   // keep the loaded position; just swap sides
+
   };
 });
 
@@ -399,21 +415,46 @@ thinkInput.oninput = () => {
   thinkVal.textContent = (thinkMs / 1000).toFixed(1) + "s";
 };
 
+const presetSel = document.getElementById("preset");
+const fenInput = document.getElementById("fenInput");
+presetSel.onchange = () => {
+  const v = presetSel.value;
+  fenInput.value = v;
+  if (v === "") newGame();      // "Starting position"
+  else loadFen(v);
+};
+document.getElementById("loadFen").onclick = () => {
+  presetSel.value = "";         // custom entry no longer matches a preset
+  loadFen(fenInput.value);
+};
+fenInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { presetSel.value = ""; loadFen(fenInput.value); }
+});
+
 function rebuildMoveList() {
   moveListEl.innerHTML = "";
-  const replay = new Chess();
-  for (let i = 0; i < movesUci.length; i++) {
-    const u = movesUci[i];
+  const replay = new Chess(startFen || undefined);
+  let row = null;
+  for (const u of movesUci) {
+    const num = replay.moveNumber();
+    const white = replay.turn() === "w";
     const mv = replay.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u.length > 4 ? u[4] : undefined });
-    // temporarily borrow appendMoveRow via the real game's move number logic
-    if (mv.color === "w") {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="num">${Math.floor(i / 2) + 1}.</td><td class="mv">${mv.san}</td><td class="mv"></td>`;
-      moveListEl.appendChild(tr);
+    if (!mv) break;
+    if (white) {
+      row = document.createElement("tr");
+      row.innerHTML = `<td class="num">${num}.</td><td class="mv">${mv.san}</td><td class="mv"></td>`;
+      moveListEl.appendChild(row);
     } else {
-      moveListEl.lastElementChild.children[2].textContent = mv.san;
+      if (!row) {   // Black to move first (a loaded FEN) — pad the White cell.
+        row = document.createElement("tr");
+        row.innerHTML = `<td class="num">${num}.</td><td class="mv">…</td><td class="mv"></td>`;
+        moveListEl.appendChild(row);
+      }
+      row.children[2].textContent = mv.san;
+      row = null;
     }
   }
+  moveListEl.parentElement.parentElement.scrollTop = 1e9;
 }
 
 // ---- boot ---------------------------------------------------------------

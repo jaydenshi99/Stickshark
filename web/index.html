@@ -46,6 +46,21 @@
         <input type="range" id="think" min="100" max="5000" step="100" value="1000" />
       </div>
 
+      <div class="option">
+        <label for="preset">Position</label>
+        <select id="preset" class="select">
+          <option value="">Starting position</option>
+          <option value="r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3">Italian Game</option>
+          <option value="rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6">Sicilian, Najdorf</option>
+          <option value="r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1">Kiwipete (tactical)</option>
+          <option value="8/8/8/4k3/8/8/8/R3K3 w - - 0 1">Rook endgame (KR v K)</option>
+        </select>
+        <div class="fen-row">
+          <input type="text" id="fenInput" class="fen-input" placeholder="Paste a FEN…" spellcheck="false" />
+          <button id="loadFen" class="btn">Load</button>
+        </div>
+      </div>
+
       <div class="engine-info">
         <div class="info-row"><span>Depth</span><b id="iDepth">–</b></div>
         <div class="info-row"><span>Score</span><b id="iScore">–</b></div>
