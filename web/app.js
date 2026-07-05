@@ -33,6 +33,7 @@ const iScore = document.getElementById("iScore");
 const iNodes = document.getElementById("iNodes");
 const iNps = document.getElementById("iNps");
 const iPv = document.getElementById("iPv");
+const engineInfoEl = document.querySelector(".engine-info");
 const evalFill = document.getElementById("evalFill");
 const evalLabel = document.getElementById("evalLabel");
 
@@ -263,6 +264,7 @@ function handleEngineLine(line) {
 }
 
 function parseInfo(line) {
+  engineInfoEl.classList.add("live");   // brighten the readout once data arrives
   const t = line.split(/\s+/);
   let depth, nodes, nps, scoreCp, mate, pv;
   for (let i = 1; i < t.length; i++) {
@@ -308,17 +310,17 @@ function updateStatus() {
     statusEl.classList.add("over");
     statusEl.textContent = (game.turn() === "w" ? "Black" : "White") + " wins by checkmate";
   } else if (game.isStalemate()) {
-    statusEl.classList.add("over"); statusEl.textContent = "Draw — stalemate";
+    statusEl.classList.add("over"); statusEl.textContent = "Draw by stalemate";
   } else if (game.isThreefoldRepetition()) {
-    statusEl.classList.add("over"); statusEl.textContent = "Draw — repetition";
+    statusEl.classList.add("over"); statusEl.textContent = "Draw by repetition";
   } else if (game.isInsufficientMaterial()) {
-    statusEl.classList.add("over"); statusEl.textContent = "Draw — insufficient material";
+    statusEl.classList.add("over"); statusEl.textContent = "Draw by insufficient material";
   } else if (game.isDraw()) {
-    statusEl.classList.add("over"); statusEl.textContent = "Draw — fifty-move rule";
+    statusEl.classList.add("over"); statusEl.textContent = "Draw by fifty-move rule";
   } else if (engineThinking) {
     statusEl.textContent = "Stickshark is thinking…";
   } else if (game.turn() === humanColor) {
-    statusEl.textContent = "Your move" + (game.inCheck() ? " — check!" : "");
+    statusEl.textContent = "Your move" + (game.inCheck() ? ", check!" : "");
   } else {
     statusEl.textContent = "Stickshark to move";
   }
@@ -334,6 +336,7 @@ function fmtNum(n) {
 function resetInfoPanel() {
   iDepth.textContent = iScore.textContent = iNodes.textContent = iNps.textContent = "–";
   iPv.textContent = "–";
+  engineInfoEl.classList.remove("live");   // back to muted, empty placeholders
   setEval(0);
 }
 
@@ -445,7 +448,7 @@ function rebuildMoveList() {
       row.innerHTML = `<td class="num">${num}.</td><td class="mv">${mv.san}</td><td class="mv"></td>`;
       moveListEl.appendChild(row);
     } else {
-      if (!row) {   // Black to move first (a loaded FEN) — pad the White cell.
+      if (!row) {   // Black to move first (a loaded FEN): pad the White cell.
         row = document.createElement("tr");
         row.innerHTML = `<td class="num">${num}.</td><td class="mv">…</td><td class="mv"></td>`;
         moveListEl.appendChild(row);
