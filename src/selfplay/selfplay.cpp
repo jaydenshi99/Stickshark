@@ -124,6 +124,7 @@ void runSelfPlay(const SelfPlayConfig& cfg) {
         int result = 0;   // white POV
         bool decided = false;
         int adjCount = 0;
+        int adjSide = 0;
         int16_t lastScore = 0;
         bool lastScoreWhite = true;
 
@@ -173,13 +174,17 @@ void runSelfPlay(const SelfPlayConfig& cfg) {
             lastScore = score;
             lastScoreWhite = board.turn;
 
+            // adjudicate only on consecutive big evals that agree on the winner
             int whiteCp = board.turn ? score : -score;
-            adjCount = abs(whiteCp) >= cfg.adjudicateCp ? adjCount + 1 : 0;
+            int side = whiteCp >= cfg.adjudicateCp ? 1
+                     : whiteCp <= -cfg.adjudicateCp ? -1 : 0;
+            adjCount = (side != 0 && side == adjSide) ? adjCount + 1 : (side != 0);
+            adjSide = side;
 
             board.makeMove(best);
 
             if (adjCount >= cfg.adjudicateMoves) {
-                result = whiteCp > 0 ? 1 : -1;
+                result = adjSide;
                 decided = true;
             }
         }
