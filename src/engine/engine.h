@@ -5,6 +5,7 @@
 #include <functional>
 #include <chrono>
 
+#include "../agent/agent.h"
 #include "../chess/board/board.h"
 #include "../chess/moveGeneration/moveGen.h"
 #include "evaluation.h"
@@ -12,7 +13,7 @@
 
 class TranspositionTable;
 
-class Engine {
+class Engine : public Agent {
     private:
     int searchDepth;
 
@@ -41,9 +42,6 @@ class Engine {
     std::vector<Move> principalVariation;
 
     public:
-    Board board;
-    Move bestMove;
-
     int16_t boardEval;
 
     // Constructor
@@ -51,10 +49,10 @@ class Engine {
     ~Engine();
 
     // Set methods
-    void resetEngine(Board b);
-    void setPosition(Board b);  // Set position without clearing TT
+    void reset(Board b) override;
+    void setPosition(Board b) override;  // Set position without clearing TT
 
-    void findBestMove(int softLimit, int hardLimit, int maxDepth = MAX_PLY);
+    void findBestMove(int softLimit, int hardLimit, int maxDepth = MAX_PLY) override;
     int16_t negaMax(int depth, int ply, int16_t alpha, int16_t beta, int16_t turn, bool isRoot = false);    // Sets bestMove to the best move and sets moveEval to the eva
     int16_t quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn, int ply);
     

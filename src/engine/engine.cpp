@@ -49,7 +49,7 @@ Engine::~Engine() {
     delete TT;
 }
 
-void Engine::resetEngine(Board b) {
+void Engine::reset(Board b) {
     board = b;
     resetSearchStats();
     searchFinished = true;

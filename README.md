@@ -70,6 +70,9 @@ engine's live search info (depth, score, nodes, speed, principal variation).
 
 ## Versions
 
+### 3.0
+- 3.0.0: Addition of complimentary MCTS engine.
+
 ### 2.2
 - 2.2.2: Add basic opening book.
 - 2.2.1: Smarter repetition detection — avoids draws when winning (alpha > 0), seeks draws when losing.

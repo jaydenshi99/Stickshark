@@ -100,7 +100,7 @@ void UCI::loop() {
         } else if (line.rfind("go", 0) == 0) {
             handleGo(line);
         } else if (line == "ucinewgame") {
-            Board b; b.setFEN(STARTING_FEN); engine->resetEngine(b);
+            Board b; b.setFEN(STARTING_FEN); engine->reset(b);
         } else if (line == "stop") {
             // Current engine uses time-limited search only; nothing to cancel here
         } else if (line == "quit") {
