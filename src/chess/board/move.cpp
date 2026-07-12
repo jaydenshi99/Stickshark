@@ -17,6 +17,18 @@ Move::Move(int s, int t, int f) {
     moveValue = (f << 12) | (s << 6) | t;
 }
 
+string Move::toUci() const {
+    string u = moveToNotation(getSource()) + moveToNotation(getTarget());
+    switch (getFlag()) {
+        case PROMOTEQUEEN: u += 'q'; break;
+        case PROMOTEROOK: u += 'r'; break;
+        case PROMOTEBISHOP: u += 'b'; break;
+        case PROMOTEKNIGHT: u += 'n'; break;
+        default: break;
+    }
+    return u;
+}
+
 ostream& operator<<(std::ostream& os, const Move& move) {
     if (move.getSource() == 0 && move.getTarget() == 0) {
         os << "Invalid Move";

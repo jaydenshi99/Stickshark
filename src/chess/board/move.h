@@ -34,6 +34,9 @@ class Move {
     inline __attribute__((always_inline)) uint16_t getTarget() const { return moveValue & 0x3F; }
     inline __attribute__((always_inline)) uint16_t getFlag()   const { return (moveValue >> 12) & 0xF; }
 
+    // UCI coordinate notation, e.g. "e2e4", "e7e8q"
+    std::string toUci() const;
+
     // Friend declaration for operator<<
     friend std::ostream& operator<<(std::ostream& os, const Move& move);
 };

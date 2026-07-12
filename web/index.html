@@ -50,6 +50,14 @@
       </div>
 
       <div class="option">
+        <label for="algo">Search algorithm</label>
+        <select id="algo" class="select">
+          <option value="AlphaBeta">Alpha-beta</option>
+          <option value="MCTS">MCTS</option>
+        </select>
+      </div>
+
+      <div class="option">
         <label for="preset">Position</label>
         <select id="preset" class="select">
           <option value="">Starting position</option>
@@ -70,6 +78,11 @@
         <div class="info-row"><span>Nodes</span><b id="iNodes">–</b></div>
         <div class="info-row"><span>Speed</span><b id="iNps">–</b></div>
         <div class="info-pv"><span>PV</span><code id="iPv">–</code></div>
+      </div>
+
+      <div class="move-dist" id="moveDist" hidden>
+        <div class="dist-title">Moves considered <span class="dist-note">share of simulations</span></div>
+        <div id="moveDistBars"></div>
       </div>
 
       <div class="moves-wrap">

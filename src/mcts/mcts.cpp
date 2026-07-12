@@ -7,17 +7,63 @@ MCTS::~MCTS() {}
 void MCTS::findBestMove(int softLimit, int hardLimit, int maxDepth) {
     arena.clear();
     arena.push_back(Node{});
+    bestMove = Move();
 
-    monteCarloTreeSearch(10000);
+    // fixed for now, make dynamic later
+    const int trials = 100000;
+
+    auto start = chrono::steady_clock::now();
+    monteCarloTreeSearch(trials);
+    int timeMs = (int)chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count();
 
     const Node& root = arena[0];
     uint32_t maxVisits = 0;
+    uint32_t bestIdx = 0;
     for (uint32_t ci = root.firstChild; ci < root.firstChild + root.numChildren; ++ci) {
         if (arena[ci].visits > maxVisits) {
             maxVisits = arena[ci].visits;
+            bestIdx = ci;
             bestMove = Move(arena[ci].move);
         }
     }
+
+    // Report the Q of the move actually picked: the evaluation conditional on
+    // playing it, unlike the root average which refuted lines drag down.
+    if (bestIdx != 0 && uciInfoCallback) {
+        float q = -arena[bestIdx].valueSum / (float)arena[bestIdx].visits;
+        q = clamp(q, -0.9999f, 0.9999f);
+        int cp = (int)(atanh(q) * 300.0f);          // invert the tanh(cp/300) squash
+        int scoreCp = board.turn ? cp : -cp;        // UCI reports white-POV here
+        int nps = timeMs > 0 ? (int)((int64_t)trials * 1000 / timeMs) : 0;
+        vector<Move> pv{bestMove};
+        uciInfoCallback(0, timeMs, trials, nps, scoreCp, pv);
+    }
+
+    reportMoveDistribution();
+}
+
+// Emit the root children as "movedist <uci>:<visits>:<q> ..." (descending by
+// visits). q is from the root mover's perspective.
+void MCTS::reportMoveDistribution() {
+    const Node& root = arena[0];
+    if (!infoStringCallback || root.numChildren == 0) return;
+
+    vector<uint32_t> kids;
+    for (uint32_t ci = root.firstChild; ci < root.firstChild + root.numChildren; ++ci) {
+        if (arena[ci].visits > 0) {
+            kids.push_back(ci);
+        }
+    }
+    sort(kids.begin(), kids.end(), [this](uint32_t a, uint32_t b) { return arena[a].visits > arena[b].visits; });
+
+    string s = "movedist";
+    char qbuf[16];
+    for (uint32_t ci : kids) {
+        float q = -arena[ci].valueSum / (float)arena[ci].visits;
+        snprintf(qbuf, sizeof(qbuf), "%.3f", q);
+        s += " " + Move(arena[ci].move).toUci() + ":" + to_string(arena[ci].visits) + ":" + qbuf;
+    }
+    infoStringCallback(s);
 }
 
 void MCTS::setPosition(Board b) {
@@ -65,12 +111,16 @@ float MCTS::monteCarloTreeSearch(int numTrials) {
             board.makeMove(Move(arena[nIdx].move));
             path.push_back(nIdx);
         }
-        // 3. rollout from the reached node; 
+        // 3. evaluate the reached node; terminal nodes use the exact result
         float value;
         if (arena[nIdx].numChildren == 0 && arena[nIdx].firstChild != 0) {
             value = board.kingInCheck(true) ? -1.0f : 0.0f;   // mate : stalemate
+        } else if (board.isThreeFoldRepetition()) {
+            value = 0.0f;
         } else {
-            value = rollout();
+            int cp = staticEvaluation(board);
+            if (!board.turn) cp = -cp;          // eval is white-POV; valueSum is side-to-move
+            value = tanh(cp / 300.0f);
         }
 
         // 4. backprop, unmaking the path's moves on the way up
@@ -84,55 +134,6 @@ float MCTS::monteCarloTreeSearch(int numTrials) {
     }
 
     return 0.0f;
-}
-
-// Play uniformly random legal moves from the current board position until the
-// game ends or the ply cap is hit
-float MCTS::rollout() {
-    MoveGen& mg = MoveGen::getInstance();
-
-    constexpr int ROLLOUT_CAP = 200;
-    Move made[ROLLOUT_CAP];
-    int madeCount = 0;
-
-    float result = 0.0f;   
-    int perspective = 1;   // +1 while side to move == side at rollout start
-
-    while (madeCount < ROLLOUT_CAP) {
-        if (board.isThreeFoldRepetition()) break;
-        MoveList pseudo = mg.generatePseudoMoves(board, false);
-        int remaining = (int)pseudo.count;
-        bool moved = false;
-        while (remaining > 0) {
-            int k = (int)(nextRandom() % (uint64_t)remaining);
-            Move m = pseudo.moves[k];
-            board.makeMove(m);
-            if (board.kingInCheck(false)) {
-                board.unmakeMove(m);
-                pseudo.moves[k] = pseudo.moves[remaining - 1];
-                remaining--;
-            } else {
-                made[madeCount++] = m;
-                moved = true;
-                break;
-            }
-        }
-        mg.freePseudoMoves(pseudo);
-
-        if (!moved) {
-            // No legal moves: mate or stalemate for the current side to move
-            result = board.kingInCheck(true) ? (float)-perspective : 0.0f;
-            break;
-        }
-        perspective = -perspective;
-    }
-
-    // Restore the board to the rollout's starting position
-    for (int i = madeCount - 1; i >= 0; i--) {
-        board.unmakeMove(made[i]);
-    }
-
-    return result;
 }
 
 uint32_t MCTS::selectChild(uint32_t parentIdx) {

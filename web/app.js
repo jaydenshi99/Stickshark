@@ -237,11 +237,14 @@ function requestEngineMove() {
 function applyEngineMove(uci) {
   engineThinking = false;
   if (!uci || uci === "(none)") { updateStatus(); return; }
-  const move = game.move({
-    from: uci.slice(0, 2),
-    to: uci.slice(2, 4),
-    promotion: uci.length > 4 ? uci[4] : undefined,
-  });
+  let move = null;
+  try {
+    move = game.move({
+      from: uci.slice(0, 2),
+      to: uci.slice(2, 4),
+      promotion: uci.length > 4 ? uci[4] : undefined,
+    });
+  } catch { /* stale or illegal reply — never wedge the session over it */ }
   if (!move) { updateStatus(); return; }
   movesUci.push(uci);
   lastMove = { from: move.from, to: move.to };
@@ -257,11 +260,79 @@ events.onmessage = (e) => handleEngineLine(e.data);
 function handleEngineLine(line) {
   if (line.startsWith("id name")) {
     document.getElementById("engineId").textContent = line.slice(8).trim();
+  } else if (line.startsWith("info string movedist ")) {
+    renderMoveDist(line.slice("info string movedist ".length));
   } else if (line.startsWith("info")) {
     parseInfo(line);
   } else if (line.startsWith("bestmove")) {
     applyEngineMove(line.split(/\s+/)[1]);
   }
+}
+
+// ---- move distribution (MCTS root visit counts) --------------------------
+const moveDistEl = document.getElementById("moveDist");
+const moveDistBarsEl = document.getElementById("moveDistBars");
+const MAX_DIST_ROWS = 8;
+
+function clearMoveDist() {
+  moveDistEl.hidden = true;
+  moveDistBarsEl.innerHTML = "";
+}
+
+function renderMoveDist(payload) {
+  const entries = payload.trim().split(/\s+/).map((p) => {
+    const [uci, v, q] = p.split(":");
+    return { uci, visits: +v, q: q !== undefined ? +q : null };
+  }).filter((e) => e.uci && e.visits > 0);
+  if (!entries.length) { clearMoveDist(); return; }
+
+  const total = entries.reduce((s, e) => s + e.visits, 0);
+  const top = entries.slice(0, MAX_DIST_ROWS);
+  const maxVisits = top[0].visits;
+
+  // The engine searched the current game position, so SAN conversion is
+  // valid here (this arrives before the bestmove line is applied).
+  const probe = new Chess(game.fen());
+
+  moveDistBarsEl.innerHTML = "";
+  for (const e of top) {
+    let label = e.uci;
+    try {
+      const mv = probe.move({ from: e.uci.slice(0, 2), to: e.uci.slice(2, 4), promotion: e.uci.length > 4 ? e.uci[4] : undefined });
+      if (mv) { label = mv.san; probe.undo(); }
+    } catch { /* fall back to coordinate notation */ }
+
+    const pct = (e.visits / total) * 100;
+    const row = document.createElement("div");
+    row.className = "dist-row";
+    // Q is from the engine's perspective; ~pawns via the inverse of tanh(cp/300)
+    let qNote = "";
+    if (e.q !== null && !Number.isNaN(e.q)) {
+      const qc = Math.max(-0.9999, Math.min(0.9999, e.q));
+      const pawns = (Math.atanh(qc) * 300) / 100;
+      qNote = ` — Q ${e.q >= 0 ? "+" : ""}${e.q.toFixed(3)} (≈${pawns >= 0 ? "+" : ""}${pawns.toFixed(1)} pawns for engine)`;
+    }
+    row.title = `${label}: ${e.visits} of ${total} simulations${qNote}`;
+
+    const moveSpan = document.createElement("span");
+    moveSpan.className = "dist-move";
+    moveSpan.textContent = label;
+
+    const track = document.createElement("div");
+    track.className = "dist-track";
+    const fill = document.createElement("div");
+    fill.className = "dist-fill";
+    fill.style.width = ((e.visits / maxVisits) * 100).toFixed(1) + "%";
+    track.appendChild(fill);
+
+    const pctSpan = document.createElement("span");
+    pctSpan.className = "dist-pct";
+    pctSpan.textContent = pct.toFixed(1) + "%";
+
+    row.append(moveSpan, track, pctSpan);
+    moveDistBarsEl.appendChild(row);
+  }
+  moveDistEl.hidden = false;
 }
 
 function parseInfo(line) {
@@ -338,6 +409,7 @@ function resetInfoPanel() {
   iDepth.textContent = iScore.textContent = iNodes.textContent = iNps.textContent = "–";
   iPv.textContent = "–";
   engineInfoEl.classList.remove("live");   // back to muted, empty placeholders
+  clearMoveDist();
   setEval(0);
 }
 
@@ -398,6 +470,7 @@ document.getElementById("undo").onclick = () => {
   rebuildMoveList();
   lastMove = null;
   clearSelection();
+  clearMoveDist();
   send(positionCommand());
   updateStatus();
 };
@@ -417,6 +490,14 @@ const thinkVal = document.getElementById("thinkVal");
 thinkInput.oninput = () => {
   thinkMs = +thinkInput.value;
   thinkVal.textContent = (thinkMs / 1000).toFixed(1) + "s";
+};
+
+const algoSel = document.getElementById("algo");
+algoSel.onchange = () => {
+  send("setoption name SearchAlgorithm value " + algoSel.value);
+  resetInfoPanel();  // also clears the move distribution
+  // MCTS reports no depth/score/nodes/pv, so the readout is dead weight there
+  engineInfoEl.hidden = algoSel.value === "MCTS";
 };
 
 const presetSel = document.getElementById("preset");
@@ -462,9 +543,22 @@ function rebuildMoveList() {
 }
 
 // ---- boot ---------------------------------------------------------------
+let sseConnectedOnce = false;
 events.onopen = () => {
-  send("uci");
-  newGame();
+  if (!sseConnectedOnce) {
+    sseConnectedOnce = true;
+    send("uci");
+    newGame();
+    return;
+  }
+  // Reconnected mid-session: any engine line sent while the stream was down
+  // (possibly the bestmove we were waiting on) is lost, and the server may
+  // even have respawned the engine. Re-sync instead of resetting the game.
+  send("setoption name SearchAlgorithm value " + algoSel.value);
+  if (engineThinking) {
+    send(positionCommand());
+    send("go movetime " + thinkMs);
+  }
 };
 render();
 updateStatus();

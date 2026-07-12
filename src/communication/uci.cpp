@@ -74,6 +74,13 @@ void UCI::attachInfoCallback() {
         // Restore null buffer
         std::cout.rdbuf(&nullBuffer);
     });
+
+    agent->setInfoStringCallback([this](const std::string& s) {
+        std::cout.rdbuf(orig_cout);
+        cout << "info string " << s << "\n";
+        cout.flush();
+        std::cout.rdbuf(&nullBuffer);
+    });
 }
 
 static inline string idName() {
@@ -238,18 +245,20 @@ void UCI::handleGo(const string& line) {
         }
     }
 
-    // Try opening book first
-    auto bookMove = book.probe(agent->board);
-    if (bookMove.has_value()) {
-        auto [src, dst, promoFlag] = *bookMove;
-        Move m;
-        if (findLegalMoveBySquares(agent->board, src, dst, promoFlag, m)) {
-            std::cout.rdbuf(orig_cout);
-            cout << "info string book move\n";
-            cout << "bestmove " << moveToUci(m) << "\n";
-            cout.flush();
-            std::cout.rdbuf(&nullBuffer);
-            return;
+    // Try opening book first (alpha-beta only; MCTS should always search)
+    if (!usingMcts) {
+        auto bookMove = book.probe(agent->board);
+        if (bookMove.has_value()) {
+            auto [src, dst, promoFlag] = *bookMove;
+            Move m;
+            if (findLegalMoveBySquares(agent->board, src, dst, promoFlag, m)) {
+                std::cout.rdbuf(orig_cout);
+                cout << "info string book move\n";
+                cout << "bestmove " << moveToUci(m) << "\n";
+                cout.flush();
+                std::cout.rdbuf(&nullBuffer);
+                return;
+            }
         }
     }
 
@@ -297,24 +306,7 @@ void UCI::handleSetOption(const string& line) {
 }
 
 string UCI::moveToUci(const Move& m) {
-    int s = m.getSource();
-    int t = m.getTarget();
-    // Flip file coordinates: a->h, b->g, ..., h->a
-    char sf = 'h' - (s % 8);  // Flip file: 0->h, 1->g, ..., 7->a
-    char sr = '1' + (s / 8);
-    char tf = 'h' - (t % 8);  // Flip file: 0->h, 1->g, ..., 7->a
-    char tr = '1' + (t / 8);
-    string u;
-    u += sf; u += sr; u += tf; u += tr;
-    // Promotion piece if any
-    switch (m.getFlag()) {
-        case PROMOTEQUEEN: u += 'q'; break;
-        case PROMOTEROOK: u += 'r'; break;
-        case PROMOTEBISHOP: u += 'b'; break;
-        case PROMOTEKNIGHT: u += 'n'; break;
-        default: break;
-    }
-    return u;
+    return m.toUci();
 }
 
 bool UCI::parseUciMoveToken(const string& token, int& src, int& dst, int& promoFlag) {

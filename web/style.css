@@ -321,6 +321,8 @@ input[type="range"]::-moz-range-thumb {
 .fen-input::placeholder { color: var(--muted-2); }
 .fen-row .btn { flex: 0 0 auto; padding: 8px 14px; }
 
+/* display:flex below would otherwise override the UA's [hidden] rule */
+.engine-info[hidden] { display: none; }
 .engine-info {
   background: var(--panel-2);
   border: 1px solid var(--line);
@@ -347,6 +349,51 @@ input[type="range"]::-moz-range-thumb {
 /* Once the engine reports, the numbers light up; empty placeholders stay muted. */
 .engine-info.live .info-row b,
 .engine-info.live .info-pv code { color: var(--text); }
+
+/* ---- move distribution (MCTS) --------------------------------------- */
+.move-dist {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+}
+.dist-title { color: var(--muted); margin-bottom: 8px; }
+.dist-note { color: var(--muted-2); font-size: 11px; float: right; }
+.dist-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.dist-move {
+  width: 52px;
+  flex: none;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dist-track {
+  flex: 1;
+  height: 6px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dist-fill {
+  height: 100%;
+  background: var(--text-2);
+  border-radius: 3px;
+}
+.dist-pct {
+  width: 44px;
+  flex: none;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 .moves-wrap { flex: 1; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 8px; }
 .moves { width: 100%; border-collapse: collapse; font-family: var(--font); font-size: 13px; }

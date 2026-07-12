@@ -10,6 +10,9 @@
 // Callback used to report search progress to a UCI frontend.
 using UciInfoCallback = std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)>;
 
+// Callback for free-form search info, relayed as a UCI "info string" line.
+using InfoStringCallback = std::function<void(const std::string&)>;
+
 // Abstract base class for move-selecting agents (alpha-beta Engine, MCTS, ...).
 // An agent owns a board position and, when asked, searches it and exposes the
 // result through bestMove.
@@ -34,5 +37,6 @@ class Agent {
 
     // Optional UCI hooks; agents without search stats / info reporting keep the no-ops.
     virtual void setUciInfoCallback(UciInfoCallback callback) { (void)callback; }
+    virtual void setInfoStringCallback(InfoStringCallback callback) { (void)callback; }
     virtual void resetSearchStats() {}
 };

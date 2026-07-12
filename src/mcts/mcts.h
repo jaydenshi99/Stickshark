@@ -7,6 +7,7 @@
 #include "../agent/agent.h"
 #include "../chess/board/board.h"
 #include "../chess/moveGeneration/moveGen.h"
+#include "../engine/evaluation.h"
 #include "../constants.h"
 
 struct Node {
@@ -25,18 +26,12 @@ class MCTS : public Agent {
     vector<Node> arena;
     vector<uint32_t> path;     // arena indices of the current descent, root first
 
-    // xorshift64 RNG for rollouts (fixed seed = reproducible searches)
-    uint64_t rngState = 0x9E3779B97F4A7C15ull;
-    inline uint64_t nextRandom() {
-        rngState ^= rngState << 13;
-        rngState ^= rngState >> 7;
-        rngState ^= rngState << 17;
-        return rngState;
-    }
+    InfoStringCallback infoStringCallback;
+    UciInfoCallback uciInfoCallback;
 
     float monteCarloTreeSearch(int numTrials);
     uint32_t selectChild(uint32_t parentIdx);
-    float rollout();
+    void reportMoveDistribution();
 
     public:
     // Constructor Destructor
@@ -47,6 +42,8 @@ class MCTS : public Agent {
     void findBestMove(int softLimit, int hardLimit, int maxDepth = MAX_PLY) override;
     void setPosition(Board b) override;
     void reset(Board b) override;
+    void setInfoStringCallback(InfoStringCallback callback) override { infoStringCallback = callback; }
+    void setUciInfoCallback(UciInfoCallback callback) override { uciInfoCallback = callback; }
 
 
 };
