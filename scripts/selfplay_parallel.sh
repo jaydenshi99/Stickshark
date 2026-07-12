@@ -1,0 +1,44 @@
+#!/bin/bash
+# Run N selfplay workers in parallel, each writing its own file.
+# usage: scripts/selfplay_parallel.sh [workers] [gamesPerWorker] [baseSeed] [moveTimeMs]
+# output: data/selfplay_w<i>.bin (one per worker)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+WORKERS=${1:-$(( $(sysctl -n hw.ncpu) - 2 ))}
+GAMES=${2:-100}
+BASESEED=${3:-1}
+MOVETIME=${4:-10}
+BIN=build/stickshark
+
+[ -x "$BIN" ] || { echo "missing $BIN — build first"; exit 1; }
+mkdir -p data
+
+echo "launching $WORKERS workers x $GAMES games (moveTime ${MOVETIME}ms)"
+pids=()
+for i in $(seq 1 "$WORKERS"); do
+    out="data/selfplay_w${i}.bin"
+    seed=$(( BASESEED + i ))
+    "$BIN" --selfplay "$GAMES" "$out" "$seed" "$MOVETIME" > "data/selfplay_w${i}.log" 2>&1 &
+    pids+=($!)
+done
+
+trap 'kill "${pids[@]}" 2>/dev/null' INT TERM
+
+fail=0
+for pid in "${pids[@]}"; do
+    wait "$pid" || fail=1
+done
+
+echo "--- results ---"
+for i in $(seq 1 "$WORKERS"); do
+    tail -1 "data/selfplay_w${i}.log"
+done
+
+total=0
+for i in $(seq 1 "$WORKERS"); do
+    sz=$(stat -f %z "data/selfplay_w${i}.bin")
+    total=$(( total + (sz - 8) / 104 ))
+done
+echo "total: $total records across $WORKERS files"
+[ "$fail" -eq 0 ] || { echo "warning: at least one worker exited nonzero"; exit 1; }

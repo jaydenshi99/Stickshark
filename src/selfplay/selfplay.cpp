@@ -68,7 +68,12 @@ struct PendingRecord {
 }
 
 void runSelfPlay(const SelfPlayConfig& cfg) {
-    rngState = cfg.seed ? cfg.seed : 1;
+    // splitmix64 scramble so consecutive worker seeds give independent streams
+    uint64_t z = (cfg.seed ? cfg.seed : 1) + 0x9E3779B97F4A7C15ULL;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+    rngState = z ^ (z >> 31);
+    if (!rngState) rngState = 1;
 
     MoveGen& mg = MoveGen::getInstance();
     OpeningBook book("data/Perfect2023.bin");

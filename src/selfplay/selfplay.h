@@ -22,7 +22,7 @@ struct SelfPlayConfig {
     int games = 100;
     std::string outPath = "data/selfplay.bin";
     uint64_t seed = 1;
-    int moveTimeMs = 150;      // engine think time per move
+    int moveTimeMs = 10;      // engine think time per move
 
     // knobs
     int maxBookPlies = 24;     // book walk depth is uniform in [0, maxBookPlies]
