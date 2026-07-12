@@ -10,7 +10,14 @@ int main (int argc, char* argv[]) {
     bool uciMode = true;        // UCI protocol on stdin/stdout (default)
     bool benchmarkMode = false; // benchmark mode
     bool perftMode = false;     // debug perft mode
+    bool useMcts = false;       // start UCI with the MCTS agent instead of alpha-beta
     int benchmarkDepth = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (string(argv[i]) == "--mcts") {
+            useMcts = true;
+        }
+    }
 
     if (argc > 1 && string(argv[1]) == "--uci") {
         uciMode = true;
@@ -42,7 +49,7 @@ int main (int argc, char* argv[]) {
     if (benchmarkMode) {
         runBenchmark(benchmarkDepth);
     } else if (uciMode) {
-        UCI uci;
+        UCI uci(useMcts);
         uci.loop();
     } else if (perftMode) {
         perft(5, STARTING_FEN);

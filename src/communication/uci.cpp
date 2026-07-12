@@ -12,13 +12,30 @@ using std::cout;
 using std::cin;
 using std::endl;
 
-UCI::UCI() : book("data/Perfect2023.bin") {
+UCI::UCI(bool useMcts) : book("data/Perfect2023.bin") {
     Board b;
     b.setFEN(STARTING_FEN);
-    engine = new Engine(b);
-    
-    // Set up UCI info callback
-    engine->setUciInfoCallback([this](int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv) {
+    usingMcts = useMcts;
+    agent = usingMcts ? (Agent*) new MCTS(b) : (Agent*) new Engine(b);
+    attachInfoCallback();
+}
+
+UCI::~UCI() {
+    delete agent;
+}
+
+// Swap the active agent implementation, carrying the current position over.
+void UCI::setAgentType(bool mcts) {
+    if (mcts == usingMcts) return;
+    Board b = agent->board;
+    delete agent;
+    agent = mcts ? (Agent*) new MCTS(b) : (Agent*) new Engine(b);
+    usingMcts = mcts;
+    attachInfoCallback();
+}
+
+void UCI::attachInfoCallback() {
+    agent->setUciInfoCallback([this](int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv) {
         // Temporarily restore cout for UCI info
         std::cout.rdbuf(orig_cout);
         
@@ -59,10 +76,6 @@ UCI::UCI() : book("data/Perfect2023.bin") {
     });
 }
 
-UCI::~UCI() {
-    delete engine;
-}
-
 static inline string idName() {
     return string("id name Stickshark ") + STICKSHARK_VERSION + "\n";
 }
@@ -87,6 +100,7 @@ void UCI::loop() {
             std::cout.rdbuf(orig_cout);
             cout << idName();
             cout << idAuthor();
+            cout << "option name SearchAlgorithm type combo default AlphaBeta var AlphaBeta var MCTS\n";
             cout << "uciok\n";
             cout.flush();
             std::cout.rdbuf(&nullBuffer);
@@ -99,8 +113,10 @@ void UCI::loop() {
             handlePosition(line);
         } else if (line.rfind("go", 0) == 0) {
             handleGo(line);
+        } else if (line.rfind("setoption", 0) == 0) {
+            handleSetOption(line);
         } else if (line == "ucinewgame") {
-            Board b; b.setFEN(STARTING_FEN); engine->reset(b);
+            Board b; b.setFEN(STARTING_FEN); agent->reset(b);
         } else if (line == "stop") {
             // Current engine uses time-limited search only; nothing to cancel here
         } else if (line == "quit") {
@@ -124,7 +140,7 @@ void UCI::handlePosition(const string& line) {
 
     // Set the initial position on the existing engine board
     if (what == "startpos") {
-        engine->board.setFEN(STARTING_FEN);
+        agent->board.setFEN(STARTING_FEN);
         p = q == string::npos ? string::npos : line.find("moves", q + 1);
     } else if (what == "fen") {
         // Extract FEN tokens until either end or "moves"
@@ -134,14 +150,14 @@ void UCI::handlePosition(const string& line) {
         // Trim
         while (!fen.empty() && fen.front() == ' ') fen.erase(fen.begin());
         while (!fen.empty() && fen.back() == ' ') fen.pop_back();
-        engine->board.setFEN(fen);
+        agent->board.setFEN(fen);
         p = movesPos;
     } else {
         return;
     }
     
     // Reset search stats (TT not cleared)
-    engine->resetSearchStats();
+    agent->resetSearchStats();
 
     if (p != string::npos) {
         size_t movesStart = line.find(' ', p + 1);
@@ -158,8 +174,8 @@ void UCI::handlePosition(const string& line) {
                     int src = -1, dst = -1, promoFlag = 0;
                     if (parseUciMoveToken(token, src, dst, promoFlag)) {
                         Move m;
-                        if (findLegalMoveBySquares(engine->board, src, dst, promoFlag, m)) {
-                            engine->board.makeMove(m);
+                        if (findLegalMoveBySquares(agent->board, src, dst, promoFlag, m)) {
+                            agent->board.makeMove(m);
                         } else {
                             // Ignore illegal token in the sequence
                         }
@@ -197,10 +213,10 @@ void UCI::handleGo(const string& line) {
         int mtg   = parseToken("movestogo", -1);
 
         if (wtime > 0 && btime > 0) {
-            int remaining = std::max((engine->board.turn ? wtime : btime) - 50, 0);
-            int increment = engine->board.turn ? winc : binc;
+            int remaining = std::max((agent->board.turn ? wtime : btime) - 50, 0);
+            int increment = agent->board.turn ? winc : binc;
 
-            int movesToGo = (mtg > 0) ? mtg : std::max(40 - engine->board.ply / 2, 20);
+            int movesToGo = (mtg > 0) ? mtg : std::max(40 - agent->board.ply / 2, 20);
 
             softLimit = (remaining * 6 / 10) / movesToGo + (increment * 8 / 10);
             softLimit = std::min(softLimit, remaining / 5);
@@ -217,11 +233,11 @@ void UCI::handleGo(const string& line) {
     }
 
     // Try opening book first
-    auto bookMove = book.probe(engine->board);
+    auto bookMove = book.probe(agent->board);
     if (bookMove.has_value()) {
         auto [src, dst, promoFlag] = *bookMove;
         Move m;
-        if (findLegalMoveBySquares(engine->board, src, dst, promoFlag, m)) {
+        if (findLegalMoveBySquares(agent->board, src, dst, promoFlag, m)) {
             std::cout.rdbuf(orig_cout);
             cout << "info string book move\n";
             cout << "bestmove " << moveToUci(m) << "\n";
@@ -237,13 +253,41 @@ void UCI::handleGo(const string& line) {
     cout.flush();
     std::cout.rdbuf(&nullBuffer);
 
-    engine->findBestMove(softLimit, hardLimit);
+    agent->findBestMove(softLimit, hardLimit);
 
     // Temporarily restore cout for bestmove response
     std::cout.rdbuf(orig_cout);
-    cout << "bestmove " << moveToUci(engine->bestMove) << "\n";
+    cout << "bestmove " << moveToUci(agent->bestMove) << "\n";
     cout.flush();
     std::cout.rdbuf(&nullBuffer);
+}
+
+void UCI::handleSetOption(const string& line) {
+    // Expected form: setoption name <name> value <value>
+    size_t namePos = line.find("name ");
+    size_t valuePos = line.find(" value ");
+    if (namePos == string::npos || valuePos == string::npos) return;
+
+    string name = line.substr(namePos + 5, valuePos - (namePos + 5));
+    string value = line.substr(valuePos + 7);
+
+    // Trim
+    while (!name.empty() && name.back() == ' ') name.pop_back();
+    while (!value.empty() && value.front() == ' ') value.erase(value.begin());
+    while (!value.empty() && value.back() == ' ') value.pop_back();
+
+    if (name == "SearchAlgorithm") {
+        if (value == "MCTS") {
+            setAgentType(true);
+        } else if (value == "AlphaBeta") {
+            setAgentType(false);
+        }
+
+        std::cout.rdbuf(orig_cout);
+        cout << "info string search algorithm set to " << (usingMcts ? "MCTS" : "AlphaBeta") << "\n";
+        cout.flush();
+        std::cout.rdbuf(&nullBuffer);
+    }
 }
 
 string UCI::moveToUci(const Move& m) {

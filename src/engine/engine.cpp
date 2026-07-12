@@ -67,7 +67,7 @@ void Engine::setPosition(Board b) {
     // Note: TT is NOT cleared,  this preserves transposition table across position changes
 }
 
-void Engine::setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback) {
+void Engine::setUciInfoCallback(UciInfoCallback callback) {
     uciInfoCallback = callback;
 }
 

@@ -36,7 +36,7 @@ class Engine : public Agent {
     int lmrTable[MAX_PLY][MAX_PLY];
     
     // UCI info reporting
-    std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> uciInfoCallback;
+    UciInfoCallback uciInfoCallback;
     
     // Principal variation tracking
     std::vector<Move> principalVariation;
@@ -57,9 +57,9 @@ class Engine : public Agent {
     int16_t quiescenceSearch(int16_t alpha, int16_t beta, int16_t turn, int ply);
     
     // UCI interface
-    void setUciInfoCallback(std::function<void(int depth, int timeMs, int nodes, int nps, int scoreCp, const std::vector<Move>& pv)> callback);
+    void setUciInfoCallback(UciInfoCallback callback) override;
     const std::vector<Move>& getPrincipalVariation() const { return principalVariation; }
-    void resetSearchStats();
+    void resetSearchStats() override;
 
     // Helper
     inline bool isTimeUp() const {

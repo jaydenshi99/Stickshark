@@ -40,15 +40,16 @@ def broadcast(line):
 class Engine:
     """A single persistent UCI engine subprocess."""
 
-    def __init__(self, path):
+    def __init__(self, path, extra_args=None):
         self.path = path
+        self.extra_args = extra_args or []
         self.proc = None
         self.lock = threading.Lock()
         self.start()
 
     def start(self):
         self.proc = subprocess.Popen(
-            [self.path],
+            [self.path] + self.extra_args,
             cwd=REPO_ROOT,           # so the engine finds data/Perfect2023.bin
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -146,12 +147,16 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    # Usage: python3 web/server.py [port] [--mcts]
+    args = sys.argv[1:]
+    engine_args = ["--mcts"] if "--mcts" in args else []
+    ports = [a for a in args if a.isdigit()]
+    port = int(ports[0]) if ports else 8000
     if not os.path.isfile(ENGINE_PATH):
         sys.exit(f"Engine not found at {ENGINE_PATH}\nBuild it first: cmake --build build")
 
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    server.engine = Engine(ENGINE_PATH)
+    server.engine = Engine(ENGINE_PATH, engine_args)
     print(f"Stickshark web GUI: http://localhost:{port}")
     try:
         server.serve_forever()
