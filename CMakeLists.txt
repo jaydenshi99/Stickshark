@@ -37,6 +37,12 @@ add_executable(stickshark ${STICKSHARK_SOURCES})
 target_include_directories(stickshark PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_include_directories(stickshark PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
+# NN inference via Apple Accelerate (BLAS) when available
+if(APPLE)
+    target_link_libraries(stickshark PRIVATE "-framework Accelerate")
+    target_compile_definitions(stickshark PRIVATE USE_ACCELERATE)
+endif()
+
 # Test executables (optional - build manually if needed)
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp"
@@ -54,6 +60,10 @@ if(TEST_SOURCES)
         target_include_directories(test_${TEST_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
         target_include_directories(test_${TEST_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
         target_include_directories(test_${TEST_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+        if(APPLE)
+            target_link_libraries(test_${TEST_NAME} PRIVATE "-framework Accelerate")
+            target_compile_definitions(test_${TEST_NAME} PRIVATE USE_ACCELERATE)
+        endif()
     endforeach()
 endif()
 

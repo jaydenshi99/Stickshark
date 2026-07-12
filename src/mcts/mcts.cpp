@@ -1,6 +1,10 @@
 #include "mcts.h"
 
-MCTS::MCTS(Board b) : Agent(b) {}
+MCTS::MCTS(Board b) : Agent(b) {
+    net.load("data/model.nn");
+    nnPlanes.resize(nn::PLANES * 64);
+    nnLogits.resize(nn::POLICY_SIZE);
+}
 
 MCTS::~MCTS() {}
 
@@ -10,7 +14,7 @@ void MCTS::findBestMove(int softLimit, int hardLimit, int maxDepth) {
     bestMove = Move();
 
     // fixed for now, make dynamic later
-    const int trials = 100000;
+    const int trials = net.isLoaded() ? 800 : 100000;
 
     auto start = chrono::steady_clock::now();
     monteCarloTreeSearch(trials);
@@ -87,8 +91,12 @@ float MCTS::monteCarloTreeSearch(int numTrials) {
             path.push_back(nIdx);
         }
 
-        // 2. expand the leaf: append all legal moves as one contiguous child block
-        if (arena[nIdx].firstChild == 0) {
+        // 2+3. expand the leaf and evaluate it (NN policy+value if loaded);
+        // terminal and repetition nodes use the exact result
+        float value;
+        if (arena[nIdx].firstChild != 0) {
+            value = board.kingInCheck(true) ? -1.0f : 0.0f;   // mate : stalemate
+        } else {
             MoveGen& mg = MoveGen::getInstance();
             MoveList legal = mg.generateLegalMoves(board);
 
@@ -102,24 +110,15 @@ float MCTS::monteCarloTreeSearch(int numTrials) {
             arena[nIdx].numChildren = (uint16_t)legal.count;
 
             mg.freeLegalMoves(legal);
-        }
 
-        // descend into one (unvisited) child so the rollout starts there
-        if (arena[nIdx].numChildren > 0) {
-            nIdx = selectChild(nIdx);
-            board.makeMove(Move(arena[nIdx].move));
-            path.push_back(nIdx);
-        }
-        // 3. evaluate the reached node; terminal nodes use the exact result
-        float value;
-        if (arena[nIdx].numChildren == 0 && arena[nIdx].firstChild != 0) {
-            value = board.kingInCheck(true) ? -1.0f : 0.0f;   // mate : stalemate
-        } else if (board.isThreeFoldRepetition()) {
-            value = 0.0f;
-        } else {
-            int cp = staticEvaluation(board);
-            if (!board.turn) cp = -cp;          // eval is white-POV; valueSum is side-to-move
-            value = tanh(cp / 300.0f);
+            if (arena[nIdx].numChildren == 0) {
+                value = board.kingInCheck(true) ? -1.0f : 0.0f;
+            } else {
+                value = evaluateLeaf(nIdx);
+                if (board.isThreeFoldRepetition()) {
+                    value = 0.0f;
+                }
+            }
         }
 
         // 4. backprop, unmaking the path's moves on the way up
@@ -135,17 +134,56 @@ float MCTS::monteCarloTreeSearch(int numTrials) {
     return 0.0f;
 }
 
+// Sets the priors on nodeIdx's children and returns the leaf value.
+// Falls back to uniform priors + static eval when no weights are loaded.
+float MCTS::evaluateLeaf(uint32_t nodeIdx) {
+    uint32_t first = arena[nodeIdx].firstChild;
+    uint16_t n = arena[nodeIdx].numChildren;
+
+    if (!net.isLoaded()) {
+        for (uint16_t i = 0; i < n; i++) {
+            arena[first + i].prior = 1.0f / n;
+        }
+        int cp = staticEvaluation(board);
+        if (!board.turn) cp = -cp;          // eval is white-POV; valueSum is side-to-move
+        return tanh(cp / 300.0f);
+    }
+
+    nn::encodeBoard(board, nnPlanes.data());
+    float value = net.evaluate(nnPlanes.data(), nnLogits.data());
+
+    // softmax over the legal moves' logits
+    float maxLogit = -1e30f;
+    for (uint16_t i = 0; i < n; i++) {
+        int idx = nn::policyIndex(Move(arena[first + i].move), board.turn);
+        float logit = nnLogits[idx];
+        arena[first + i].prior = logit;
+        if (logit > maxLogit) maxLogit = logit;
+    }
+    float sum = 0.0f;
+    for (uint16_t i = 0; i < n; i++) {
+        float e = exp(arena[first + i].prior - maxLogit);
+        arena[first + i].prior = e;
+        sum += e;
+    }
+    for (uint16_t i = 0; i < n; i++) {
+        arena[first + i].prior /= sum;
+    }
+
+    return value;
+}
+
+// PUCT
 uint32_t MCTS::selectChild(uint32_t parentIdx) {
     const Node& p = arena[parentIdx];
-    float logN = std::log((float)p.visits);
+    float sqrtN = sqrt((float)p.visits);
 
-    uint32_t best = 0;
+    uint32_t best = p.firstChild;
     float bestScore = -1e30f;
     for (uint32_t ci = p.firstChild; ci < p.firstChild + p.numChildren; ci++) {
         const Node& ch = arena[ci];
-        if (ch.visits == 0) return ci;
-        float q = -ch.valueSum / ch.visits;
-        float score = q + C * std::sqrt(logN / ch.visits);
+        float q = ch.visits > 0 ? -ch.valueSum / ch.visits : 0.0f;
+        float score = q + C * ch.prior * sqrtN / (1.0f + ch.visits);
         if (score > bestScore) { bestScore = score; best = ci; }
     }
     return best;

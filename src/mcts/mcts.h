@@ -8,6 +8,7 @@
 #include "../chess/board/board.h"
 #include "../chess/moveGeneration/moveGen.h"
 #include "../engine/evaluation.h"
+#include "../nn/network.h"
 #include "../constants.h"
 
 struct Node {
@@ -16,6 +17,7 @@ struct Node {
     uint16_t move = 0;         // 16-bit moveValue. the edge from parent
     uint32_t visits = 0;
     float    valueSum = 0.0f;  // sum of results, side-to-move perspective
+    float    prior = 0.0f;     // policy prior from the parent's evaluation
 };
 
 class MCTS : public Agent {
@@ -29,8 +31,13 @@ class MCTS : public Agent {
     InfoStringCallback infoStringCallback;
     UciInfoCallback uciInfoCallback;
 
+    nn::Network net;
+    vector<float> nnPlanes;
+    vector<float> nnLogits;
+
     float monteCarloTreeSearch(int numTrials);
     uint32_t selectChild(uint32_t parentIdx);
+    float evaluateLeaf(uint32_t nodeIdx);
     void reportMoveDistribution();
 
     public:
