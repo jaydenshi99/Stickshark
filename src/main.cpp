@@ -1,6 +1,7 @@
 #include "main.h"
 #include "communication/uci.h"
 #include "benchmark.h"
+#include "selfplay/selfplay.h"
 #include <sstream>
 
 using namespace std;
@@ -19,8 +20,13 @@ int main (int argc, char* argv[]) {
         }
     }
 
+    bool selfplayMode = false;
+
     if (argc > 1 && string(argv[1]) == "--uci") {
         uciMode = true;
+    } else if (argc > 1 && string(argv[1]) == "--selfplay") {
+        uciMode = false;
+        selfplayMode = true;
     } else if (argc > 1 && string(argv[1]) == "--perft") {
         uciMode = false;
         perftMode = true;
@@ -46,7 +52,15 @@ int main (int argc, char* argv[]) {
         computeAllTables();
     }
 
-    if (benchmarkMode) {
+    if (selfplayMode) {
+        // usage: --selfplay [games] [outFile] [seed] [moveTimeMs]
+        SelfPlayConfig cfg;
+        if (argc > 2) cfg.games = atoi(argv[2]);
+        if (argc > 3) cfg.outPath = argv[3];
+        if (argc > 4) cfg.seed = strtoull(argv[4], nullptr, 10);
+        if (argc > 5) cfg.moveTimeMs = atoi(argv[5]);
+        runSelfPlay(cfg);
+    } else if (benchmarkMode) {
         runBenchmark(benchmarkDepth);
     } else if (uciMode) {
         UCI uci(useMcts);
