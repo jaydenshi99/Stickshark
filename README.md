@@ -44,7 +44,11 @@ Clean: remove the `build` directory to force a fresh configure/build:
 
 ## Web Interface
 
-Stickshark includes a web-based GUI for visual chess gameplay.
+Stickshark ships with a browser GUI that talks to the engine over the **UCI**
+protocol. A small Python bridge (`web/server.py`, standard library only — no pip
+installs) spawns the engine, relays UCI lines to the page over Server-Sent
+Events, and serves the static assets. The board rules run client-side via a
+vendored copy of [chess.js](https://github.com/jhlywa/chess.js).
 
 ### Launching the Web Interface
 
@@ -54,24 +58,15 @@ Stickshark includes a web-based GUI for visual chess gameplay.
    cmake --build build
    ```
 
-2. **Start the HTTP server**:
+2. **Start the bridge** (serves the GUI and drives the engine):
    ```bash
-   python3 -m http.server 8000
+   python3 web/server.py        # optional: python3 web/server.py <port>
    ```
 
-3. **Start the chess engine in web mode** (in another terminal):
-   - macOS/Linux:
-     ```bash
-     ./build/stickshark --server
-     ```
-   - Windows:
-     ```powershell
-     build\stickshark.exe --server
-     ```
+3. **Open your browser** at http://localhost:8000
 
-4. **Open your web browser** and navigate to:
-   - **Visual Board**: http://localhost:8000/web/chess_board.html
-   - **Raw JSON View**: http://localhost:8000/web/json_viewer.html
+Pick your colour, set the engine's thinking time, and play. The panel shows the
+engine's live search info (depth, score, nodes, speed, principal variation).
 
 ## Versions
 

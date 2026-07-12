@@ -72,4 +72,5 @@ class Engine {
 
 private:
     void setFinalResult(int16_t score, Move& move);
+    void buildPrincipalVariation();  // reconstruct full PV by walking the TT
 };

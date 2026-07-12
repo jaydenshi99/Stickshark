@@ -130,6 +130,7 @@ void Engine::findBestMove(int softLimit, int hardLimit, int maxDepth) {
                 int totalNodes = normalNodesSearched + quiescenceNodesSearched;
                 int nps = elapsedTime > 0 ? (totalNodes * 1000) / elapsedTime : 0;
                 int scoreCp = board.turn ? boardEval : -boardEval;
+                buildPrincipalVariation();
                 uciInfoCallback(searchDepth, elapsedTime, totalNodes, nps, scoreCp, principalVariation);
             }
 
@@ -594,9 +595,51 @@ void Engine::setFinalResult(int16_t score, Move& move) {
     boardEval = score;
     searchFinished = true;
     
-    // Update principal variation (simple version - just the best move)
+    // Update principal variation (simple version - just the best move).
+    // The full line is reconstructed later via buildPrincipalVariation().
     principalVariation.clear();
     if (move.getSource() != 0 || move.getTarget() != 0) { // Valid move
         principalVariation.push_back(move);
+    }
+}
+
+// Reconstruct the full principal variation by starting from bestMove and
+// following the transposition table's stored best move position-by-position.
+// Runs on a board copy so the real root position is untouched. Stops on a TT
+// miss, an illegal/absent stored move, a repetition, or a length cap.
+void Engine::buildPrincipalVariation() {
+    principalVariation.clear();
+    if (bestMove.getSource() == 0 && bestMove.getTarget() == 0) return;
+
+    MoveGen& mg = MoveGen::getInstance();
+    Board copy = board;
+    Move current = bestMove;
+    std::vector<uint64_t> seen;
+    const int MAX_PV = 64;
+
+    for (int i = 0; i < MAX_PV; i++) {
+        // Confirm 'current' is legal in this position before trusting it.
+        MoveList legal = mg.generateLegalMoves(copy);
+        bool ok = false;
+        for (std::ptrdiff_t j = 0; j < legal.count; j++) {
+            if (legal.moves[j].moveValue == current.moveValue) { ok = true; break; }
+        }
+        mg.freeLegalMoves(legal);
+        if (!ok) break;
+
+        principalVariation.push_back(current);
+        copy.makeMove(current);
+
+        // Guard against cycles (repetition would loop forever).
+        uint64_t h = copy.zobristHash;
+        bool repeated = false;
+        for (uint64_t s : seen) if (s == h) { repeated = true; break; }
+        if (repeated) break;
+        seen.push_back(h);
+
+        // Follow the TT's best move for the resulting position.
+        TTEntry entry;
+        if (!TT->retrieveEntry(h, entry) || entry.bestMove == 0) break;
+        current = Move(entry.bestMove);
     }
 }
