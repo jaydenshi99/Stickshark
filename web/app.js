@@ -257,7 +257,7 @@ function armEngineWatchdog() {
     send(positionCommand());
     send("go movetime " + thinkMs);
     armEngineWatchdog();
-  }, thinkMs + 8000);
+  }, thinkMs + 2000);
 }
 
 function applyEngineMove(uci) {
