@@ -227,16 +227,47 @@ function positionCommand() {
   return base + (movesUci.length ? " moves " + movesUci.join(" ") : "");
 }
 
+// Watchdog: SSE delivery isn't guaranteed (tab sleep, connection drops can
+// eat the bestmove line), so every request re-asks the engine if no usable
+// reply lands in time. Duplicate replies are dropped by the guard in
+// applyEngineMove, which makes re-asking always safe.
+let engineWatchdog = null;
+let engineRetries = 0;
+
 function requestEngineMove() {
   engineThinking = true;
+  engineRetries = 0;
   updateStatus();
   send(positionCommand());
   send("go movetime " + thinkMs);
+  armEngineWatchdog();
+}
+
+function armEngineWatchdog() {
+  clearTimeout(engineWatchdog);
+  engineWatchdog = setTimeout(() => {
+    if (!engineThinking) return;
+    if (engineRetries >= 3) {
+      engineThinking = false;
+      updateStatus();
+      statusEl.textContent = "Engine not responding — try New game";
+      return;
+    }
+    engineRetries++;
+    send(positionCommand());
+    send("go movetime " + thinkMs);
+    armEngineWatchdog();
+  }, thinkMs + 8000);
 }
 
 function applyEngineMove(uci) {
-  engineThinking = false;
-  if (!uci || uci === "(none)") { updateStatus(); return; }
+  if (!engineThinking) return;   // unsolicited or duplicate reply — drop it
+  if (!uci || uci === "(none)") {
+    engineThinking = false;
+    clearTimeout(engineWatchdog);
+    updateStatus();
+    return;
+  }
   let move = null;
   try {
     move = game.move({
@@ -244,8 +275,10 @@ function applyEngineMove(uci) {
       to: uci.slice(2, 4),
       promotion: uci.length > 4 ? uci[4] : undefined,
     });
-  } catch { /* stale or illegal reply — never wedge the session over it */ }
-  if (!move) { updateStatus(); return; }
+  } catch { /* rejected reply — leave engineThinking set; watchdog re-asks */ }
+  if (!move) return;
+  engineThinking = false;
+  clearTimeout(engineWatchdog);
   movesUci.push(uci);
   lastMove = { from: move.from, to: move.to };
   clearSelection();
@@ -551,14 +584,9 @@ events.onopen = () => {
     newGame();
     return;
   }
-  // Reconnected mid-session: any engine line sent while the stream was down
-  // (possibly the bestmove we were waiting on) is lost, and the server may
-  // even have respawned the engine. Re-sync instead of resetting the game.
+  // Reconnected mid-session: the server may have respawned the engine, so
+  // re-sync the option. A lost bestmove is handled by the engine watchdog.
   send("setoption name SearchAlgorithm value " + algoSel.value);
-  if (engineThinking) {
-    send(positionCommand());
-    send("go movetime " + thinkMs);
-  }
 };
 render();
 updateStatus();
