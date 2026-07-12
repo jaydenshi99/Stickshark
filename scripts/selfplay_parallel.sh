@@ -5,10 +5,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-WORKERS=${1:-$(( $(sysctl -n hw.ncpu) - 2 ))}
-GAMES=${2:-100}
+WORKERS=${1:-4}
+GAMES=${2:-2400}
 BASESEED=${3:-1}
-MOVETIME=${4:-10}
+MOVETIME=${4:-15}
 BIN=build/stickshark
 
 [ -x "$BIN" ] || { echo "missing $BIN — build first"; exit 1; }
