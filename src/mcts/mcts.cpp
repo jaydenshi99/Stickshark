@@ -27,13 +27,12 @@ void MCTS::findBestMove(int softLimit, int hardLimit, int maxDepth) {
         }
     }
 
-    // Report the Q of the move actually picked: the evaluation conditional on
-    // playing it, unlike the root average which refuted lines drag down.
+    // Report the Q of the move actually picked
     if (bestIdx != 0 && uciInfoCallback) {
         float q = -arena[bestIdx].valueSum / (float)arena[bestIdx].visits;
         q = clamp(q, -0.9999f, 0.9999f);
-        int cp = (int)(atanh(q) * 300.0f);          // invert the tanh(cp/300) squash
-        int scoreCp = board.turn ? cp : -cp;        // UCI reports white-POV here
+        int cp = (int)(atanh(q) * 300.0f);
+        int scoreCp = board.turn ? cp : -cp; 
         int nps = timeMs > 0 ? (int)((int64_t)trials * 1000 / timeMs) : 0;
         vector<Move> pv{bestMove};
         uciInfoCallback(0, timeMs, trials, nps, scoreCp, pv);
