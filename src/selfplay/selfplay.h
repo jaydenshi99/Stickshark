@@ -25,6 +25,7 @@ struct SelfPlayConfig {
     int moveTimeMs = 150;      // engine think time per move
 
     // knobs
+    int maxBookPlies = 24;     // book walk depth is uniform in [0, maxBookPlies]
     int minRandomPlies = 2;    // uniform random plies after the book exit
     int maxRandomPlies = 6;
     float epsilonNoise = 0.07f;   // chance of a random (unlogged) move

@@ -99,8 +99,9 @@ void runSelfPlay(const SelfPlayConfig& cfg) {
         board.setFEN(STARTING_FEN);
         gameRecords.clear();
 
-        // opening book walk (probe picks weighted-random among book moves)
-        while (true) {
+        // opening book walk to a random depth, sometimes zero
+        int bookLimit = (int)(nextRandom() % (uint64_t)(cfg.maxBookPlies + 1));
+        for (int i = 0; i < bookLimit; i++) {
             auto bm = book.probe(board);
             if (!bm) break;
             auto [src, dst, promo] = *bm;
