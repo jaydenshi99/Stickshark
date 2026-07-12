@@ -89,7 +89,8 @@ void UCI::loop() {
     
     // Silence all stdout/stderr during UCI mode using a more robust method
     orig_cout = std::cout.rdbuf();
-    
+    orig_cerr = std::cerr.rdbuf();
+
     std::cout.rdbuf(&nullBuffer);
     std::cerr.rdbuf(&nullBuffer);
     
@@ -127,6 +128,11 @@ void UCI::loop() {
             // Ignore unknown commands for now
         }
     }
+
+    // Restore the real stream buffers: nullBuffer dies with this object, and
+    // cout flushes at static teardown — leaving it pointed here segfaults
+    std::cout.rdbuf(orig_cout);
+    std::cerr.rdbuf(orig_cerr);
 }
 
 void UCI::handlePosition(const string& line) {

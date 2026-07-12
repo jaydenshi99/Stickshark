@@ -25,6 +25,7 @@ private:
     bool usingMcts;
     OpeningBook book;
     std::streambuf* orig_cout;  // Store original cout streambuf for UCI responses
+    std::streambuf* orig_cerr;
 
     // Custom streambuf that discards all output
     class NullBuffer : public std::streambuf {
