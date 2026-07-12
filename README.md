@@ -45,8 +45,7 @@ Clean: remove the `build` directory to force a fresh configure/build:
 ## Web Interface
 
 Stickshark ships with a browser GUI that talks to the engine over the **UCI**
-protocol. A small Python bridge (`web/server.py`, standard library only — no pip
-installs) spawns the engine, relays UCI lines to the page over Server-Sent
+protocol. A small Python bridge (`web/server.py`), relays UCI lines to the page over Server-Sent
 Events, and serves the static assets. The board rules run client-side via a
 vendored copy of [chess.js](https://github.com/jhlywa/chess.js).
 

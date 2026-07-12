@@ -173,10 +173,11 @@ function onDragEnd(e) {
 
   if (target && target !== from && legalTargets.has(target)) {
     completeMove(from, target);
-  } else if (moved) {
+  } else if (moved && target !== from) {
     clearSelection();       // dragged off to nowhere
   }
-  // a plain click (no move) leaves the piece selected for click-to-move
+  // releasing on the origin square (plain click, or drag returned home,
+  // including tiny accidental jiggles) keeps the piece selected for click-to-move
 }
 
 // ---- making moves -------------------------------------------------------
