@@ -11,7 +11,11 @@ build/
 
 # Ignore LLM 
 CLAUDE.md
+.claude 
 /memory
+
+# Ignore vscode settings
+.vscode
 
 # Ignore Makefile intermediate files
 Makefile~
