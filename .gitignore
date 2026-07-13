@@ -18,5 +18,7 @@ Makefile~
 
 # Generated web state files
 data/board_state.json
+# Selfplay training data (regenerable, too large for git)
+data/selfplay/
 # Python bytecode cache
 __pycache__/

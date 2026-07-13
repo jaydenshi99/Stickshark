@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run N selfplay workers in parallel, each writing its own file.
 # usage: scripts/selfplay_parallel.sh [workers] [gamesPerWorker] [baseSeed] [moveTimeMs]
-# output: data/selfplay_w<i>.bin (one per worker)
+# output: data/selfplay/selfplay_w<i>.bin (one per worker)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -12,14 +12,14 @@ MOVETIME=${4:-15}
 BIN=build/stickshark
 
 [ -x "$BIN" ] || { echo "missing $BIN — build first"; exit 1; }
-mkdir -p data
+mkdir -p data/selfplay
 
 echo "launching $WORKERS workers x $GAMES games (moveTime ${MOVETIME}ms)"
 pids=()
 for i in $(seq 1 "$WORKERS"); do
-    out="data/selfplay_w${i}.bin"
+    out="data/selfplay/selfplay_w${i}.bin"
     seed=$(( BASESEED + i ))
-    "$BIN" --selfplay "$GAMES" "$out" "$seed" "$MOVETIME" > "data/selfplay_w${i}.log" 2>&1 &
+    "$BIN" --selfplay "$GAMES" "$out" "$seed" "$MOVETIME" > "data/selfplay/selfplay_w${i}.log" 2>&1 &
     pids+=($!)
 done
 
@@ -32,12 +32,12 @@ done
 
 echo "--- results ---"
 for i in $(seq 1 "$WORKERS"); do
-    tail -1 "data/selfplay_w${i}.log"
+    tail -1 "data/selfplay/selfplay_w${i}.log"
 done
 
 total=0
 for i in $(seq 1 "$WORKERS"); do
-    sz=$(stat -f %z "data/selfplay_w${i}.bin")
+    sz=$(stat -f %z "data/selfplay/selfplay_w${i}.bin")
     total=$(( total + (sz - 8) / 104 ))
 done
 echo "total: $total records across $WORKERS files"
