@@ -6,13 +6,20 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 WORKERS=${1:-4}
-GAMES=${2:-2400}
-BASESEED=${3:-1}
+GAMES=${2:-3000}
+BASESEED=${3:-123}
 MOVETIME=${4:-15}
 BIN=build/stickshark
 
 [ -x "$BIN" ] || { echo "missing $BIN — build first"; exit 1; }
 mkdir -p data/selfplay
+
+# refuse to clobber a previous run's output — rename it to batch<N>_w*.bin first
+if ls data/selfplay/selfplay_w*.bin >/dev/null 2>&1; then
+    echo "error: data/selfplay/selfplay_w*.bin already exists."
+    echo "rename it first, e.g.: for f in data/selfplay/selfplay_w*; do mv \"\$f\" \"\${f/selfplay_w/batchN_w}\"; done"
+    exit 1
+fi
 
 echo "launching $WORKERS workers x $GAMES games (moveTime ${MOVETIME}ms)"
 pids=()

@@ -129,6 +129,7 @@ void runSelfPlay(const SelfPlayConfig& cfg) {
 
         int result = 0;   // white POV
         bool decided = false;
+        bool fullPlayout = (nextRandom() % 1000) < (uint64_t)(cfg.playoutFraction * 1000);
         int adjCount = 0;
         int adjSide = 0;
         int16_t lastScore = 0;
@@ -189,7 +190,7 @@ void runSelfPlay(const SelfPlayConfig& cfg) {
 
             board.makeMove(best);
 
-            if (adjCount >= cfg.adjudicateMoves) {
+            if (!fullPlayout && adjCount >= cfg.adjudicateMoves) {
                 result = adjSide;
                 decided = true;
             }

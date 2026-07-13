@@ -27,5 +27,7 @@ Makefile~
 data/board_state.json
 # Selfplay training data (regenerable, too large for git)
 data/selfplay/
+data/nets/
+
 # Python bytecode cache
 __pycache__/

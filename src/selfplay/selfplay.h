@@ -32,7 +32,8 @@ struct SelfPlayConfig {
     int noiseCutoffPly = 40;      // no noise injected after this ply
     int adjudicateCp = 800;       // |eval| for a win adjudication...
     int adjudicateMoves = 6;      // ...held for this many consecutive engine moves
-    int maxPlies = 300;           // then adjudicate by last score (+/-200cp, else draw)
+    int maxPlies = 200;           // then adjudicate by last score (+/-200cp, else draw)
+    float playoutFraction = 0.3f; // chance a game skips adjudication, playing to the natural end
 };
 
 void runSelfPlay(const SelfPlayConfig& cfg);
