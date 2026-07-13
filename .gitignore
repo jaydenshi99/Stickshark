@@ -17,6 +17,9 @@ CLAUDE.md
 # Ignore vscode settings
 .vscode
 
+# Ignore venv
+.venv
+
 # Ignore Makefile intermediate files
 Makefile~
 
