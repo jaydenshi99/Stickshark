@@ -259,6 +259,7 @@ def main():
             export_ssnn(model, args.out)
             torch.save(model.state_dict(), args.out + ".pt")
             model.to(device)
+            model.train()   # export_ssnn leaves the model in eval mode
         else:
             print("val loss did not improve; stopping early")
             break
